@@ -4,24 +4,28 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { inscrireOuConnecter } from "@/lib/authFallback";
-import { appelerApi } from "@/lib/api";
-import { ErreurApi, messageErreur } from "@/lib/erreurs";
+import { Logo } from "@/components/Logo";
+import { Bouton } from "@/components/Bouton";
 import { ChampMotDePasse } from "@/components/ChampMotDePasse";
 import { ChampTelephone } from "@/components/ChampTelephone";
 
 type MethodeAuth = "email" | "telephone";
 
-// Rôle attribué automatiquement à tout compte créé directement depuis cet
-// écran (pas de sélecteur visible, demande Bourama : "une seule
-// inscription et normale"). Un compte enseignant/étudiant sera rattaché
-// via un code d'invitation plus tard (partie 4), pas depuis cet écran.
-// Ajustable en un mot si Bourama veut un autre défaut.
-const ROLE_PAR_DEFAUT = "etablissement";
+// Correctif (08/08, fusion des parties 2 et 4) : cet écran ne fait plus
+// que créer le compte (email/téléphone + mot de passe). L'attribution du
+// rôle se fait juste après, sur "/", via EspaceRejoindre (partie 4) --
+// soit avec un code reçu (enseignant/étudiant), soit "je crée un nouvel
+// établissement" (le nouveau chemin racine, POST
+// /api/roles/etablissement-racine). L'ancienne version de cet écran
+// appelait directement POST /api/roles/choisir avec un rôle "etablissement"
+// codé en dur pour TOUT nouveau compte -- ça cassait silencieusement le
+// parcours enseignant/étudiant par code : le rôle était déjà pris avant
+// même que la personne ait pu saisir son code. Le nom (nom_affiche) est
+// maintenant demandé une seule fois, dans EspaceRejoindre, pas ici.
 
 export default function PageInscription() {
   const router = useRouter();
   const [methode, setMethode] = useState<MethodeAuth>("email");
-  const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
@@ -38,31 +42,15 @@ export default function PageInscription() {
         ? await inscrireOuConnecter({ email, password: motDePasse })
         : await inscrireOuConnecter({ phone: telephone.replace(/\s+/g, ""), password: motDePasse });
 
+    setEnCours(false);
+
     if (error) {
-      setEnCours(false);
       setErreur(error.message);
       return;
     }
 
-    // Attribution du rôle + nom, silencieuse (aucune étape visible pour
-    // l'utilisateur). Si le compte existait déjà avec un rôle (repli
-    // "compte existant -> connexion" de inscrireOuConnecter), le backend
-    // renvoie 409 ROLE_DEJA_CHOISI : pas une vraie erreur ici, le compte
-    // est déjà en règle, on continue simplement vers le chat.
-    try {
-      await appelerApi("/api/roles/choisir", {
-        method: "POST",
-        body: JSON.stringify({ role: ROLE_PAR_DEFAUT, nom_affiche: nom }),
-      });
-    } catch (e) {
-      if (!(e instanceof ErreurApi && e.code === "ROLE_DEJA_CHOISI")) {
-        setEnCours(false);
-        setErreur(messageErreur(e));
-        return;
-      }
-    }
-
-    setEnCours(false);
+    // Le rôle (établissement/enseignant/étudiant) se choisit juste après,
+    // sur "/" (EspaceRejoindre) -- voir commentaire en haut de fichier.
     router.push("/");
   }
 
@@ -70,8 +58,7 @@ export default function PageInscription() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm animate-dj-fade-up">
         <div className="mb-8 flex items-center justify-center gap-2.5">
-          {/* Logo (chapeau de diplômé, identité graphique) : traité en
-              partie 5, laissé en texte simple pour ce module. */}
+          <Logo taille={32} />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
             Class <span className="text-dj-accent-1">GPT</span>
           </span>
@@ -106,21 +93,6 @@ export default function PageInscription() {
           </div>
 
           <form onSubmit={gererSoumission} className="mt-4 space-y-4">
-            <div>
-              <label htmlFor="nom" className="block text-sm font-medium text-dj-texte-muet">
-                Nom
-              </label>
-              <input
-                id="nom"
-                type="text"
-                required
-                autoComplete="name"
-                value={nom}
-                onChange={(e) => setNom(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-dj-texte outline-none focus:border-dj-accent-1"
-              />
-            </div>
-
             {methode === "email" ? (
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-dj-texte-muet">
@@ -149,13 +121,9 @@ export default function PageInscription() {
 
             {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
 
-            <button
-              type="submit"
-              disabled={enCours}
-              className="w-full rounded-full bg-dj-gradient px-4 py-2.5 text-sm font-bold text-[#1A0D02] shadow-[0_2px_14px_rgba(217,99,31,0.25)] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
-            >
+            <Bouton type="submit" disabled={enCours} className="w-full">
               {enCours ? "Création…" : "Créer mon compte"}
-            </button>
+            </Bouton>
           </form>
         </div>
 

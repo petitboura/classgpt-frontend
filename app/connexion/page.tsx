@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { connecter } from "@/lib/authFallback";
+import { Logo } from "@/components/Logo";
+import { Bouton } from "@/components/Bouton";
 import { ChampMotDePasse } from "@/components/ChampMotDePasse";
 import { ChampTelephone } from "@/components/ChampTelephone";
 
@@ -45,8 +47,7 @@ export default function PageConnexion() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm animate-dj-fade-up">
         <div className="mb-8 flex items-center justify-center gap-2.5">
-          {/* Logo (chapeau de diplômé, identité graphique) : traité en
-              partie 5, laissé en texte simple pour ce module. */}
+          <Logo taille={32} />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
             Class <span className="text-dj-accent-1">GPT</span>
           </span>
@@ -104,13 +105,9 @@ export default function PageConnexion() {
 
             {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
 
-            <button
-              type="submit"
-              disabled={enCours}
-              className="w-full rounded-full bg-dj-gradient px-4 py-2.5 text-sm font-bold text-[#1A0D02] shadow-[0_2px_14px_rgba(217,99,31,0.25)] transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
-            >
+            <Bouton type="submit" disabled={enCours} className="w-full">
               {enCours ? "Connexion…" : "Se connecter"}
-            </button>
+            </Bouton>
           </form>
         </div>
 

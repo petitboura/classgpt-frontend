@@ -1,9 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronsLeft, ChevronsRight, MessageSquarePlus, History, LogOut, GraduationCap } from "lucide-react";
+import Link from "next/link";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  MessageSquarePlus,
+  History,
+  LogOut,
+  Users,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { appelerApi } from "@/lib/api";
+import { Logo } from "@/components/Logo";
 
 // Sidebar de Class GPT (partie 3 du brief) -- version délibérément réduite
 // de SidebarChat.tsx (djiguigne-frontend) : reprend le même comportement
@@ -14,10 +23,9 @@ import { appelerApi } from "@/lib/api";
 // fonctionnalités "espace utilisateur" (inviter, suivi élèves, diffusion)
 // appartiennent à la partie 4 du brief, pas à ce composant.
 //
-// Le logo affiché ici (icône GraduationCap générique) est un repli
-// temporaire -- le vrai logo "chapeau de diplômé" dans le style Djiguignè
-// est prévu par la partie 5 du brief (identité visuelle), pas encore
-// disponible au moment d'écrire ce composant.
+// Logo (chapeau de diplômé, identité graphique) : branché depuis la
+// partie 5 (composant Logo.tsx), remplace l'icône GraduationCap
+// générique utilisée en repli le temps que cette partie soit livrée.
 
 type FilConversation = {
   conversation_id: string | null;
@@ -39,17 +47,24 @@ function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.
 
 export function SidebarChatLite({
   agentId,
+  role,
   aDesMessages,
   conversationActiveId,
   onNouvelleConversation,
   onSelectionnerConversation,
 }: {
   agentId: string;
+  role: string | null;
   aDesMessages: boolean;
   conversationActiveId: string | null;
   onNouvelleConversation: () => void;
   onSelectionnerConversation: (fil: FilConversation) => void;
 }) {
+  // Correctif (08/08) : lien vers /mon-espace (partie 4 -- inviter,
+  // suivre son équipe, diffuser des documents), jusqu'ici inatteignable
+  // depuis l'interface. Un étudiant n'a rien à gérer en dessous de lui
+  // (voir EspaceClassGPT.tsx), donc pas de lien pour ce rôle.
+  const peutVoirMonEspace = role === "etablissement" || role === "enseignant";
   const [ouverte, setOuverte] = useState(false);
   const [fils, setFils] = useState<FilConversation[] | null>(null);
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
@@ -123,6 +138,18 @@ export function SidebarChatLite({
           </button>
         )}
 
+        {peutVoirMonEspace && (
+          <Link
+            href="/mon-espace"
+            className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          >
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+              <Users size={18} />
+            </span>
+            <LibelleRail ouverte={ouverte}>Mon espace</LibelleRail>
+          </Link>
+        )}
+
         {fils && fils.length > 0 && (
           <div className="mt-2 rounded-xl border border-dj-bordure">
             <button
@@ -184,7 +211,7 @@ export function SidebarChatLite({
 
           <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <GraduationCap size={18} className="text-dj-accent-1" />
+              <Logo taille={18} />
             </span>
             <LibelleRail ouverte={ouverte}>
               <span className="font-display font-bold tracking-tight">Class GPT</span>
@@ -209,6 +236,21 @@ export function SidebarChatLite({
               </span>
               <span className="text-sm">Nouvelle conversation</span>
             </button>
+          )}
+
+          {peutVoirMonEspace && (
+            <Link
+              href="/mon-espace"
+              onClick={() => setOuverte(false)}
+              className={`flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+                aDesMessages ? "mt-2" : "mt-8"
+              }`}
+            >
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                <Users size={18} />
+              </span>
+              <span className="text-sm">Mon espace</span>
+            </Link>
           )}
 
           {fils && fils.length > 0 && (

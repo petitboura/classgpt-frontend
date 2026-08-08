@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import { BlocCode } from "./BlocCode";
 import { Mermaid } from "./Mermaid";
 import { CarteMessage } from "./CarteMessage";
+import { IndicateurReflexion } from "@/components/IndicateurReflexion";
 import { SchemaGeometrique } from "./SchemaGeometrique";
 import { WidgetSandbox } from "./WidgetSandbox";
 import { ImageMessage } from "./ImageMessage";
@@ -395,14 +396,7 @@ export function BulleMessage({
           la réponse, ce qui ne reflétait pas l'ordre réel "le modèle
           réfléchit D'ABORD, répond ENSUITE". */}
       {!estUtilisateur && enAttente && (
-        <div className="my-1 flex items-center gap-1.5 text-[13px] text-dj-texte-muet">
-          <span>{nomAgent} réfléchit</span>
-          <span className="flex gap-0.5">
-            <span className="h-1 w-1 animate-bounce rounded-full bg-dj-texte-muet [animation-delay:0ms]" />
-            <span className="h-1 w-1 animate-bounce rounded-full bg-dj-texte-muet [animation-delay:150ms]" />
-            <span className="h-1 w-1 animate-bounce rounded-full bg-dj-texte-muet [animation-delay:300ms]" />
-          </span>
-        </div>
+        <IndicateurReflexion nomAgent={nomAgent ?? "Class GPT"} />
       )}
       {!estUtilisateur && raisonnement && (
         <RaisonnementBulle nomAgent={nomAgent ?? "L'agent"} texte={raisonnement} enCours={!!raisonnementEnCours} />

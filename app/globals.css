@@ -186,3 +186,8 @@ select:focus-visible {
     transition: none;
   }
 }
+
+/* Partie 5 (identité visuelle "à main levée") -- le bloc
+   prefers-reduced-motion existant plus haut couvre déjà globalement les
+   nouveaux keyframes cgpt-* (animation-duration devient quasi nulle),
+   pas besoin d'un second bloc redondant ici. */

@@ -1,14 +1,14 @@
 import type { Config } from "tailwindcss";
 
-// Étape D.1 (pivot social) : thème repris à l'identique de djiguigne-frontendent
-// (la vitrine) — palette, typographie, dégradés, animations. Décision de
-// Bourama (2026-07-11) : le thème visuel est commun aux deux sites, seule
-// la STRUCTURE des pages diffère (ici : feed/agent/portfolio/dashboard, pas
-// accueil/services/blog/contact). Source de vérité de ces valeurs :
-// djiguigne-frontendent/tailwind.config.ts, lui-même dérivé de l'ancien
-// djiguigne-backend/faces/vues/theme_djiguigne.py (fichier supprimé depuis,
-// le retrait de Streamlit). Ne pas dévier de ces
-// valeurs sans changer les deux dépôts à la fois.
+// Thème repris à l'identique de djiguigne-frontend (palette, typographie,
+// dégradés, animations dj-*) -- ne pas dévier de ces valeurs sans
+// décision explicite de Bourama, pour garder une cohérence visuelle avec
+// le reste de l'écosystème même si ce produit ne le montre jamais.
+//
+// Tokens "cgpt-*" (partie 5, traitement "à main levée") : propres à Class
+// GPT, n'existent pas dans djiguigne-frontend -- easings sur mesure
+// (jamais de ease-in-out générique) + rayons de bordure légèrement
+// irréguliers, cf. brief section 4b.
 const config: Config = {
   darkMode: "class",
   content: [
@@ -42,6 +42,23 @@ const config: Config = {
         sans: ["var(--font-inter)", "sans-serif"],
         mono: ["var(--font-jetbrains-mono)", "monospace"],
       },
+      transitionTimingFunction: {
+        // Apparitions (fade-in, entrée d'un message, ouverture d'un
+        // panneau) : décélération franche, jamais de rebond.
+        "cgpt-doux": "cubic-bezier(.25,.8,.35,1)",
+        // Interactions directes (survol, clic) : très léger dépassement
+        // (1.04) avant de se stabiliser -- imite l'inertie d'un geste de
+        // la main.
+        "cgpt-geste": "cubic-bezier(.36,0,.2,1.04)",
+      },
+      borderRadius: {
+        // Écart de 1 à 3px entre les 4 coins -- assez subtil pour ne
+        // jamais lire comme un bug de rendu, assez réel pour casser le
+        // tracé vectoriel parfaitement figé (brief 4b : "les courbes ne
+        // sont jamais parfaitement rondes ou parfaitement droites").
+        "cgpt-bouton": "12px 13px 12px 14px",
+        "cgpt-carte": "16px 17px 16px 18px",
+      },
       keyframes: {
         "dj-fade-up": {
           from: { opacity: "0", transform: "translateY(14px)" },
@@ -68,6 +85,19 @@ const config: Config = {
           "0%, 100%": { opacity: "0.55", transform: "scale(1)" },
           "50%": { opacity: "0.9", transform: "scale(1.06)" },
         },
+        // Entrée d'un message dans le chat (partie 5) : jamais d'affichage
+        // brut (brief 4b). Fondu + léger glissement + micro-scale.
+        "cgpt-entree-message": {
+          from: { opacity: "0", transform: "translateY(10px) scale(.985)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        // Points de l'indicateur "{agent} réfléchit" (partie 5) : rythme
+        // légèrement irrégulier plutôt que animate-bounce (délais
+        // parfaitement réguliers) -- brief 4b.
+        "cgpt-point-reflexion": {
+          "0%, 100%": { transform: "translateY(0)", opacity: ".5" },
+          "35%": { transform: "translateY(-4px)", opacity: "1" },
+        },
       },
       animation: {
         "dj-fade-up": "dj-fade-up 0.5s ease both",
@@ -75,6 +105,8 @@ const config: Config = {
         "dj-fade-in-rapide": "dj-fade-in-rapide 0.18s ease both",
         "dj-orbit": "dj-orbit 18s linear infinite",
         "dj-glow": "dj-glow 3.2s ease-in-out infinite",
+        "cgpt-entree-message": "cgpt-entree-message 0.4s cubic-bezier(.25,.8,.35,1) both",
+        "cgpt-point-reflexion": "cgpt-point-reflexion 1.3s cubic-bezier(.25,.8,.35,1) infinite",
       },
     },
   },

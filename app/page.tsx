@@ -41,6 +41,7 @@ export default function PageAccueilChat() {
   const [etat, setEtat] = useState<"chargement" | "pret" | "erreur">("chargement");
   const [erreur, setErreur] = useState<string | null>(null);
   const [agent, setAgent] = useState<AgentDetail | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [cle, setCle] = useState(() => crypto.randomUUID());
   const [messagesInitiaux, setMessagesInitiaux] = useState<MessageAffiche[]>([]);
   const [nbMessages, setNbMessages] = useState(0);
@@ -65,14 +66,19 @@ export default function PageAccueilChat() {
           "/api/roles/moi"
         );
         if (!monRole.agent_id) {
-          // Compte connecté mais qui n'a pas encore choisi de rôle --
-          // flux d'inscription en cascade, partie 2 du brief.
-          window.location.href = "/connexion";
+          // Compte connecté mais sans rôle -- ce n'est PAS une erreur de
+          // session (ça bouclerait avec /connexion, qui redirige déjà
+          // vers "/" une fois connecté). Correctif (08/08, fusion des
+          // parties 2 et 4) : /inscription ne choisit plus de rôle
+          // elle-même, ce choix se fait ici, sur /rejoindre (code reçu ou
+          // création d'un nouvel établissement).
+          window.location.href = "/rejoindre";
           return;
         }
         const detail: AgentDetail = await appelerApi(`/api/agents/${monRole.agent_id}`);
         if (!annule) {
           setAgent(detail);
+          setRole(monRole.role);
           setEtat("pret");
         }
       } catch (e) {
@@ -145,6 +151,7 @@ export default function PageAccueilChat() {
     <div className="flex h-dvh" style={{ height: "var(--vh-visuelle, 100dvh)" }}>
       <SidebarChatLite
         agentId={agent.id}
+        role={role}
         aDesMessages={nbMessages > 0}
         conversationActiveId={cle}
         onNouvelleConversation={nouvelleConversation}
@@ -154,7 +161,17 @@ export default function PageAccueilChat() {
         <ChatIA
           key={cle}
           agentId={agent.id}
-          nomAgent={agent.nom}
+          // Correctif (08/08) : agent.nom renvoyait le nom technique
+          // interne de l'agent (ex. "Lirinus"), affiché tel quel dans
+          // "{nomAgent} réfléchit" / "Pose ta question à {nomAgent}" —
+          // fuite directe du nom d'un agent de l'écosystème Djiguignè,
+          // contraire au brief (section 3 : l'IA ne doit jamais révéler
+          // qu'elle a un nom technique ou qu'il existe d'autres agents).
+          // Nom de marque fixe volontaire ici, pas un oubli de
+          // dynamisme : c'est justement le point, Class GPT n'a qu'un
+          // seul nom, toujours le même, quel que soit l'agent réel
+          // derrière.
+          nomAgent="Class GPT"
           iconeUrl={agent.icone_url}
           titreAccueil={agent.titre_accueil}
           sousTitreAccueil={agent.sous_titre_accueil}

@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Class GPT — squelette (partie 1). Le CSS spécifique au rendu du chat
+   (code, LaTeX, etc.) sera ajouté en partie 3 (expérience de chat),
+   uniquement sur les pages qui en ont besoin — pas ici globalement, pour
+   éviter de charger du CSS inutile sur les écrans de connexion. */
+
+body {
+  background-color: #0b0908;
+  color: #f5ece0;
+}

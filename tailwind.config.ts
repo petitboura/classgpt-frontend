@@ -1,15 +1,14 @@
 import type { Config } from "tailwindcss";
 
-// Class GPT (produit "établissement" autonome, dérivé de Djiguignè).
-// Thème repris À L'IDENTIQUE de djiguigne-frontend/tailwind.config.ts —
-// même palette, même typographie, mêmes animations de base. Ne pas dévier
-// de ces valeurs sans une décision explicite de Bourama, pour garder une
-// cohérence visuelle avec le reste de l'écosystème même si ce produit ne
-// le montre jamais à l'utilisateur.
-//
-// Le traitement visuel "à main levée" (courbes irrégulières, easing
-// organique) est un chantier à part (partie 5 du plan) : il viendra
-// s'ajouter ici, pas remplacer ces tokens de base.
+// Étape D.1 (pivot social) : thème repris à l'identique de djiguigne-frontendent
+// (la vitrine) — palette, typographie, dégradés, animations. Décision de
+// Bourama (2026-07-11) : le thème visuel est commun aux deux sites, seule
+// la STRUCTURE des pages diffère (ici : feed/agent/portfolio/dashboard, pas
+// accueil/services/blog/contact). Source de vérité de ces valeurs :
+// djiguigne-frontendent/tailwind.config.ts, lui-même dérivé de l'ancien
+// djiguigne-backend/faces/vues/theme_djiguigne.py (fichier supprimé depuis,
+// le retrait de Streamlit). Ne pas dévier de ces
+// valeurs sans changer les deux dépôts à la fois.
 const config: Config = {
   darkMode: "class",
   content: [
@@ -52,6 +51,11 @@ const config: Config = {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        // Fondu rapide (2026-07-28, demande Bourama : "rien ne doit
+        // s'afficher brut") -- distinct de dj-fade-in (0.8s, pensé pour un
+        // chargement de page) : utilisé pour les micro-interactions d'UI
+        // (changement d'onglet, apparition d'une icône dans un slot
+        // variable) où 0.8s serait perçu comme lent.
         "dj-fade-in-rapide": {
           from: { opacity: "0" },
           to: { opacity: "1" },

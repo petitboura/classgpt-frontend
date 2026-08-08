@@ -16,33 +16,43 @@ plus grand.
   réutilisé ici en arrière-plan (l'utilisateur ne doit jamais voir son nom
   technique ni savoir qu'il existe d'autres agents).
 
-## Ce qui est fait dans ce squelette (partie 1)
+## État d'avancement
 
-- Projet Next.js 14 + Tailwind, tokens `dj-*` repris à l'identique de
-  `djiguigne-frontend/tailwind.config.ts` (à ne jamais faire dériver sans
-  décision explicite de Bourama).
-- 3 polices de la marque (Bricolage Grotesque, Inter, JetBrains Mono).
-- `lib/supabase.ts` et `lib/api.ts` : socle d'appel au backend/à l'auth,
-  minimal, à étendre dans les parties suivantes (streaming pour le chat,
-  upload de fichiers, etc.).
-- `app/page.tsx` : page de jonction temporaire, PAS l'écran final.
+**Partie 1 — Squelette (fait)**
+Next.js 14 + Tailwind, tokens `dj-*` repris à l'identique de
+`djiguigne-frontend/tailwind.config.ts` (à ne jamais faire dériver sans
+décision explicite de Bourama). 3 polices de la marque (Bricolage
+Grotesque, Inter, JetBrains Mono).
 
-## Ce qui reste à faire (parties 2 à 5, indépendantes entre elles)
+**Partie 2 — Connexion et inscription autonomes (fait)**
+`app/connexion/page.tsx`, `app/inscription/page.tsx`, `components/ChampTelephone.tsx`,
+`components/ChampMotDePasse.tsx`, `lib/authFallback.ts`. Connexion email ou
+téléphone. L'inscription attribue silencieusement le rôle `etablissement`
+(pas de sélecteur de rôle visible — un compte enseignant/étudiant se
+rattache plus tard via un code d'invitation, partie 4). Aucun passage par
+la vitrine Djiguignè (`djiguigne-ai`), tout est géré ici.
 
-**Partie 2 — Connexion et inscription autonomes**
-Écrans de connexion/inscription propres à Class GPT, aucune redirection
-vers la vitrine Djiguignè (`djiguigne-ai`). S'appuie sur `api/roles.py`
-côté backend (déjà existant, ne pas le modifier sans nécessité) et sur
-`lib/supabase.ts` de ce dépôt.
+**Partie 3 — Expérience de chat directe (fait)**
+`app/page.tsx` résout l'agent (Lirinus, jamais nommé côté UI) via
+`GET /api/roles/moi`, redirige vers `/connexion` si pas de session. Tous
+les composants de chat (`components/chat/*`) sont repris de
+`djiguigne-frontend`, adaptés : `SidebarChatLite.tsx` remplace la sidebar
+multi-agents (historique de conversations de CET agent uniquement, pas de
+"changer d'IA"/"voir l'IA"/"retour à la vitrine").
 
-**Partie 3 — Expérience de chat directe**
-Ouverture directe sur le chat après connexion. Pas de sélecteur d'agents
-visible, pas d'historique de plusieurs IA. Consomme le streaming du
-backend (`appelerApiStream` dans `djiguigne-frontend/lib/api.ts` est la
-référence d'implémentation, à adapter ici). L'agent utilisé en arrière-plan
-est Lirinus, mais ce nom ne doit jamais apparaître à l'utilisateur.
+**Correction apportée lors de la fusion (08/08)** : `lib/erreurs.ts`
+contenait ~58 codes d'erreur du reste de l'écosystème Djiguignè
+(création/modification d'agent, feed social, publications, vitrine,
+signature électronique, génération 3D/vidéo...) — jamais déclenchés par
+Class GPT mais présents en clair dans le bundle JS livré au navigateur,
+donc inspectables via les devtools et révélateurs de l'écosystème plus
+large derrière le produit. Retirés. Le fallback de `messageErreur()` sur
+le message déjà en français renvoyé par le backend reste inchangé, aucune
+perte fonctionnelle.
 
-**Partie 4 — Espace utilisateur réduit**
+## Ce qui reste à faire (parties 4 et 5)
+
+**Partie 4 — Espace utilisateur réduit
 Uniquement : inviter par message/code, suivi des étudiants ("l'IA de mes
 élèves"), diffusion de documents. Les fonctions équivalentes existent déjà
 côté backend (`diffuserDocumentEtablissement`, `diffuserLien` — voir
@@ -50,7 +60,7 @@ côté backend (`diffuserDocumentEtablissement`, `diffuserLien` — voir
 onglets "administrer"/"mes IA", bouton retour vitrine, sélecteur/historique
 d'agents.
 
-**Partie 5 — Identité visuelle "à main levée"**
+**Partie 5 — Identité visuelle "à main levée" (reste à faire)**
 Logo (chapeau de diplômé, couleurs Djiguignè), et un traitement organique :
 courbes légèrement irrégulières, animations à easing non linéaire (pas de
 `ease-in-out` générique), rien ne s'affiche jamais de façon brute. À

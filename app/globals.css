@@ -2,12 +2,187 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Class GPT — squelette (partie 1). Le CSS spécifique au rendu du chat
-   (code, LaTeX, etc.) sera ajouté en partie 3 (expérience de chat),
-   uniquement sur les pages qui en ont besoin — pas ici globalement, pour
-   éviter de charger du CSS inutile sur les écrans de connexion. */
+/* Rendu LaTeX + éditeur de formule (BulleMessage.tsx, EditeurFormule.tsx,
+   EditeurMathsRiche.tsx) : déplacés hors de globals.css le 01/08 (audit
+   vitesse) vers app/agent/[id]/chat/layout.tsx et
+   app/dashboard/applications/layout.tsx -- les deux SEULS endroits qui
+   rendent ces composants. Ce CSS (dont les polices KaTeX/MathLive)
+   chargeait avant sur TOUTES les pages (accueil, connexion, profil...)
+   alors qu'aucune d'elles n'affiche jamais de maths. */
+
+/* Éditeur de formule (2026-07-25, EditeurFormule.tsx) -- le clavier
+   virtuel de MathLive est réactivé (Bourama veut une couverture complète
+   de symboles, notre palette maison ne suffit pas pour ça) ; seul le
+   bouton menu (⋮, raccourcis/aide, sans rapport avec les symboles) reste
+   masqué. Le panneau du clavier est thémé en sombre via l'attribut
+   `theme="dark"` posé sur <body> pendant que l'éditeur est ouvert (voir
+   EditeurFormule.tsx) -- le panneau du clavier virtuel est injecté par
+   MathLive au niveau de <body>, pas dans le shadow DOM du <math-field>
+   lui-même, donc son thème se règle à cet endroit-là. */
+math-field::part(menu-toggle) {
+  display: none;
+}
+math-field {
+  --hue: 30; /* aligné sur dj-accent-1 (#E8934A, orange) pour le curseur/la sélection */
+}
+
+/* Thème highlight.js sur-mesure (voir components/chat/BlocCode.tsx) --
+   volontairement pas un thème importé (github-dark, atom-one...) : les
+   couleurs suivent la palette dj-* pour rester cohérentes avec le reste
+   de l'interface plutôt que d'importer une palette étrangère à la charte. */
+.hljs {
+  color: var(--dj-texte);
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--dj-texte-muet);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type {
+  color: var(--dj-accent-1);
+}
+.hljs-string,
+.hljs-attr,
+.hljs-regexp,
+.hljs-addition {
+  color: var(--dj-succes);
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-built_in {
+  color: #f2a65a;
+}
+.hljs-title,
+.hljs-function,
+.hljs-title.class_,
+.hljs-title.function_ {
+  color: var(--dj-accent-2);
+  font-weight: 600;
+}
+.hljs-variable,
+.hljs-template-variable,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #c9a9e0;
+}
+.hljs-deletion {
+  color: #f87171;
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 700;
+}
+
+/* Étape D.1 (pivot social) : repris à l'identique de
+   djiguigne-frontend/app/globals.css — même thème, plateforme différente.
+   Variables CSS miroir de tailwind.config.ts, utiles hors classes
+   utilitaires (SVG inline, styles calculés). */
+:root {
+  --dj-fond: #0b0908;
+  --dj-surface: #161210;
+  --dj-surface-haute: #1e1813;
+  --dj-bordure: rgba(255, 255, 255, 0.08);
+  --dj-bordure-forte: rgba(232, 147, 74, 0.35);
+  --dj-accent-1: #e8934a;
+  --dj-accent-2: #c1440e;
+  --dj-texte: #f5ece0;
+  --dj-texte-muet: #a79a8c;
+  --dj-succes: #4ade80;
+  --dj-inactif: #6b6259;
+}
+
+* {
+  border-color: var(--dj-bordure);
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 body {
-  background-color: #0b0908;
-  color: #f5ece0;
+  background-color: var(--dj-fond);
+  background-image: radial-gradient(
+    ellipse 120% 60% at 50% -10%,
+    rgba(232, 147, 74, 0.1),
+    transparent 60%
+  );
+  background-attachment: fixed;
+  color: var(--dj-texte);
+}
+
+::selection {
+  background: var(--dj-accent-1);
+  color: #1a0d02;
+}
+
+:focus-visible {
+  outline: 2px solid var(--dj-accent-1);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Corrige le cadre double repéré en conditions réelles (2026-07-12,
+   Bourama) : les champs de saisie (input/textarea/select) ont déjà leur
+   propre bordure orange au focus (classe Tailwind focus:border-dj-accent-1,
+   collée au champ). La règle :focus-visible ci-dessus s'appliquait EN PLUS
+   sur ces mêmes champs -- un second contour, plus large et décalé de 3px
+   vers l'extérieur, superposé au premier. Désactivé ici uniquement pour
+   les champs de formulaire, qui n'en ont pas besoin (leur bordure suffit
+   déjà comme indicateur de focus) ; conservé sur les boutons/liens, qui
+   eux n'ont pas d'indicateur de focus propre. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--dj-fond);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--dj-surface-haute);
+  border-radius: 999px;
+  border: 2px solid var(--dj-fond);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dj-bordure-forte);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.dj-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.dj-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dj-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

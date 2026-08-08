@@ -1,13 +1,23 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+// KaTeX/MathLive (rendu de formules dans BulleMessage.tsx et
+// EditeurMathsRiche.tsx) : dans djiguigne-frontend ce CSS est scopé à la
+// seule route /agent/[id]/chat (audit vitesse du 01/08, voir globals.css).
+// Ici l'app entière EST le chat (pas de vitrine/blog à alléger), donc pas
+// besoin de ce découpage par route — chargé une fois au niveau racine.
+import "katex/dist/katex.min.css";
+import "mathlive/fonts.css";
 
-// Class GPT — squelette (partie 1).
+// Polices identiques à la charte Djiguignè (brief section 4a), chargées en
+// local (next/font, zéro requête Google au runtime) — même mécanisme que
+// djiguigne-frontend/app/layout.tsx, dont ce fichier est dérivé.
 //
-// Correctif mobile repris de djiguigne-frontend : viewportFit "cover" +
-// interactiveWidget "resizes-content" pour que le clavier virtuel ne casse
-// pas la mise en page sur mobile (utile dès qu'il y aura un champ de
-// saisie de chat, partie 3).
+// Volontairement ABSENT ici : SessionSyncVitrine (synchronisation de
+// session avec djiguigne-ai.vercel.app). Class GPT ne doit jamais
+// laisser transparaître l'existence de l'écosystème Djiguignè (brief
+// section 1) — inclure ce composant romprait ce principe dès le layout
+// racine, avant même la moindre page.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -15,9 +25,6 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
-// Les 3 polices de la marque Djiguignè, chargées à l'identique (next/font,
-// auto-hébergées, zéro requête Google au runtime), exposées en variables
-// CSS consommées par tailwind.config.ts.
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   weight: ["600", "700", "800"],
@@ -39,17 +46,14 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-// Titre/description volontairement neutres : Class GPT ne se présente
-// jamais comme une section de Djiguignè, ni publiquement ni dans ses
-// métadonnées techniques.
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://classgpt.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Class GPT",
   description: "Class GPT",
-  icons: { icon: "/favicon.ico" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Class GPT" },
 };
 
-export default function RootLayout({
+export default function RacineLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -59,7 +63,9 @@ export default function RootLayout({
       lang="fr"
       className={`${bricolage.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="font-sans">{children}</body>
+      <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
+        {children}
+      </body>
     </html>
   );
 }

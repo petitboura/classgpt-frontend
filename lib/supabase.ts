@@ -1,10 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Class GPT parle au MÊME projet Supabase que djiguigne-frontend (même
-// auth, mêmes comptes établissement/enseignant/étudiant, même table
-// `profiles`). Next.js parle directement à Supabase Auth via ce client —
-// le backend FastAPI ne gère jamais de mot de passe, il vérifie seulement
-// le token envoyé (même architecture que le reste de l'écosystème).
+// Décision d'architecture (voir api/PLAN.md, point 1) : Next.js parle
+// DIRECTEMENT à Supabase Auth via ce client JS. Le backend FastAPI ne gère
+// jamais de mot de passe — il ne fait que vérifier le token envoyé.
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const cleAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -15,4 +13,7 @@ if (!url || !cleAnon) {
   );
 }
 
+// Un seul client, réutilisé partout — évite de recréer une connexion à
+// chaque appel et garde la session (stockée par supabase-js) cohérente
+// entre les pages.
 export const supabase = createClient(url, cleAnon);

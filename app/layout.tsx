@@ -8,6 +8,7 @@ import "./globals.css";
 // besoin de ce découpage par route — chargé une fois au niveau racine.
 import "katex/dist/katex.min.css";
 import "mathlive/fonts.css";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 // Polices identiques à la charte Djiguignè (brief section 4a), chargées en
 // local (next/font, zéro requête Google au runtime) — même mécanisme que
@@ -64,6 +65,7 @@ export const metadata: Metadata = {
   title: "Class GPT",
   description: "Class GPT",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Class GPT" },
+  icons: { apple: "/icone-192.png" },
 };
 
 export default function RacineLayout({
@@ -77,6 +79,7 @@ export default function RacineLayout({
       className={`${bricolage.variable} ${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
     >
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>

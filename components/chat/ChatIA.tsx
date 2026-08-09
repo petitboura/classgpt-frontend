@@ -34,6 +34,7 @@ export function ChatIA({
   modeleChoisi = null,
   boutonSansEnseignant = false,
   avantEnvoi,
+  iconePersonnalisee,
 }: {
   agentId: string;
   nomAgent: string;
@@ -66,6 +67,12 @@ export function ChatIA({
   // CompteRequisModal à la place). Retourne true pour laisser passer,
   // comme si la prop n'existait pas.
   avantEnvoi?: () => boolean;
+  // Écran de démarrage : remplace iconeUrl/IconeGenerique par cet
+  // élément quand fourni (09/08, demande Bourama : sur Class GPT, l'IA
+  // "étudiant autonome" ne doit montrer ni le nom technique de l'agent
+  // réel -- déjà géré via nomAgent -- ni son icône réelle, remplacée ici
+  // par le logo Class GPT).
+  iconePersonnalisee?: React.ReactNode;
 }) {
   const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
   const [messages, setMessages] = useState<MessageAffiche[]>(messagesInitiaux);
@@ -557,7 +564,9 @@ export function ChatIA({
           {titreAccueil ? (
             <div className="mb-8 flex flex-col items-center text-center">
               <span className="relative mb-4 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dj-surface-haute">
-                {iconeUrl ? (
+                {iconePersonnalisee ? (
+                  iconePersonnalisee
+                ) : iconeUrl ? (
                   <Image src={iconeUrl} alt="" fill className="object-cover" sizes="56px" />
                 ) : (
                   <IconeGenerique className="h-7 w-7 text-dj-accent-1" />

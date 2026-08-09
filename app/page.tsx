@@ -9,6 +9,7 @@ import { MessageAffiche, nettoyerMessageHistorique } from "@/components/chat/Bul
 import { SidebarChatLite } from "@/components/chat/SidebarChatLite";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
+import { Logo } from "@/components/Logo";
 
 // Partie 3 du brief ("Expérience de chat directe") : contrairement à
 // djiguigne-frontend (app/agent/[id]/chat/page.tsx), il n'y a PAS de
@@ -72,6 +73,19 @@ const AGENT_INVITE_ID = "nitrux";
 const LIMITE_MESSAGES_INVITE = 5;
 const CLE_COMPTEUR_INVITE = "classgpt_nb_messages_invite";
 
+// Même logique que nomAgent="Class GPT" plus bas (fuite du nom
+// technique de l'agent réel) mais pour le titre et le sous-titre de
+// l'écran de démarrage (09/08, bug repéré par Bourama) : titre_accueil
+// ("Nitrux") et sous_titre_accueil ("Débloque une matière avec le code
+// de ton enseignant...") viennent de l'agent partagé avec
+// djiguigne-frontend, où le déblocage par code est un vrai mécanisme.
+// Sur Class GPT, l'étudiant "autonome" créé par l'inscription libre n'a
+// jamais d'enseignant ni de code -- ce texte est donc toujours faux ici,
+// que ce soit en mode invité ou déjà connecté. Titre/sous-titre/icône
+// fixes volontaires, pas un oubli de dynamisme.
+const TITRE_ACCUEIL_CLASSGPT = "Class GPT";
+const SOUS_TITRE_ACCUEIL_CLASSGPT = "L'IA qui t'aide dans tes études.";
+
 export default function PageAccueilChat() {
   const [etat, setEtat] = useState<"chargement" | "pret" | "erreur" | "invite">("chargement");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -95,12 +109,12 @@ export default function PageAccueilChat() {
         // Plus de redirection immédiate (correctif 09/08) : coquille de
         // chat invité rendue plus bas.
         if (!annule) setEtat("invite");
-        // Titre/icône de l'agent étudiant (endpoint public, pas besoin de
-        // session) -- purement pour l'affichage (titreAccueil, icone_url).
-        // Best-effort : agentId reste "nitrux" (constante, pas dépendante
-        // de cet appel) même si ce fetch échoue, donc le chat invité reste
-        // utilisable, juste avec le texte de repli générique de ChatIA à
-        // la place.
+        // Best-effort, sert uniquement à sectionMesComportements plus bas
+        // (titre/sous-titre/icône sont maintenant fixes, voir
+        // TITRE_ACCUEIL_CLASSGPT -- ce fetch ne les fournit plus depuis
+        // le correctif du 09/08). agentId reste "nitrux" (constante, pas
+        // dépendante de cet appel) même si ce fetch échoue, donc le chat
+        // invité reste utilisable dans tous les cas.
         try {
           const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
           if (!annule) setAgentInvite(detail);
@@ -222,9 +236,9 @@ export default function PageAccueilChat() {
             // Même choix que pour un compte connecté (voir plus bas) :
             // jamais le nom technique de l'agent réel.
             nomAgent="Class GPT"
-            iconeUrl={agentInvite?.icone_url ?? null}
-            titreAccueil={agentInvite?.titre_accueil}
-            sousTitreAccueil={agentInvite?.sous_titre_accueil}
+            titreAccueil={TITRE_ACCUEIL_CLASSGPT}
+            sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLASSGPT}
+            iconePersonnalisee={<Logo taille={28} />}
             conversationId={cleInvite}
             onMessagesChange={setNbMessages}
             avantEnvoi={verifierLimiteInvite}
@@ -282,9 +296,9 @@ export default function PageAccueilChat() {
           // seul nom, toujours le même, quel que soit l'agent réel
           // derrière.
           nomAgent="Class GPT"
-          iconeUrl={agent.icone_url}
-          titreAccueil={agent.titre_accueil}
-          sousTitreAccueil={agent.sous_titre_accueil}
+          titreAccueil={TITRE_ACCUEIL_CLASSGPT}
+          sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLASSGPT}
+          iconePersonnalisee={<Logo taille={28} />}
           conversationId={cle}
           messagesInitiaux={messagesInitiaux}
           onMessagesChange={setNbMessages}

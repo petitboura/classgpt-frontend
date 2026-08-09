@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { inscrireOuConnecter } from "@/lib/authFallback";
-import { creerEtablissementRacine } from "@/lib/invitations";
+import { creerEtudiantAutonome } from "@/lib/invitations";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
@@ -16,10 +16,11 @@ type MethodeAuth = "email" | "telephone";
 // Correctif (09/08, décision explicite de Bourama) : retour au parcours
 // direct et simple -- "une IA normale". PAS d'écran intermédiaire "code
 // reçu ou créer un établissement" après l'inscription (/rejoindre,
-// EspaceRejoindre) : le compte devient "etablissement" automatiquement et
-// silencieusement ici, puis va droit au chat. Les autres rôles
-// (enseignant/étudiant par code) seront réintroduits plus tard, petit à
-// petit -- ne pas les réactiver sans demande explicite.
+// EspaceRejoindre) : le compte devient "etudiant" automatiquement et
+// silencieusement ici (sans enseignant rattaché), puis va droit au chat
+// avec Nitrux. Les autres rôles (enseignant/étudiant rattaché par code)
+// seront réintroduits plus tard, petit à petit -- ne pas les réactiver
+// sans demande explicite.
 
 export default function PageInscription() {
   const router = useRouter();
@@ -47,13 +48,14 @@ export default function PageInscription() {
       return;
     }
 
-    // Attribution silencieuse du rôle "etablissement" -- aucune étape
-    // visible, conforme au brief "une IA normale". Si le compte existait
-    // déjà avec un rôle (repli "compte existant -> connexion" de
-    // inscrireOuConnecter), le backend renvoie déjà-choisi : pas une
-    // vraie erreur ici, on continue simplement vers le chat.
+    // Attribution silencieuse du rôle "etudiant" (sans enseignant
+    // rattaché) -- aucune étape visible, conforme au brief "une IA
+    // normale". Si le compte existait déjà avec un rôle (repli "compte
+    // existant -> connexion" de inscrireOuConnecter), le backend renvoie
+    // déjà-choisi : pas une vraie erreur ici, on continue simplement vers
+    // le chat.
     try {
-      await creerEtablissementRacine(nom);
+      await creerEtudiantAutonome(nom);
     } catch (e) {
       if (!(e instanceof ErreurApi && e.code === "ROLE_DEJA_CHOISI")) {
         setEnCours(false);

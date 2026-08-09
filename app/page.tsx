@@ -57,11 +57,12 @@ type FilConversation = {
 // Mode invité (09/08, décision Bourama) : avant inscription, on ne connaît
 // pas le rôle du visiteur (rien à résoudre via /api/roles/moi, qui exige
 // une session) -- il faut donc un agent fixe. Choix explicite : l'agent
-// "établissement" (lirinus), le même que celui attribué par défaut à
-// l'inscription (voir /inscription et api/roles.py:AGENT_PAR_ROLE côté
-// backend) -- cohérent avec le fait que tout nouveau compte devient de
-// toute façon "établissement" par défaut.
-const AGENT_INVITE_ID = "lirinus";
+// "étudiant" (nitrux), le même que celui attribué par défaut à
+// l'inscription libre (voir /inscription et
+// api/invitations_classgpt.py:creer_etudiant_autonome côté backend) --
+// cohérent avec le fait que tout nouveau compte sans code d'invitation
+// devient "etudiant" par défaut.
+const AGENT_INVITE_ID = "nitrux";
 
 // L'inscription n'est demandée qu'à partir du 5ème message envoyé par un
 // visiteur non connecté (09/08, décision Bourama) -- avant ça, le chat
@@ -94,12 +95,12 @@ export default function PageAccueilChat() {
         // Plus de redirection immédiate (correctif 09/08) : coquille de
         // chat invité rendue plus bas.
         if (!annule) setEtat("invite");
-        // Titre/icône de l'agent établissement (endpoint public, pas
-        // besoin de session) -- purement pour l'affichage (titreAccueil,
-        // icone_url). Best-effort : agentId reste "lirinus" (constante,
-        // pas dépendante de cet appel) même si ce fetch échoue, donc le
-        // chat invité reste utilisable, juste avec le texte de repli
-        // générique de ChatIA à la place.
+        // Titre/icône de l'agent étudiant (endpoint public, pas besoin de
+        // session) -- purement pour l'affichage (titreAccueil, icone_url).
+        // Best-effort : agentId reste "nitrux" (constante, pas dépendante
+        // de cet appel) même si ce fetch échoue, donc le chat invité reste
+        // utilisable, juste avec le texte de repli générique de ChatIA à
+        // la place.
         try {
           const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
           if (!annule) setAgentInvite(detail);

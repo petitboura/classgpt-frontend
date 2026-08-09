@@ -40,7 +40,12 @@ export async function rejoindreParCode(code: string, nomAffiche: string): Promis
   })) as ResultatRejoindre;
 }
 
-export async function creerEtablissementRacine(nomAffiche: string): Promise<ResultatRejoindre> {
+// Inscription libre (sans code) -- devient "etudiant" sans enseignant
+// rattaché (décision Bourama, 09/08). Le nom de la route reste
+// /etablissement-racine côté backend (nom d'URL inchangé pour éviter un
+// aller-retour inutile), seul le rôle attribué a changé -- voir
+// api/invitations_classgpt.py:creer_etudiant_autonome.
+export async function creerEtudiantAutonome(nomAffiche: string): Promise<ResultatRejoindre> {
   return (await appelerApi("/api/roles/etablissement-racine", {
     method: "POST",
     body: JSON.stringify({ nom_affiche: nomAffiche }),

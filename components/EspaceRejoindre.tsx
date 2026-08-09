@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { rejoindreParCode, creerEtablissementRacine } from "@/lib/invitations";
+import { rejoindreParCode, creerEtudiantAutonome } from "@/lib/invitations";
 import { messageErreur } from "@/lib/erreurs";
 
 /**
@@ -29,7 +29,7 @@ export function EspaceRejoindre({ onTermine }: { onTermine: () => void }) {
       if (mode === "code") {
         await rejoindreParCode(code.trim(), nomAffiche.trim());
       } else {
-        await creerEtablissementRacine(nomAffiche.trim());
+        await creerEtudiantAutonome(nomAffiche.trim());
       }
       onTermine();
     } catch (e) {

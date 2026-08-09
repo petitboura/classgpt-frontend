@@ -4,10 +4,11 @@ import Link from "next/link";
 import { ArrowLeft, Briefcase, Sparkles, Library, Brain } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { lireMonRole, sectionComportementsActivee, type MonRole } from "@/lib/api";
+import { creerEtudiantAutonome } from "@/lib/invitations";
+import { supabase } from "@/lib/supabase";
 import { EspaceInviter } from "./EspaceInviter";
 import { EspaceEquipe } from "./EspaceEquipe";
 import { EspaceDiffuser } from "./EspaceDiffuser";
-import { EspaceRejoindre } from "./EspaceRejoindre";
 import { EspaceBibliotheque } from "./EspaceBibliotheque";
 import { MesComportements } from "./MesComportements";
 import { MaMemoire } from "./MaMemoire";
@@ -35,6 +36,13 @@ import { messageErreur } from "@/lib/erreurs";
  * "Mon espace" dans la sidebar doit maintenant être visible pour TOUS les
  * rôles connectés, pas seulement établissement/enseignant comme avant --
  * voir SidebarChatLite.tsx.
+ * Écran de repli "code reçu ou créer un établissement" (EspaceRejoindre,
+ * fichier conservé mais retiré de l'affichage, 09/08 demande Bourama) :
+ * n'a plus lieu d'être depuis que /inscription attribue déjà "etudiant"
+ * silencieusement à tout nouveau compte -- ce cas (role: null pour un
+ * compte connecté) ne devrait plus arriver qu'en edge case (ancien
+ * compte, inscription interrompue...). Traité désormais silencieusement
+ * ci-dessous plutôt qu'avec un écran de choix, voir useEffect dédié.
  */
 
 type OngletId = "bureau" | "comportements" | "bibliotheque" | "memoire";
@@ -57,6 +65,29 @@ export function EspaceClassGPT() {
       .catch((e) => setErreur(messageErreur(e)))
       .finally(() => setChargement(false));
   }, []);
+
+  // Edge case (voir commentaire d'en-tête) : compte connecté sans rôle.
+  // Devient "etudiant" silencieusement, sans montrer d'écran de choix --
+  // repli du repli, "Sans nom" si aucun nom n'est disponible sur la
+  // session (même convention que _nom_affiche_ou_repli côté backend,
+  // api/roles.py).
+
+  useEffect(() => {
+    if (chargement || erreur) return;
+    if (!monRole || monRole.role) return;
+    (async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const nomAffiche = session?.user?.email?.split("@")[0] || "Sans nom";
+        await creerEtudiantAutonome(nomAffiche);
+        window.location.reload();
+      } catch (e) {
+        setErreur(messageErreur(e));
+      }
+    })();
+  }, [chargement, erreur, monRole]);
 
   const peutVoirBureau = monRole?.role === "etablissement" || monRole?.role === "enseignant";
 
@@ -99,9 +130,19 @@ export function EspaceClassGPT() {
   }
 
   if (!monRole?.role) {
+    // Auto-provisioning en cours (useEffect ci-dessus) -- pas d'écran de
+    // choix, juste le même squelette de chargement que l'état initial.
     return (
-      <main className="mx-auto flex min-h-[70vh] items-center justify-center px-4">
-        <EspaceRejoindre onTermine={() => window.location.reload()} />
+      <main className="mx-auto max-w-2xl px-4 pb-24 pt-6">
+        <div className="space-y-2" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-14 animate-pulse rounded-xl border border-dj-bordure bg-dj-surface-haute"
+              style={{ animationDelay: `${i * 100}ms` }}
+            />
+          ))}
+        </div>
       </main>
     );
   }

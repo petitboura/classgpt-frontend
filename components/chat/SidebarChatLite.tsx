@@ -9,19 +9,48 @@ import {
   History,
   LogOut,
   Users,
+  GraduationCap,
+  Sparkles,
+  MoreHorizontal,
+  Share2,
+  Star,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { appelerApi } from "@/lib/api";
+import {
+  appelerApi,
+  lireMesRattachements,
+  entrerCodeMatiere,
+  activerRattachementMatiere,
+  renommerRattachementMatiere,
+  type Rattachement,
+} from "@/lib/api";
+import { messageErreur } from "@/lib/erreurs";
+import { ErreurApi } from "@/lib/erreurs";
 import { Logo } from "@/components/Logo";
+import { MesComportements } from "@/components/MesComportements";
+import { NoteAgent } from "@/components/NoteAgent";
+import { CommentairesAgent } from "@/components/CommentairesAgent";
+import { BoutonInstaller } from "@/components/BoutonInstaller";
 
 // Sidebar de Class GPT (partie 3 du brief) -- version délibérément réduite
 // de SidebarChat.tsx (djiguigne-frontend) : reprend le même comportement
 // de rail (collapse/expand, panneau plein écran sur mobile, transitions
 // jamais brutales) mais SANS aucun des éléments qui révéleraient
 // l'écosystème Djiguignè -- pas de "Changer d'IA", pas de "Voir l'IA",
-// pas d'"Avis sur cet agent", pas de lien "Retour à la vitrine". Les
-// fonctionnalités "espace utilisateur" (inviter, suivi élèves, diffusion)
-// appartiennent à la partie 4 du brief, pas à ce composant.
+// pas de lien "Retour à la vitrine". Les fonctionnalités "espace
+// utilisateur" (inviter, suivi élèves, diffusion) appartiennent à la
+// partie 4 du brief (voir EspaceClassGPT.tsx), pas à ce composant.
+//
+// Ajouté le 09/08 (demande Bourama, par comparaison avec
+// djiguigne-frontend/SidebarChat.tsx) : Débloquer une matière (code),
+// Mes comportements, bouton Installer, et un bouton Actions réduit à
+// Partager + Avis uniquement -- PAS de "Voir l'IA"/"Changer d'IA"/
+// "Retour à la vitrine", contraires au principe ci-dessus. Le bouton
+// Partager de Class GPT pointe volontairement vers la racine de
+// l'appli (window.location.origin), jamais vers /agent/{agentId} de
+// djiguigne-frontend -- copier ce lien ici aurait révélé l'écosystème.
 //
 // Logo (chapeau de diplômé, identité graphique) : branché depuis la
 // partie 5 (composant Logo.tsx), remplace l'icône GraduationCap
@@ -45,6 +74,108 @@ function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.
   );
 }
 
+// Porté tel quel de djiguigne-frontend/components/chat/SidebarChat.tsx.
+function ListeMatieresDebloquees({
+  rattachements,
+  chargement,
+  onActiver,
+  onRenomme,
+}: {
+  rattachements: Rattachement[] | null;
+  chargement: boolean;
+  onActiver: (contenuId: string) => void;
+  onRenomme: (contenuId: string, surnom: string) => void;
+}) {
+  const [editionId, setEditionId] = useState<string | null>(null);
+  const [texteEdition, setTexteEdition] = useState("");
+
+  function ouvrirEdition(r: Rattachement) {
+    setEditionId(r.contenu_id);
+    setTexteEdition(r.surnom || "");
+  }
+
+  function valider(contenuId: string) {
+    onRenomme(contenuId, texteEdition.trim());
+    setEditionId(null);
+  }
+
+  if (chargement) {
+    return (
+      <div className="flex flex-col gap-1.5 px-2 pt-1">
+        {[0, 1].map((i) => (
+          <div key={i} className="h-8 animate-pulse rounded-lg bg-dj-surface-haute" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!rattachements || rattachements.length === 0) return null;
+
+  const parMatiere = new Map<string, Rattachement[]>();
+  for (const r of rattachements) {
+    parMatiere.set(r.matiere, [...(parMatiere.get(r.matiere) || []), r]);
+  }
+
+  return (
+    <div className="flex animate-dj-fade-in-rapide flex-col gap-1.5 px-2 pt-1">
+      {Array.from(parMatiere.entries()).map(([matiere, groupe]) =>
+        groupe.map((r) => (
+          <div key={r.contenu_id} className="flex flex-col gap-1 rounded-lg border border-dj-bordure/60 px-2 py-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-medium text-dj-texte">{r.surnom || matiere}</p>
+                <p className="truncate text-[11px] text-dj-texte-muet">
+                  {r.surnom ? `${matiere} · ` : ""}
+                  {r.enseignant_nom}
+                  {!r.actif && groupe.length > 1 ? " · inactif" : ""}
+                </p>
+              </div>
+              {editionId !== r.contenu_id && (
+                <button
+                  onClick={() => ouvrirEdition(r)}
+                  title="Donner un nom"
+                  className="flex-shrink-0 text-dj-texte-muet transition-colors hover:text-dj-texte"
+                >
+                  <Pencil size={12} />
+                </button>
+              )}
+            </div>
+
+            {editionId === r.contenu_id && (
+              <div className="flex items-center gap-1.5">
+                <input
+                  autoFocus
+                  value={texteEdition}
+                  onChange={(e) => setTexteEdition(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && valider(r.contenu_id)}
+                  placeholder={matiere}
+                  className="min-w-0 flex-1 rounded-md border border-dj-bordure bg-transparent px-1.5 py-1 text-xs text-dj-texte"
+                />
+                <button
+                  onClick={() => valider(r.contenu_id)}
+                  className="flex-shrink-0 text-dj-accent-1"
+                  title="Valider le nom"
+                >
+                  <Check size={14} />
+                </button>
+              </div>
+            )}
+
+            {!r.actif && groupe.length > 1 && (
+              <button
+                onClick={() => onActiver(r.contenu_id)}
+                className="self-start text-[11px] text-dj-accent-1 hover:underline"
+              >
+                Utiliser cet enseignant
+              </button>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 export function SidebarChatLite({
   agentId,
   role,
@@ -52,6 +183,8 @@ export function SidebarChatLite({
   conversationActiveId,
   onNouvelleConversation,
   onSelectionnerConversation,
+  contenuDynamiqueParMatiere,
+  sectionMesComportements,
 }: {
   agentId: string;
   role: string | null;
@@ -59,16 +192,34 @@ export function SidebarChatLite({
   conversationActiveId: string | null;
   onNouvelleConversation: () => void;
   onSelectionnerConversation: (fil: FilConversation) => void;
+  contenuDynamiqueParMatiere?: boolean;
+  sectionMesComportements?: boolean;
 }) {
   // Correctif (08/08) : lien vers /mon-espace (partie 4 -- inviter,
-  // suivre son équipe, diffuser des documents), jusqu'ici inatteignable
-  // depuis l'interface. Un étudiant n'a rien à gérer en dessous de lui
-  // (voir EspaceClassGPT.tsx), donc pas de lien pour ce rôle.
-  const peutVoirMonEspace = role === "etablissement" || role === "enseignant";
+  // suivre son équipe, diffuser des documents). Élargi le 09/08 : "Mon
+  // espace" héberge maintenant aussi Bibliothèque/Ma mémoire, qui
+  // concernent TOUS les rôles y compris étudiant (pas seulement
+  // "Bureau", réservé lui à établissement/enseignant à l'intérieur de
+  // la page -- voir EspaceClassGPT.tsx) -- donc le lien est visible dès
+  // qu'un rôle existe, plus seulement pour établissement/enseignant.
+  const peutVoirMonEspace = !!role;
   const [ouverte, setOuverte] = useState(false);
   const [fils, setFils] = useState<FilConversation[] | null>(null);
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
+  const [codeDeplie, setCodeDeplie] = useState(false);
+  const [comportementsDeplie, setComportementsDeplie] = useState(false);
+  const [actionsDeplie, setActionsDeplie] = useState(false);
+  const [avisDeplie, setAvisDeplie] = useState(false);
+  const [copie, setCopie] = useState(false);
   const asideRef = useRef<HTMLDivElement>(null);
+
+  const [code, setCode] = useState("");
+  const [codeEnCours, setCodeEnCours] = useState(false);
+  const [codeErreur, setCodeErreur] = useState<string | null>(null);
+  const [codeSucces, setCodeSucces] = useState<string | null>(null);
+  const [rattachements, setRattachements] = useState<Rattachement[] | null>(null);
+  const [rattachementsChargement, setRattachementsChargement] = useState(false);
+  const codeEnvoiEnCoursRef = useRef(false);
 
   useEffect(() => {
     if (!agentId) return;
@@ -76,6 +227,105 @@ export function SidebarChatLite({
       .then((r: FilConversation[]) => setFils(r))
       .catch(() => setFils([]));
   }, [agentId]);
+
+  function rafraichirRattachements() {
+    setRattachementsChargement(true);
+    lireMesRattachements(agentId)
+      .then(setRattachements)
+      .catch(() => setRattachements([]))
+      .finally(() => setRattachementsChargement(false));
+  }
+
+  useEffect(() => {
+    if (!contenuDynamiqueParMatiere) return;
+    rafraichirRattachements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contenuDynamiqueParMatiere, agentId]);
+
+  async function activerEnseignant(contenuId: string) {
+    try {
+      await activerRattachementMatiere(agentId, contenuId);
+      rafraichirRattachements();
+    } catch {
+      // Échec silencieux -- l'ancien état reste affiché, pas de panne
+      // bloquante pour un simple changement d'enseignant préféré.
+    }
+  }
+
+  async function renommerMatiere(contenuId: string, surnom: string) {
+    setRattachements((prec) =>
+      (prec || []).map((r) => (r.contenu_id === contenuId ? { ...r, surnom: surnom || null } : r))
+    );
+    try {
+      await renommerRattachementMatiere(agentId, contenuId, surnom);
+    } finally {
+      rafraichirRattachements();
+    }
+  }
+
+  async function validerCode() {
+    if (!code.trim() || codeEnvoiEnCoursRef.current) return;
+    codeEnvoiEnCoursRef.current = true;
+    setCodeEnCours(true);
+    setCodeErreur(null);
+    setCodeSucces(null);
+    try {
+      const rattachement = await entrerCodeMatiere(agentId, code.trim());
+      setCode("");
+      setCodeSucces(`${rattachement.matiere} débloquée.`);
+      rafraichirRattachements();
+    } catch (e) {
+      if (e instanceof ErreurApi && e.code === "DEJA_RATTACHE_A_CE_CONTENU") {
+        setCode("");
+        setCodeSucces("Déjà débloqué.");
+        rafraichirRattachements();
+      } else {
+        setCodeErreur(messageErreur(e));
+      }
+    } finally {
+      setCodeEnCours(false);
+      codeEnvoiEnCoursRef.current = false;
+    }
+  }
+
+  // Bascule exclusive pour les volets repliables du rail (même correctif
+  // que djiguigne-frontend, 28/07) : un seul volet ouvert à la fois.
+  function basculerVoletRail(section: "historique" | "code" | "comportements") {
+    const dejaActif =
+      (section === "historique" && historiqueDeplie) ||
+      (section === "code" && codeDeplie) ||
+      (section === "comportements" && comportementsDeplie);
+    setHistoriqueDeplie(section === "historique" ? !dejaActif : false);
+    setCodeDeplie(section === "code" ? !dejaActif : false);
+    setComportementsDeplie(section === "comportements" ? !dejaActif : false);
+    setOuverte(true);
+  }
+
+  function basculerActions() {
+    setActionsDeplie((v) => !v);
+    setOuverte(true);
+  }
+
+  // Partage le lien de Class GPT lui-même, JAMAIS /agent/{agentId} --
+  // ce lien pointerait vers l'écosystème Djiguignè, contraire au brief.
+  async function partager() {
+    const url = window.location.origin;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "Class GPT", url });
+      } catch {
+        // Annulé par la personne -- flux normal du Web Share API.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopie(true);
+      setTimeout(() => setCopie(false), 2000);
+    } catch {
+      window.prompt("Copie ce lien :", url);
+    }
+  }
 
   function choisirFil(fil: FilConversation) {
     onSelectionnerConversation(fil);
@@ -150,13 +400,61 @@ export function SidebarChatLite({
           </Link>
         )}
 
+        {contenuDynamiqueParMatiere && (
+          <div className="mt-2 rounded-xl border border-dj-bordure">
+            <button
+              onClick={() => basculerVoletRail("code")}
+              title="Débloquer une matière"
+              className={`flex w-full items-center gap-2 rounded-xl transition-colors ${
+                codeDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+              }`}
+            >
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                <GraduationCap size={18} />
+              </span>
+              <LibelleRail ouverte={ouverte}>Débloquer une matière</LibelleRail>
+            </button>
+            {ouverte && (
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                  codeDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="flex flex-col gap-2 px-2 pb-2">
+                    <input
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => e.key === "Enter" && !codeEnCours && validerCode()}
+                      placeholder="CODE"
+                      className="rounded-lg border border-dj-bordure bg-transparent px-2 py-1.5 text-sm uppercase tracking-widest text-dj-texte"
+                    />
+                    <button
+                      onClick={validerCode}
+                      disabled={codeEnCours || !code.trim()}
+                      className="rounded-lg bg-dj-accent-1 px-2 py-1.5 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                    >
+                      {codeEnCours ? "Validation…" : "Valider"}
+                    </button>
+                    {codeErreur && <p className="text-xs text-red-500">{codeErreur}</p>}
+                    {codeSucces && <p className="text-xs text-green-600">{codeSucces}</p>}
+                  </div>
+                  <ListeMatieresDebloquees
+                    rattachements={rattachements}
+                    chargement={rattachementsChargement}
+                    onActiver={activerEnseignant}
+                    onRenomme={renommerMatiere}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {fils && fils.length > 0 && (
           <div className="mt-2 rounded-xl border border-dj-bordure">
             <button
-              onClick={() => {
-                setHistoriqueDeplie((v) => !v);
-                setOuverte(true);
-              }}
+              onClick={() => basculerVoletRail("historique")}
               title="Historique"
               className={`flex w-full items-center gap-2 rounded-xl transition-colors ${
                 historiqueDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -198,31 +496,121 @@ export function SidebarChatLite({
           </div>
         )}
 
-        <div className="mt-auto flex flex-col gap-2">
+        {sectionMesComportements && (
+          <div className="mt-2 rounded-xl border border-dj-bordure">
+            <button
+              onClick={() => basculerVoletRail("comportements")}
+              title="Mes comportements"
+              className={`flex w-full items-center gap-2 rounded-xl transition-colors ${
+                comportementsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+              }`}
+            >
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                <Sparkles size={18} />
+              </span>
+              <LibelleRail ouverte={ouverte}>Mes comportements</LibelleRail>
+            </button>
+            {ouverte && (
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                  comportementsDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <MesComportements agentId={agentId} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {ouverte && (
+          <div className="mt-auto flex justify-center pt-2">
+            <BoutonInstaller />
+          </div>
+        )}
+
+        <div className={`rounded-xl border border-dj-bordure ${ouverte ? "mt-2" : "mt-auto"}`}>
           <button
-            onClick={seDeconnecter}
-            className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            onClick={basculerActions}
+            title="Actions"
+            className={`flex w-full items-center gap-2 rounded-xl transition-colors ${
+              actionsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+            }`}
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <LogOut size={18} />
+              <MoreHorizontal size={18} />
             </span>
-            <LibelleRail ouverte={ouverte}>Se déconnecter</LibelleRail>
+            <LibelleRail ouverte={ouverte}>Actions</LibelleRail>
           </button>
+          {ouverte && (
+            <div
+              className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                actionsDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="flex flex-col gap-2 px-2 pb-2">
+                  <button
+                    onClick={partager}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
+                  >
+                    <Share2 size={16} className="flex-shrink-0" />
+                    {copie ? "Copié !" : "Partager"}
+                  </button>
 
-          <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <Logo taille={18} />
-            </span>
-            <LibelleRail ouverte={ouverte}>
-              <span className="font-display font-bold tracking-tight">Class GPT</span>
-            </LibelleRail>
-          </div>
+                  <div className="rounded-lg border border-dj-bordure">
+                    <button
+                      onClick={() => setAvisDeplie((v) => !v)}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                        avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte"
+                      }`}
+                    >
+                      <Star size={16} className="flex-shrink-0" />
+                      Avis sur cette IA
+                    </button>
+                    <div
+                      className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                        avisDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="flex flex-col gap-4 px-2 pb-2">
+                          <NoteAgent agentId={agentId} />
+                          <CommentairesAgent agentId={agentId} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={seDeconnecter}
+          className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        >
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <LogOut size={18} />
+          </span>
+          <LibelleRail ouverte={ouverte}>Se déconnecter</LibelleRail>
+        </button>
+
+        <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <Logo taille={18} />
+          </span>
+          <LibelleRail ouverte={ouverte}>
+            <span className="font-display font-bold tracking-tight">Class GPT</span>
+          </LibelleRail>
         </div>
       </div>
 
       {/* Panneau plein écran mobile, même logique que desktop. */}
       {ouverte && (
-        <div className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 md:hidden">
+        <div className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto overflow-x-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 md:hidden">
           {aDesMessages && (
             <button
               onClick={() => {
@@ -253,6 +641,46 @@ export function SidebarChatLite({
             </Link>
           )}
 
+          {contenuDynamiqueParMatiere && (
+            <div className="mt-2 rounded-xl border border-dj-bordure px-2">
+              <button
+                onClick={() => basculerVoletRail("code")}
+                className={`flex w-full items-center gap-2 py-2 text-sm transition-colors ${
+                  codeDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
+                }`}
+              >
+                <GraduationCap size={18} />
+                Débloquer une matière
+              </button>
+              {codeDeplie && (
+                <div className="flex flex-col gap-2 pb-2">
+                  <input
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => e.key === "Enter" && !codeEnCours && validerCode()}
+                    placeholder="CODE"
+                    className="rounded-lg border border-dj-bordure bg-transparent px-2 py-1.5 text-sm uppercase tracking-widest text-dj-texte"
+                  />
+                  <button
+                    onClick={validerCode}
+                    disabled={codeEnCours || !code.trim()}
+                    className="rounded-lg bg-dj-accent-1 px-2 py-1.5 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                  >
+                    {codeEnCours ? "Validation…" : "Valider"}
+                  </button>
+                  {codeErreur && <p className="text-xs text-red-500">{codeErreur}</p>}
+                  {codeSucces && <p className="text-xs text-green-600">{codeSucces}</p>}
+                  <ListeMatieresDebloquees
+                    rattachements={rattachements}
+                    chargement={rattachementsChargement}
+                    onActiver={activerEnseignant}
+                    onRenomme={renommerMatiere}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {fils && fils.length > 0 && (
             <div className="mt-2 flex-1 overflow-y-auto rounded-xl border border-dj-bordure">
               <div className="flex items-center gap-2 border-b border-dj-bordure px-2 py-2 text-dj-texte-muet">
@@ -279,6 +707,63 @@ export function SidebarChatLite({
               </div>
             </div>
           )}
+
+          {sectionMesComportements && (
+            <div className="mt-2 rounded-xl border border-dj-bordure">
+              <button
+                onClick={() => setComportementsDeplie((v) => !v)}
+                className={`flex w-full items-center gap-2 px-2 py-2 text-sm transition-colors ${
+                  comportementsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
+                }`}
+              >
+                <Sparkles size={18} />
+                Mes comportements
+              </button>
+              {comportementsDeplie && <MesComportements agentId={agentId} />}
+            </div>
+          )}
+
+          <div className="mt-2 flex justify-center">
+            <BoutonInstaller />
+          </div>
+
+          <div className="mt-2 rounded-xl border border-dj-bordure px-2">
+            <button
+              onClick={() => setActionsDeplie((v) => !v)}
+              className={`flex w-full items-center gap-2 py-2 text-sm transition-colors ${
+                actionsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
+              }`}
+            >
+              <MoreHorizontal size={18} />
+              Actions
+            </button>
+            {actionsDeplie && (
+              <div className="flex flex-col gap-2 pb-2">
+                <button
+                  onClick={partager}
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <Share2 size={16} />
+                  {copie ? "Copié !" : "Partager"}
+                </button>
+                <button
+                  onClick={() => setAvisDeplie((v) => !v)}
+                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                    avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
+                  }`}
+                >
+                  <Star size={16} />
+                  Avis sur cette IA
+                </button>
+                {avisDeplie && (
+                  <div className="flex flex-col gap-4 px-2 pb-2">
+                    <NoteAgent agentId={agentId} />
+                    <CommentairesAgent agentId={agentId} />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <button
             onClick={seDeconnecter}

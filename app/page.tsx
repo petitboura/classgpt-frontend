@@ -7,6 +7,8 @@ import { messageErreur } from "@/lib/erreurs";
 import { ChatIA } from "@/components/chat/ChatIA";
 import { MessageAffiche, nettoyerMessageHistorique } from "@/components/chat/BulleMessage";
 import { SidebarChatLite } from "@/components/chat/SidebarChatLite";
+import { CompteRequisModal } from "@/components/CompteRequisModal";
+import { Logo } from "@/components/Logo";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 
 // Partie 3 du brief ("Expérience de chat directe") : contrairement à
@@ -19,6 +21,21 @@ import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 // étudiant, stirux pour un enseignant, lirinus pour un établissement).
 // Ne JAMAIS coder un agent_id en dur ici : un compte connecté avec un
 // autre rôle recevrait alors le mauvais agent.
+//
+// Mode invité (09/08, demande Bourama) : "atterrir dans le chat
+// d'abord avant l'inscription". Arrivée sans session -> plus de
+// redirection immédiate vers /connexion, on atterrit directement ici
+// dans une coquille de chat générique (pas d'agent résolu, donc pas de
+// titre/icône spécifique -- juste la marque Class GPT). Aucun appel API
+// authentifié tant qu'il n'y a pas de session. Toute action qui exige
+// un compte (ici : envoyer un premier message) ouvre CompteRequisModal
+// au lieu d'un message d'erreur -- jamais de redirection silencieuse.
+// Le modal pointe par défaut vers /inscription, pas /connexion
+// (décision explicite de Bourama : la création de compte est le
+// chemin par défaut). Après connexion ou inscription, les deux pages
+// renvoient déjà vers "/" (router.push("/")) -- on retombe ici, cette
+// fois avec une session, et le flux normal (résolution d'agent) prend
+// le relais.
 
 type AgentDetail = {
   id: string;
@@ -39,13 +56,15 @@ type FilConversation = {
 };
 
 export default function PageAccueilChat() {
-  const [etat, setEtat] = useState<"chargement" | "pret" | "erreur">("chargement");
+  const [etat, setEtat] = useState<"chargement" | "pret" | "erreur" | "invite">("chargement");
   const [erreur, setErreur] = useState<string | null>(null);
   const [agent, setAgent] = useState<AgentDetail | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [cle, setCle] = useState(() => crypto.randomUUID());
   const [messagesInitiaux, setMessagesInitiaux] = useState<MessageAffiche[]>([]);
   const [nbMessages, setNbMessages] = useState(0);
+  const [messageInvite, setMessageInvite] = useState("");
+  const [compteRequis, setCompteRequis] = useState(false);
   useHauteurVisuelle();
 
   useEffect(() => {
@@ -55,11 +74,10 @@ export default function PageAccueilChat() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
-        // Pas de page de présentation publique (brief section 3) :
-        // arrivée sans session -> écran de connexion propre à Class GPT
-        // (partie 2 du brief, pas encore construite au moment d'écrire
-        // cette partie -- la route existera une fois la partie 2 livrée).
-        window.location.href = "/connexion";
+        // Plus de redirection immédiate (correctif 09/08) : coquille de
+        // chat invité rendue plus bas, aucun appel API tant qu'il n'y a
+        // pas de session.
+        if (!annule) setEtat("invite");
         return;
       }
       try {
@@ -71,10 +89,10 @@ export default function PageAccueilChat() {
           // le rôle automatiquement (09/08, décision Bourama : parcours
           // simple, pas d'écran "code ou établissement"). Filet de
           // sécurité si un compte plus ancien ou créé autrement n'a
-          // vraiment aucun rôle : retour à /connexion plutôt que
-          // /rejoindre (désactivé, code encore présent pour une
-          // réactivation progressive plus tard).
-          window.location.href = "/connexion";
+          // vraiment aucun rôle : vers /inscription (formulaire par
+          // défaut, décision du 09/08), pas /rejoindre (désactivé, code
+          // encore présent pour une réactivation progressive plus tard).
+          window.location.href = "/inscription";
           return;
         }
         const detail: AgentDetail = await appelerApi(`/api/agents/${monRole.agent_id}`);
@@ -131,6 +149,52 @@ export default function PageAccueilChat() {
         {/* Jamais un texte figé "Chargement..." (standards de dev,
             règle 7) -- animation douce plutôt qu'un état brut. */}
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-dj-bordure border-t-dj-accent-1" />
+      </div>
+    );
+  }
+
+  if (etat === "invite") {
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center gap-6 bg-dj-fond px-4">
+        <div className="flex items-center gap-2.5">
+          <Logo taille={32} />
+          <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
+            Class <span className="text-dj-accent-1">GPT</span>
+          </span>
+        </div>
+        <p className="max-w-sm text-center text-sm text-dj-texte-muet">
+          Pose ta question à l&apos;IA de ton établissement.
+        </p>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!messageInvite.trim()) return;
+            setCompteRequis(true);
+          }}
+          className="flex w-full max-w-lg items-center gap-2"
+        >
+          <input
+            value={messageInvite}
+            onChange={(e) => setMessageInvite(e.target.value)}
+            placeholder="Écris ta question…"
+            className="flex-1 rounded-full border border-dj-bordure bg-dj-surface px-4 py-3 text-dj-texte outline-none focus:border-dj-accent-1"
+          />
+          <button
+            type="submit"
+            disabled={!messageInvite.trim()}
+            className="rounded-full bg-dj-gradient px-5 py-3 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+          >
+            Envoyer
+          </button>
+        </form>
+
+        {compteRequis && (
+          <CompteRequisModal
+            texte="Crée un compte pour continuer la conversation."
+            onFerme={() => setCompteRequis(false)}
+          />
+        )}
       </div>
     );
   }

@@ -66,13 +66,14 @@ export default function PageAccueilChat() {
           "/api/roles/moi"
         );
         if (!monRole.agent_id) {
-          // Compte connecté mais sans rôle -- ce n'est PAS une erreur de
-          // session (ça bouclerait avec /connexion, qui redirige déjà
-          // vers "/" une fois connecté). Correctif (08/08, fusion des
-          // parties 2 et 4) : /inscription ne choisit plus de rôle
-          // elle-même, ce choix se fait ici, sur /rejoindre (code reçu ou
-          // création d'un nouvel établissement).
-          window.location.href = "/rejoindre";
+          // Ne devrait normalement plus arriver -- /inscription attribue
+          // le rôle automatiquement (09/08, décision Bourama : parcours
+          // simple, pas d'écran "code ou établissement"). Filet de
+          // sécurité si un compte plus ancien ou créé autrement n'a
+          // vraiment aucun rôle : retour à /connexion plutôt que
+          // /rejoindre (désactivé, code encore présent pour une
+          // réactivation progressive plus tard).
+          window.location.href = "/connexion";
           return;
         }
         const detail: AgentDetail = await appelerApi(`/api/agents/${monRole.agent_id}`);

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { inscrireOuConnecter } from "@/lib/authFallback";
+import { creerEtablissementRacine } from "@/lib/invitations";
+import { ErreurApi, messageErreur } from "@/lib/erreurs";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
 import { ChampMotDePasse } from "@/components/ChampMotDePasse";
@@ -11,21 +13,18 @@ import { ChampTelephone } from "@/components/ChampTelephone";
 
 type MethodeAuth = "email" | "telephone";
 
-// Correctif (08/08, fusion des parties 2 et 4) : cet écran ne fait plus
-// que créer le compte (email/téléphone + mot de passe). L'attribution du
-// rôle se fait juste après, sur "/", via EspaceRejoindre (partie 4) --
-// soit avec un code reçu (enseignant/étudiant), soit "je crée un nouvel
-// établissement" (le nouveau chemin racine, POST
-// /api/roles/etablissement-racine). L'ancienne version de cet écran
-// appelait directement POST /api/roles/choisir avec un rôle "etablissement"
-// codé en dur pour TOUT nouveau compte -- ça cassait silencieusement le
-// parcours enseignant/étudiant par code : le rôle était déjà pris avant
-// même que la personne ait pu saisir son code. Le nom (nom_affiche) est
-// maintenant demandé une seule fois, dans EspaceRejoindre, pas ici.
+// Correctif (09/08, décision explicite de Bourama) : retour au parcours
+// direct et simple -- "une IA normale". PAS d'écran intermédiaire "code
+// reçu ou créer un établissement" après l'inscription (/rejoindre,
+// EspaceRejoindre) : le compte devient "etablissement" automatiquement et
+// silencieusement ici, puis va droit au chat. Les autres rôles
+// (enseignant/étudiant par code) seront réintroduits plus tard, petit à
+// petit -- ne pas les réactiver sans demande explicite.
 
 export default function PageInscription() {
   const router = useRouter();
   const [methode, setMethode] = useState<MethodeAuth>("email");
+  const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
@@ -42,15 +41,28 @@ export default function PageInscription() {
         ? await inscrireOuConnecter({ email, password: motDePasse })
         : await inscrireOuConnecter({ phone: telephone.replace(/\s+/g, ""), password: motDePasse });
 
-    setEnCours(false);
-
     if (error) {
+      setEnCours(false);
       setErreur(error.message);
       return;
     }
 
-    // Le rôle (établissement/enseignant/étudiant) se choisit juste après,
-    // sur "/" (EspaceRejoindre) -- voir commentaire en haut de fichier.
+    // Attribution silencieuse du rôle "etablissement" -- aucune étape
+    // visible, conforme au brief "une IA normale". Si le compte existait
+    // déjà avec un rôle (repli "compte existant -> connexion" de
+    // inscrireOuConnecter), le backend renvoie déjà-choisi : pas une
+    // vraie erreur ici, on continue simplement vers le chat.
+    try {
+      await creerEtablissementRacine(nom);
+    } catch (e) {
+      if (!(e instanceof ErreurApi && e.code === "ROLE_DEJA_CHOISI")) {
+        setEnCours(false);
+        setErreur(messageErreur(e));
+        return;
+      }
+    }
+
+    setEnCours(false);
     router.push("/");
   }
 
@@ -93,6 +105,21 @@ export default function PageInscription() {
           </div>
 
           <form onSubmit={gererSoumission} className="mt-4 space-y-4">
+            <div>
+              <label htmlFor="nom" className="block text-sm font-medium text-dj-texte-muet">
+                Nom
+              </label>
+              <input
+                id="nom"
+                type="text"
+                required
+                autoComplete="name"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-dj-texte outline-none focus:border-dj-accent-1"
+              />
+            </div>
+
             {methode === "email" ? (
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-dj-texte-muet">

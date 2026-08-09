@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Trash2, Plus, X, Check, Maximize2 } from "lucide-react";
 import { lireMesComportements, ajouterComportement, modifierComportement, supprimerComportement, type Comportement } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
+import { CompteRequisModal } from "@/components/CompteRequisModal";
 
 // Section "Mes comportements" (06/08/2026, demande Bourama : "on peut en
 // mettre plusieurs hein, pas juste un") : PLUSIEURS instructions perso
@@ -14,6 +15,14 @@ import { messageErreur } from "@/lib/erreurs";
 // uniquement pour l'instant), gaté par le parent (SidebarChat.tsx et/ou
 // /dashboard/espace) -- ce composant est partagé entre les deux, jamais
 // dupliqué.
+//
+// Ouvert aux visiteurs sans compte depuis le 09/08 (la barre latérale
+// entière l'est désormais, décision Bourama : "tout est visible, la
+// seule différence c'est que ça demande un compte au clic") : cette
+// section est en revanche intrinsèquement liée à un compte (instructions
+// perso PAR utilisateur) -- même la lecture initiale exige une session
+// côté backend. Un visiteur sans session voit donc un CTA "Crée un
+// compte" à la place de la liste, pas une liste vide silencieuse.
 //
 // Édition plein écran par élément (07/08/2026, demande Bourama : "je
 // parle pas de la section, je parle de chaque élément de la liste --
@@ -42,11 +51,20 @@ export function MesComportements({ agentId }: { agentId: string }) {
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
   const [erreurOuvert, setErreurOuvert] = useState<string | null>(null);
+  const [sansCompte, setSansCompte] = useState(false);
+  const [modaleCompteOuverte, setModaleCompteOuverte] = useState(false);
 
   useEffect(() => {
     lireMesComportements(agentId)
       .then(setListe)
-      .catch(() => setListe([]));
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statusCode === 401) {
+          setSansCompte(true);
+          setListe([]);
+        } else {
+          setListe([]);
+        }
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
 
@@ -131,6 +149,28 @@ export function MesComportements({ agentId }: { agentId: string }) {
       setErreurOuvert(messageErreur(e));
       setSuppressionEnCours(false);
     }
+  }
+
+  if (sansCompte) {
+    return (
+      <div className="flex animate-dj-fade-in-rapide flex-col gap-2 px-3 pb-3">
+        <p className="text-xs text-dj-texte-muet">
+          Crée un compte pour ajouter tes propres consignes perso à cette IA.
+        </p>
+        <button
+          onClick={() => setModaleCompteOuverte(true)}
+          className="self-start rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5"
+        >
+          Créer un compte
+        </button>
+        {modaleCompteOuverte && (
+          <CompteRequisModal
+            texte="Crée un compte pour personnaliser cette IA."
+            onFerme={() => setModaleCompteOuverte(false)}
+          />
+        )}
+      </div>
+    );
   }
 
   if (liste === undefined) {

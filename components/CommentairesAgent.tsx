@@ -2,14 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { appelerApi } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
+import { CompteRequisModal } from "@/components/CompteRequisModal";
 
 // Commentaires sur l'IA (porté de
 // djiguigne-frontend/components/CommentairesAgent.tsx). Contrat
 // backend (api/agents.py) : GET .../comments public, POST exige un
-// token. Simplifié pour Class GPT : pas de gestion "pas connecté" (le
-// chat n'est jamais atteignable sans session), donc pas de
-// CompteRequisModal ici contrairement à la version djiguigne-frontend.
+// token.
+//
+// Ouvert aux visiteurs sans compte depuis le 09/08 (décision Bourama :
+// toute la barre latérale est désormais visible sans compte) : la
+// lecture reste publique, mais publier un commentaire exige un compte
+// -- géré ici via CompteRequisModal plutôt qu'un message d'erreur brut.
 
 type Commentaire = {
   id: string;
@@ -25,6 +29,7 @@ export function CommentairesAgent({ agentId }: { agentId: string }) {
   const [brouillon, setBrouillon] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [compteRequis, setCompteRequis] = useState(false);
 
   function charger() {
     appelerApi(`/api/agents/${agentId}/comments`)
@@ -52,7 +57,11 @@ export function CommentairesAgent({ agentId }: { agentId: string }) {
       setBrouillon("");
       charger();
     } catch (e) {
-      setErreur(messageErreur(e));
+      if (e instanceof ErreurApi && e.statusCode === 401) {
+        setCompteRequis(true);
+      } else {
+        setErreur(messageErreur(e));
+      }
     } finally {
       setEnvoi(false);
     }
@@ -92,6 +101,13 @@ export function CommentairesAgent({ agentId }: { agentId: string }) {
           </div>
         ))}
       </div>
+
+      {compteRequis && (
+        <CompteRequisModal
+          texte="Crée un compte pour commenter cette IA."
+          onFerme={() => setCompteRequis(false)}
+        />
+      )}
     </div>
   );
 }

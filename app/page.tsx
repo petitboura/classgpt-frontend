@@ -148,6 +148,11 @@ export default function PageAccueilChat() {
     setNbMessages(0);
   }
 
+  function nouvelleConversationInvite() {
+    setCleInvite(crypto.randomUUID());
+    setNbMessages(0);
+  }
+
   async function selectionnerConversation(fil: FilConversation) {
     if (!agent) return;
     try {
@@ -200,6 +205,16 @@ export default function PageAccueilChat() {
 
     return (
       <div className="flex h-dvh" style={{ height: "var(--vh-visuelle, 100dvh)" }}>
+        <SidebarChatLite
+          agentId={AGENT_INVITE_ID}
+          role={null}
+          aDesMessages={nbMessages > 0}
+          conversationActiveId={cleInvite}
+          onNouvelleConversation={nouvelleConversationInvite}
+          onSelectionnerConversation={() => {}}
+          sectionMesComportements={agentInvite?.section_mes_comportements}
+          onNecessiteCompte={() => setCompteRequis(true)}
+        />
         <div className="flex-1 overflow-hidden">
           <ChatIA
             key={cleInvite}
@@ -211,13 +226,14 @@ export default function PageAccueilChat() {
             titreAccueil={agentInvite?.titre_accueil}
             sousTitreAccueil={agentInvite?.sous_titre_accueil}
             conversationId={cleInvite}
+            onMessagesChange={setNbMessages}
             avantEnvoi={verifierLimiteInvite}
           />
         </div>
 
         {compteRequis && (
           <CompteRequisModal
-            texte="Crée un compte pour continuer la conversation."
+            texte="Crée un compte pour continuer."
             onFerme={() => setCompteRequis(false)}
           />
         )}
@@ -249,6 +265,7 @@ export default function PageAccueilChat() {
         onNouvelleConversation={nouvelleConversation}
         onSelectionnerConversation={selectionnerConversation}
         sectionMesComportements={agent.section_mes_comportements}
+        onNecessiteCompte={() => setCompteRequis(true)}
       />
       <div className="flex-1 overflow-hidden">
         <ChatIA
@@ -276,6 +293,13 @@ export default function PageAccueilChat() {
           boutonSansEnseignant={agent.bouton_sans_enseignant ?? true}
         />
       </div>
+
+      {compteRequis && (
+        <CompteRequisModal
+          texte="Crée un compte pour continuer."
+          onFerme={() => setCompteRequis(false)}
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { appelerApi } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
+import { CompteRequisModal } from "@/components/CompteRequisModal";
 
 // Note 1-5 sur l'IA (porté de djiguigne-frontend/components/NoteAgent.tsx).
 // Contrat backend (api/agents.py) : GET .../rating public (moyenne +
@@ -10,9 +11,10 @@ import { messageErreur } from "@/lib/erreurs";
 // par user, jamais cumulée) -- pas besoin de gérer un état "déjà noté"
 // séparément, un second clic modifie simplement la note existante.
 //
-// Simplifié pour Class GPT : pas de gestion "pas connecté" (le chat
-// n'est jamais atteignable sans session, brief section 3), donc pas de
-// CompteRequisModal ici contrairement à la version djiguigne-frontend.
+// Ouvert aux visiteurs sans compte depuis le 09/08 (décision Bourama :
+// toute la barre latérale est désormais visible sans compte) : la
+// lecture (moyenne + total) reste publique, mais noter exige un compte
+// -- géré ici via CompteRequisModal plutôt qu'un message d'erreur brut.
 
 type Agrege = { moyenne: number | null; total: number };
 
@@ -21,6 +23,7 @@ export function NoteAgent({ agentId }: { agentId: string }) {
   const [maNote, setMaNote] = useState<number | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [compteRequis, setCompteRequis] = useState(false);
 
   useEffect(() => {
     appelerApi(`/api/agents/${agentId}/rating`)
@@ -40,7 +43,11 @@ export function NoteAgent({ agentId }: { agentId: string }) {
       const r = await appelerApi(`/api/agents/${agentId}/rating`);
       setAgrege(r);
     } catch (e) {
-      setErreur(messageErreur(e));
+      if (e instanceof ErreurApi && e.statusCode === 401) {
+        setCompteRequis(true);
+      } else {
+        setErreur(messageErreur(e));
+      }
     } finally {
       setEnvoi(false);
     }
@@ -69,6 +76,12 @@ export function NoteAgent({ agentId }: { agentId: string }) {
         </span>
       </div>
       {erreur && <p className="text-xs text-dj-accent-2">{erreur}</p>}
+      {compteRequis && (
+        <CompteRequisModal
+          texte="Crée un compte pour noter cette IA."
+          onFerme={() => setCompteRequis(false)}
+        />
+      )}
     </div>
   );
 }

@@ -50,6 +50,17 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 // partie 5 (composant Logo.tsx), remplace l'icône GraduationCap
 // générique utilisée en repli le temps que cette partie soit livrée.
 
+// CORRIGÉ le 09/08 (Bourama, suite à la disparition de la barre en mode
+// invité) : "tout est visible, visiteur ou pas -- la seule différence,
+// c'est que cliquer sur un truc qui nécessite un compte invite à s'en
+// créer un." La barre est désormais rendue à l'identique pour un
+// visiteur sans session (voir app/page.tsx, état "invite") : "Mon
+// espace" reste visible mais ouvre `onNecessiteCompte` au clic au lieu
+// de naviguer, et "Se déconnecter" devient "Se connecter" (même
+// callback). "Mes comportements"/"Avis" restent visibles tels quels --
+// gérés au niveau de MesComportements.tsx/NoteAgent.tsx/
+// CommentairesAgent.tsx eux-mêmes (401 -> CompteRequisModal locale).
+
 type FilConversation = {
   conversation_id: string | null;
   titre: string;
@@ -76,6 +87,7 @@ export function SidebarChatLite({
   onNouvelleConversation,
   onSelectionnerConversation,
   sectionMesComportements,
+  onNecessiteCompte,
 }: {
   agentId: string;
   role: string | null;
@@ -84,15 +96,8 @@ export function SidebarChatLite({
   onNouvelleConversation: () => void;
   onSelectionnerConversation: (fil: FilConversation) => void;
   sectionMesComportements?: boolean;
+  onNecessiteCompte: () => void;
 }) {
-  // Correctif (08/08) : lien vers /mon-espace (partie 4 -- inviter,
-  // suivre son équipe, diffuser des documents). Élargi le 09/08 : "Mon
-  // espace" héberge maintenant aussi Bibliothèque/Ma mémoire, qui
-  // concernent TOUS les rôles y compris étudiant (pas seulement
-  // "Bureau", réservé lui à établissement/enseignant à l'intérieur de
-  // la page -- voir EspaceClassGPT.tsx) -- donc le lien est visible dès
-  // qu'un rôle existe, plus seulement pour établissement/enseignant.
-  const peutVoirMonEspace = !!role;
   const [ouverte, setOuverte] = useState(false);
   const [fils, setFils] = useState<FilConversation[] | null>(null);
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
@@ -149,7 +154,18 @@ export function SidebarChatLite({
     setHistoriqueDeplie(false);
   }
 
+  function clicMonEspace(e: React.MouseEvent) {
+    if (!role) {
+      e.preventDefault();
+      onNecessiteCompte();
+    }
+  }
+
   async function seDeconnecter() {
+    if (!role) {
+      onNecessiteCompte();
+      return;
+    }
     await supabase.auth.signOut();
     window.location.href = "/connexion";
   }
@@ -205,17 +221,16 @@ export function SidebarChatLite({
           </button>
         )}
 
-        {peutVoirMonEspace && (
-          <Link
-            href="/mon-espace"
-            className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-          >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <Users size={18} />
-            </span>
-            <LibelleRail ouverte={ouverte}>Mon espace</LibelleRail>
-          </Link>
-        )}
+        <Link
+          href="/mon-espace"
+          onClick={clicMonEspace}
+          className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        >
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <Users size={18} />
+          </span>
+          <LibelleRail ouverte={ouverte}>Mon espace</LibelleRail>
+        </Link>
 
         {fils && fils.length > 0 && (
           <div className="mt-2 rounded-xl border border-dj-bordure">
@@ -361,7 +376,7 @@ export function SidebarChatLite({
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
             <LogOut size={18} />
           </span>
-          <LibelleRail ouverte={ouverte}>Se déconnecter</LibelleRail>
+          <LibelleRail ouverte={ouverte}>{role ? "Se déconnecter" : "Se connecter"}</LibelleRail>
         </button>
 
         <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
@@ -392,20 +407,21 @@ export function SidebarChatLite({
             </button>
           )}
 
-          {peutVoirMonEspace && (
-            <Link
-              href="/mon-espace"
-              onClick={() => setOuverte(false)}
-              className={`flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
-                aDesMessages ? "mt-2" : "mt-8"
-              }`}
-            >
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                <Users size={18} />
-              </span>
-              <span className="text-sm">Mon espace</span>
-            </Link>
-          )}
+          <Link
+            href="/mon-espace"
+            onClick={(e) => {
+              clicMonEspace(e);
+              if (role) setOuverte(false);
+            }}
+            className={`flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+              aDesMessages ? "mt-2" : "mt-8"
+            }`}
+          >
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+              <Users size={18} />
+            </span>
+            <span className="text-sm">Mon espace</span>
+          </Link>
 
           {fils && fils.length > 0 && (
             <div className="mt-2 flex-1 overflow-y-auto rounded-xl border border-dj-bordure">
@@ -498,7 +514,7 @@ export function SidebarChatLite({
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
               <LogOut size={18} />
             </span>
-            <span className="text-sm">Se déconnecter</span>
+            <span className="text-sm">{role ? "Se déconnecter" : "Se connecter"}</span>
           </button>
         </div>
       )}

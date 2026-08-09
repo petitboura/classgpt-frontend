@@ -405,7 +405,7 @@ export function BulleMessage({
         className={
           estUtilisateur
             ? "max-w-[80%] rounded-2xl bg-dj-surface-haute px-4 py-2.5 text-[15px] text-dj-texte"
-            : "max-w-[80%] px-1 py-1 text-[15px] leading-relaxed text-dj-texte"
+            : "max-w-[80%] px-1 py-1 font-lecture text-[16px] leading-relaxed text-dj-texte"
         }
       >
         {message.pieceJointe && (
@@ -447,7 +447,7 @@ export function BulleMessage({
         <div
           ref={conteneurRef}
           onMouseUp={gererFinSelection}
-          className="dj-markdown [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 last:[&_p]:mb-0 [&_h1]:font-display [&_h1]:font-bold [&_h1]:tracking-[-0.01em] [&_h1]:text-dj-texte [&_h1]:text-xl [&_h1]:mb-2 [&_h1]:mt-3 [&_h2]:font-display [&_h2]:font-bold [&_h2]:tracking-[-0.01em] [&_h2]:text-dj-texte [&_h2]:text-lg [&_h2]:mb-2 [&_h2]:mt-3 [&_h3]:font-display [&_h3]:font-bold [&_h3]:tracking-[-0.01em] [&_h3]:text-dj-texte [&_h3]:text-base [&_h3]:mb-1.5 [&_h3]:mt-2"
+          className="dj-markdown [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 last:[&_p]:mb-0 [&_h1]:font-lecture [&_h1]:font-semibold [&_h1]:tracking-[-0.01em] [&_h1]:text-dj-texte [&_h1]:text-xl [&_h1]:mb-2 [&_h1]:mt-3 [&_h2]:font-lecture [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-dj-texte [&_h2]:text-lg [&_h2]:mb-2 [&_h2]:mt-3 [&_h3]:font-lecture [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] [&_h3]:text-dj-texte [&_h3]:text-base [&_h3]:mb-1.5 [&_h3]:mt-2"
         >
           {/* remarkGfm (tableaux/gras/liens) + remarkMath/rehypeKatex
               (LaTeX) tournent dans LA MÊME passe de parsing -- c'est ça

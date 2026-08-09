@@ -553,21 +553,21 @@ export function ChatIA({
   if (messages.length === 0) {
     return (
       <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center px-4">
-        <div className="w-full max-w-lg animate-dj-fade-up">
+        <div className="w-full max-w-xl animate-dj-fade-up">
           {titreAccueil ? (
-            <div className="mb-6 flex flex-col items-center text-center">
-              <span className="relative mb-3 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dj-surface-haute">
+            <div className="mb-8 flex flex-col items-center text-center">
+              <span className="relative mb-4 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dj-surface-haute">
                 {iconeUrl ? (
-                  <Image src={iconeUrl} alt="" fill className="object-cover" sizes="40px" />
+                  <Image src={iconeUrl} alt="" fill className="object-cover" sizes="56px" />
                 ) : (
-                  <IconeGenerique className="h-5 w-5 text-dj-accent-1" />
+                  <IconeGenerique className="h-7 w-7 text-dj-accent-1" />
                 )}
               </span>
-              <h1 className="font-display text-2xl font-bold tracking-[-0.01em] text-dj-texte">{titreAccueil}</h1>
-              {sousTitreAccueil && <p className="mt-1 text-sm text-dj-texte-muet">{sousTitreAccueil}</p>}
+              <h1 className="font-display text-3xl font-bold tracking-[-0.01em] text-dj-texte sm:text-4xl">{titreAccueil}</h1>
+              {sousTitreAccueil && <p className="mt-2 text-base text-dj-texte-muet">{sousTitreAccueil}</p>}
             </div>
           ) : (
-            <p className="mb-6 text-center text-sm text-dj-texte-muet">Pose ta question à {nomAgent}...</p>
+            <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>
           )}
           <BarreDeSaisie
             onEnvoyer={envoyerMessage}

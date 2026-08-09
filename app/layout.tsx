@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Inter, JetBrains_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 // KaTeX/MathLive (rendu de formules dans BulleMessage.tsx et
 // EditeurMathsRiche.tsx) : dans djiguigne-frontend ce CSS est scopé à la
@@ -46,6 +46,19 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// Police serif éditoriale pour le corps des réponses de l'IA uniquement
+// (09/08, demande Bourama : "façon Claude" pour le texte des réponses --
+// pas pour les titres, qui restent en Bricolage Grotesque, juste
+// agrandis). Décision explicite : identité partagée avec
+// djiguigne-frontend, donc le même choix de police y est repris à
+// l'identique.
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-lecture",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Class GPT",
@@ -61,7 +74,7 @@ export default function RacineLayout({
   return (
     <html
       lang="fr"
-      className={`${bricolage.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+      className={`${bricolage.variable} ${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
     >
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
         {children}

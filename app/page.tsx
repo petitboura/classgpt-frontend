@@ -8,7 +8,6 @@ import { ChatIA } from "@/components/chat/ChatIA";
 import { MessageAffiche, nettoyerMessageHistorique } from "@/components/chat/BulleMessage";
 import { SidebarChatLite } from "@/components/chat/SidebarChatLite";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
-import { Logo } from "@/components/Logo";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 
 // Partie 3 du brief ("Expérience de chat directe") : contrairement à
@@ -55,6 +54,23 @@ type FilConversation = {
   derniere_activite: string;
 };
 
+// Mode invité (09/08, décision Bourama) : avant inscription, on ne connaît
+// pas le rôle du visiteur (rien à résoudre via /api/roles/moi, qui exige
+// une session) -- il faut donc un agent fixe. Choix explicite : l'agent
+// "établissement" (lirinus), le même que celui attribué par défaut à
+// l'inscription (voir /inscription et api/roles.py:AGENT_PAR_ROLE côté
+// backend) -- cohérent avec le fait que tout nouveau compte devient de
+// toute façon "établissement" par défaut.
+const AGENT_INVITE_ID = "lirinus";
+
+// L'inscription n'est demandée qu'à partir du 5ème message envoyé par un
+// visiteur non connecté (09/08, décision Bourama) -- avant ça, le chat
+// est librement utilisable. Le backend accepte déjà les requêtes
+// anonymes sans limite (api/chat.py:envoyer_message, utilisateur_optionnel) --
+// la limite est donc uniquement appliquée ici, côté client.
+const LIMITE_MESSAGES_INVITE = 5;
+const CLE_COMPTEUR_INVITE = "classgpt_nb_messages_invite";
+
 export default function PageAccueilChat() {
   const [etat, setEtat] = useState<"chargement" | "pret" | "erreur" | "invite">("chargement");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -63,7 +79,8 @@ export default function PageAccueilChat() {
   const [cle, setCle] = useState(() => crypto.randomUUID());
   const [messagesInitiaux, setMessagesInitiaux] = useState<MessageAffiche[]>([]);
   const [nbMessages, setNbMessages] = useState(0);
-  const [messageInvite, setMessageInvite] = useState("");
+  const [agentInvite, setAgentInvite] = useState<AgentDetail | null>(null);
+  const [cleInvite, setCleInvite] = useState(() => crypto.randomUUID());
   const [compteRequis, setCompteRequis] = useState(false);
   useHauteurVisuelle();
 
@@ -75,9 +92,20 @@ export default function PageAccueilChat() {
       } = await supabase.auth.getSession();
       if (!session) {
         // Plus de redirection immédiate (correctif 09/08) : coquille de
-        // chat invité rendue plus bas, aucun appel API tant qu'il n'y a
-        // pas de session.
+        // chat invité rendue plus bas.
         if (!annule) setEtat("invite");
+        // Titre/icône de l'agent établissement (endpoint public, pas
+        // besoin de session) -- purement pour l'affichage (titreAccueil,
+        // icone_url). Best-effort : agentId reste "lirinus" (constante,
+        // pas dépendante de cet appel) même si ce fetch échoue, donc le
+        // chat invité reste utilisable, juste avec le texte de repli
+        // générique de ChatIA à la place.
+        try {
+          const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
+          if (!annule) setAgentInvite(detail);
+        } catch {
+          // Repli silencieux, voir commentaire ci-dessus.
+        }
         return;
       }
       try {
@@ -154,40 +182,37 @@ export default function PageAccueilChat() {
   }
 
   if (etat === "invite") {
-    return (
-      <div className="flex h-dvh flex-col items-center justify-center gap-6 bg-dj-fond px-4">
-        <div className="flex items-center gap-2.5">
-          <Logo taille={32} />
-          <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
-            Class <span className="text-dj-accent-1">GPT</span>
-          </span>
-        </div>
-        <p className="max-w-sm text-center text-sm text-dj-texte-muet">
-          Pose ta question à l&apos;IA de ton établissement.
-        </p>
+    // Lu à chaque tentative d'envoi plutôt que gardé en state React :
+    // évite un re-render de toute la page à chaque message, et reste de
+    // toute façon la source de vérité unique (persiste au rechargement,
+    // voir décision Bourama 09/08).
+    function verifierLimiteInvite(): boolean {
+      const brut = window.localStorage.getItem(CLE_COMPTEUR_INVITE);
+      const compte = brut ? parseInt(brut, 10) || 0 : 0;
+      if (compte >= LIMITE_MESSAGES_INVITE) {
+        setCompteRequis(true);
+        return false;
+      }
+      window.localStorage.setItem(CLE_COMPTEUR_INVITE, String(compte + 1));
+      return true;
+    }
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!messageInvite.trim()) return;
-            setCompteRequis(true);
-          }}
-          className="flex w-full max-w-lg items-center gap-2"
-        >
-          <input
-            value={messageInvite}
-            onChange={(e) => setMessageInvite(e.target.value)}
-            placeholder="Écris ta question…"
-            className="flex-1 rounded-full border border-dj-bordure bg-dj-surface px-4 py-3 text-dj-texte outline-none focus:border-dj-accent-1"
+    return (
+      <div className="flex h-dvh" style={{ height: "var(--vh-visuelle, 100dvh)" }}>
+        <div className="flex-1 overflow-hidden">
+          <ChatIA
+            key={cleInvite}
+            agentId={AGENT_INVITE_ID}
+            // Même choix que pour un compte connecté (voir plus bas) :
+            // jamais le nom technique de l'agent réel.
+            nomAgent="Class GPT"
+            iconeUrl={agentInvite?.icone_url ?? null}
+            titreAccueil={agentInvite?.titre_accueil}
+            sousTitreAccueil={agentInvite?.sous_titre_accueil}
+            conversationId={cleInvite}
+            avantEnvoi={verifierLimiteInvite}
           />
-          <button
-            type="submit"
-            disabled={!messageInvite.trim()}
-            className="rounded-full bg-dj-gradient px-5 py-3 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            Envoyer
-          </button>
-        </form>
+        </div>
 
         {compteRequis && (
           <CompteRequisModal

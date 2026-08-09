@@ -33,6 +33,7 @@ export function ChatIA({
   modelesDisponibles = [],
   modeleChoisi = null,
   boutonSansEnseignant = false,
+  avantEnvoi,
 }: {
   agentId: string;
   nomAgent: string;
@@ -58,6 +59,13 @@ export function ChatIA({
   // afficher le bouton "Sans enseignant" (forcer le prompt généraliste
   // pour un message précis, sans passer par le routeur de matière).
   boutonSansEnseignant?: boolean;
+  // Mode invité (09/08, demande Bourama : inscription demandée seulement
+  // au 5ème message) : appelé juste avant le tout premier appel réseau
+  // d'un envoi. Retourne false pour bloquer -- rien n'est envoyé, aucun
+  // message n'est ajouté à l'écran (le parent, page.tsx, ouvre alors
+  // CompteRequisModal à la place). Retourne true pour laisser passer,
+  // comme si la prop n'existait pas.
+  avantEnvoi?: () => boolean;
 }) {
   const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
   const [messages, setMessages] = useState<MessageAffiche[]>(messagesInitiaux);
@@ -265,6 +273,13 @@ export function ChatIA({
     ignorerRouteurOutils: boolean = false,
     sansEnseignant: boolean = false
   ) {
+    // Doit être le tout premier test de la fonction : si le parent
+    // bloque (limite invité atteinte), on sort avant de toucher à quoi
+    // que ce soit -- pas de message ajouté, pas d'appel réseau, pas de
+    // proposition de notifications push.
+    if (avantEnvoi && !avantEnvoi()) {
+      return;
+    }
     // Demande de Bourama (2026-07-22) : proposer l'activation des
     // notifications push dès la première vraie action (envoyer un
     // message = utiliser l'IA), pas au chargement de la page -- voir
@@ -524,6 +539,50 @@ export function ChatIA({
     // la première ligne d'une réponse longue.
   }, [messages, statuts, raisonnementEnCours]);
 
+  // Écran de démarrage centré (09/08, demande Bourama : "exact au
+  // démarrage" par rapport à Claude -- pas le thème de couleurs, la
+  // mise en page). Tant qu'il n'y a aucun message -- que ce soit au tout
+  // premier chargement OU après un clic sur "Nouvelle conversation"
+  // (messages.length repasse à 0 côté parent, voir page.tsx) -- le titre
+  // d'accueil et la barre de saisie sont centrés verticalement au milieu
+  // de l'écran, comme sur claude.ai, plutôt qu'affichés en haut d'une
+  // zone de messages vide avec la barre de saisie plaquée en bas. Dès
+  // l'envoi du premier message, messages.length > 0 et on retombe sur la
+  // mise en page normale (liste défilante + barre fixée en bas) plus
+  // bas dans ce fichier.
+  if (messages.length === 0) {
+    return (
+      <div className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center px-4">
+        <div className="w-full max-w-lg animate-dj-fade-up">
+          {titreAccueil ? (
+            <div className="mb-6 flex flex-col items-center text-center">
+              <span className="relative mb-3 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dj-surface-haute">
+                {iconeUrl ? (
+                  <Image src={iconeUrl} alt="" fill className="object-cover" sizes="40px" />
+                ) : (
+                  <IconeGenerique className="h-5 w-5 text-dj-accent-1" />
+                )}
+              </span>
+              <h1 className="font-display text-2xl font-bold tracking-[-0.01em] text-dj-texte">{titreAccueil}</h1>
+              {sousTitreAccueil && <p className="mt-1 text-sm text-dj-texte-muet">{sousTitreAccueil}</p>}
+            </div>
+          ) : (
+            <p className="mb-6 text-center text-sm text-dj-texte-muet">Pose ta question à {nomAgent}...</p>
+          )}
+          <BarreDeSaisie
+            onEnvoyer={envoyerMessage}
+            desactive={genEnCours}
+            agentId={agentId}
+            modelesDisponibles={modelesDisponibles}
+            modeleSelectionne={modeleSelectionne}
+            onModeleChange={setModeleSelectionne}
+            boutonSansEnseignant={boutonSansEnseignant}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl flex-col">
       <div
@@ -532,25 +591,6 @@ export function ChatIA({
           collePresBasRef.current = estPresDuBas();
         }}
         className="flex-1 space-y-5 overflow-y-auto px-4 py-6">
-        {messages.length === 0 && (
-          titreAccueil ? (
-            <div className="mb-4 mt-6">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dj-surface-haute">
-                  {iconeUrl ? (
-                    <Image src={iconeUrl} alt="" fill className="object-cover" sizes="28px" />
-                  ) : (
-                    <IconeGenerique className="h-4 w-4 text-dj-accent-1" />
-                  )}
-                </span>
-                <h1 className="font-display text-2xl font-bold tracking-[-0.01em] text-dj-texte">{titreAccueil}</h1>
-              </div>
-              {sousTitreAccueil && <p className="mt-1 text-sm text-dj-texte-muet">{sousTitreAccueil}</p>}
-            </div>
-          ) : (
-            <p className="mt-10 text-center text-sm text-dj-texte-muet">Pose ta question à {nomAgent}...</p>
-          )
-        )}
         {messages.map((message, index) => {
           const estDernier = index === messages.length - 1;
           return (

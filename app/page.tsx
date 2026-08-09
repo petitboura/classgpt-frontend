@@ -29,7 +29,6 @@ type AgentDetail = {
   modeles_disponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modele_choisi?: string | null;
   bouton_sans_enseignant?: boolean;
-  contenu_dynamique_par_matiere?: boolean;
   section_mes_comportements?: boolean;
 };
 
@@ -159,7 +158,6 @@ export default function PageAccueilChat() {
         conversationActiveId={cle}
         onNouvelleConversation={nouvelleConversation}
         onSelectionnerConversation={selectionnerConversation}
-        contenuDynamiqueParMatiere={agent.contenu_dynamique_par_matiere}
         sectionMesComportements={agent.section_mes_comportements}
       />
       <div className="flex-1 overflow-hidden">

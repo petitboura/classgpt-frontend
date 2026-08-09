@@ -3,12 +3,9 @@
 import { useEffect, useState } from "react";
 
 // Porté de djiguigne-frontend/components/BoutonInstaller.tsx, texte
-// adapté à Class GPT. Reste inerte (return null) tant que
-// app/manifest.ts + le service worker n'existent pas encore dans ce
-// dépôt -- fait partie de l'infra/identité visuelle, pas de ce
-// chantier. Sans danger de le brancher dès maintenant : sur un
-// navigateur qui ne déclenche jamais `beforeinstallprompt` (faute de
-// manifest), le bouton ne s'affiche simplement jamais.
+// adapté à Class GPT. app/manifest.ts + public/sw.js existent
+// désormais (voir ServiceWorkerRegistration.tsx) -- le bouton est
+// pleinement fonctionnel, plus seulement inerte-par-défaut.
 export function BoutonInstaller() {
   const [evenementInstall, setEvenementInstall] = useState<Event | null>(null);
   const [estIOS, setEstIOS] = useState(false);
@@ -52,11 +49,11 @@ export function BoutonInstaller() {
 
       {instructionsIOS && (
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
+          className="fixed inset-0 z-[100] flex animate-dj-fade-in-rapide items-end justify-center bg-black/50 p-4 sm:items-center"
           onClick={() => setInstructionsIOS(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border border-dj-bordure bg-dj-surface p-5 text-sm text-dj-texte"
+            className="w-full max-w-sm animate-cgpt-entree-modal rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5 text-sm text-dj-texte"
             onClick={(e) => e.stopPropagation()}
           >
             <p className="font-display text-base font-bold">Installer Class GPT</p>

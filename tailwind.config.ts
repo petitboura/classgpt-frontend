@@ -94,6 +94,15 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(10px) scale(.985)" },
           to: { opacity: "1", transform: "translateY(0) scale(1)" },
         },
+        // Apparition d'un modal (09/08, audit partie 5 : CompteRequisModal,
+        // BoutonInstaller instructions iOS avaient un fond qui s'affichait
+        // brut et un panneau sans easing sur mesure). Même principe que
+        // cgpt-entree-message, léger scale en plus du glissement pour
+        // renforcer la sensation de profondeur à l'ouverture.
+        "cgpt-entree-modal": {
+          from: { opacity: "0", transform: "translateY(12px) scale(.96)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
         // Points de l'indicateur "{agent} réfléchit" (partie 5) : rythme
         // légèrement irrégulier plutôt que animate-bounce (délais
         // parfaitement réguliers) -- brief 4b.
@@ -109,6 +118,7 @@ const config: Config = {
         "dj-orbit": "dj-orbit 18s linear infinite",
         "dj-glow": "dj-glow 3.2s ease-in-out infinite",
         "cgpt-entree-message": "cgpt-entree-message 0.4s cubic-bezier(.25,.8,.35,1) both",
+        "cgpt-entree-modal": "cgpt-entree-modal 0.35s cubic-bezier(.25,.8,.35,1) both",
         "cgpt-point-reflexion": "cgpt-point-reflexion 1.3s cubic-bezier(.25,.8,.35,1) infinite",
       },
     },

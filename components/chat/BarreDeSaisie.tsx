@@ -1706,7 +1706,7 @@ export function BarreDeSaisie({
               <div
                 ref={menuOutilsRef}
                 className={
-                  "absolute bottom-full left-0 z-20 mb-2 w-72 max-w-[calc(100vw-2rem)] origin-bottom-left overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-lg transition-all duration-150 ease-out " +
+                  "absolute bottom-full left-0 z-20 mb-2 w-72 max-w-[calc(100vw-2rem)] origin-bottom-left overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-lg transition-all duration-150 ease-cgpt-doux " +
                   (menuOutilsOuvert
                     ? "translate-y-0 scale-100 opacity-100"
                     : "pointer-events-none translate-y-1 scale-95 opacity-0")
@@ -1873,7 +1873,7 @@ export function BarreDeSaisie({
               <div
                 ref={menuUtilitairesRef}
                 className={
-                  "absolute bottom-full left-0 z-20 mb-2 max-h-72 w-64 max-w-[calc(100vw-2rem)] origin-bottom-left overflow-y-auto rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-out " +
+                  "absolute bottom-full left-0 z-20 mb-2 max-h-72 w-64 max-w-[calc(100vw-2rem)] origin-bottom-left overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
                   (menuUtilitairesOuvert
                     ? "translate-y-0 scale-100 opacity-100"
                     : "pointer-events-none translate-y-1 scale-95 opacity-0")
@@ -1953,7 +1953,7 @@ export function BarreDeSaisie({
               <div
                 ref={menuAppliRef}
                 className={
-                  "absolute bottom-full left-0 z-20 mb-2 max-h-72 w-56 origin-bottom-left overflow-y-auto rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-out " +
+                  "absolute bottom-full left-0 z-20 mb-2 max-h-72 w-56 origin-bottom-left overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
                   (menuAppliOuvert
                     ? "translate-y-0 scale-100 opacity-100"
                     : "pointer-events-none translate-y-1 scale-95 opacity-0")
@@ -2022,7 +2022,7 @@ export function BarreDeSaisie({
                 <div
                   ref={menuModeleRef}
                   className={
-                    "absolute bottom-full right-0 z-20 mb-2 max-h-80 w-56 origin-bottom-right overflow-y-auto rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-out " +
+                    "absolute bottom-full right-0 z-20 mb-2 max-h-80 w-56 origin-bottom-right overflow-y-auto rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
                     (menuModeleOuvert
                       ? "translate-y-0 scale-100 opacity-100"
                       : "pointer-events-none translate-y-1 scale-95 opacity-0")
@@ -2096,7 +2096,7 @@ export function BarreDeSaisie({
               <div
                 ref={menuLongueurRef}
                 className={
-                  "absolute bottom-full right-0 z-20 mb-2 w-40 origin-bottom-right overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-out " +
+                  "absolute bottom-full right-0 z-20 mb-2 w-40 origin-bottom-right overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-1 shadow-lg transition-all duration-150 ease-cgpt-doux " +
                   (menuLongueurOuvert
                     ? "translate-y-0 scale-100 opacity-100"
                     : "pointer-events-none translate-y-1 scale-95 opacity-0")

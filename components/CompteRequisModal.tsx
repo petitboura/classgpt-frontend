@@ -22,11 +22,11 @@ export function CompteRequisModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-4 sm:items-center"
+      className="fixed inset-0 z-[100] flex animate-dj-fade-in-rapide items-end justify-center bg-black/50 p-4 sm:items-center"
       onClick={onFerme}
     >
       <div
-        className="w-full max-w-sm animate-dj-fade-up rounded-2xl border border-dj-bordure bg-dj-surface p-6 text-center shadow-[0_2px_24px_rgba(0,0,0,0.35)]"
+        className="w-full max-w-sm animate-cgpt-entree-modal rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-6 text-center shadow-[0_2px_24px_rgba(0,0,0,0.35)]"
         onClick={(e) => e.stopPropagation()}
       >
         <button

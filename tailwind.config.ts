@@ -19,17 +19,17 @@ const config: Config = {
     extend: {
       colors: {
         dj: {
-          fond: "#0B0908",
-          surface: "#161210",
-          "surface-haute": "#1E1813",
-          bordure: "rgba(255,255,255,0.08)",
-          "bordure-forte": "rgba(232,147,74,0.35)",
+          fond: "#F4F3EE",
+          surface: "#FBFAF8",
+          "surface-haute": "#FFFFFF",
+          bordure: "rgba(43,33,24,0.10)",
+          "bordure-forte": "rgba(193,68,14,0.35)",
           "accent-1": "#E8934A",
           "accent-2": "#C1440E",
-          texte: "#F5ECE0",
-          "texte-muet": "#A79A8C",
-          succes: "#4ADE80",
-          inactif: "#6B6259",
+          texte: "#2B2118",
+          "texte-muet": "#6E5F4D",
+          succes: "#16A34A",
+          inactif: "#B0A79B",
         },
       },
       backgroundImage: {

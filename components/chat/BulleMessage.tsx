@@ -24,6 +24,7 @@ import { LecteurMedia, typeMedia } from "./LecteurMedia";
 import { LinkPreview } from "./LinkPreview";
 import { RaisonnementBulle } from "./RaisonnementBulle";
 import { OutilResultatBulle } from "./OutilResultatBulle";
+import { Skeleton } from "../Skeleton";
 
 // Chargé à la demande (pas en haut du bundle du chat) : recharts ne sert
 // que si le message contient effectivement un bloc ```chart, et son
@@ -31,7 +32,7 @@ import { OutilResultatBulle } from "./OutilResultatBulle";
 // (mesures de pixels réelles nécessaires) -- ssr:false assumé.
 const GraphiqueDonnees = dynamic(() => import("./GraphiqueDonnees").then((m) => m.GraphiqueDonnees), {
   ssr: false,
-  loading: () => <div className="text-sm text-dj-muted px-1 py-2">Construction du graphique…</div>,
+  loading: () => <Skeleton className="h-[260px] w-full rounded-xl border border-dj-bordure" />,
 });
 
 // Extrait le texte brut d'un enfant React -- nécessaire pour récupérer le

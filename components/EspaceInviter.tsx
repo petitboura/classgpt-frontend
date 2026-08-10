@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { genererMonInvitation, lireMonInvitation, type Invitation } from "@/lib/invitations";
 import { messageErreur } from "@/lib/erreurs";
+import { Skeleton } from "./Skeleton";
 
 const LIBELLE_ROLE_CIBLE: Record<Invitation["role_cible"], string> = {
   enseignant: "enseignants",
@@ -63,9 +64,7 @@ export function EspaceInviter() {
     <section className="rounded-2xl border border-dj-bordure bg-dj-surface p-5">
       <h2 className="font-display text-base font-semibold text-dj-texte">Inviter</h2>
 
-      {chargement && (
-        <div className="mt-4 h-24 animate-pulse rounded-xl border border-dj-bordure bg-dj-surface-haute" aria-hidden />
-      )}
+      {chargement && <Skeleton className="mt-4 h-24 rounded-xl border border-dj-bordure" />}
 
       {erreur && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-[#F87171]">{erreur}</p>}
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { lireMonEquipe, type MembreEquipe } from "@/lib/invitations";
 import { messageErreur } from "@/lib/erreurs";
+import { Skeleton } from "./Skeleton";
 
 /**
  * "L'IA de mes élèves" (brief section 3). Réutilise /api/roles/mon-equipe
@@ -39,9 +40,9 @@ export function EspaceEquipe({ titre }: { titre: string }) {
       {membres === null && !erreur && (
         <div className="mt-3 space-y-2" aria-hidden>
           {[0, 1, 2].map((i) => (
-            <div
+            <Skeleton
               key={i}
-              className="h-12 animate-pulse rounded-lg border border-dj-bordure bg-dj-surface-haute"
+              className="h-12 rounded-lg border border-dj-bordure"
               style={{ animationDelay: `${i * 100}ms` }}
             />
           ))}

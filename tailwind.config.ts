@@ -36,6 +36,21 @@ const config: Config = {
         "dj-gradient": "linear-gradient(135deg, #F2A65A 0%, #D9631F 55%, #8A2E0A 100%)",
         "dj-hero-glow":
           "radial-gradient(ellipse 120% 60% at 50% -10%, rgba(232,147,74,0.10), transparent 60%)",
+        // Shimmer (09/08, demande Bourama : remplacer partout le texte figé
+        // "Chargement..." et les blocs animate-pulse par un balayage
+        // lumineux, comme Claude.ai/Vercel). Gris neutre (dj-inactif),
+        // PAS teinté accent-1 -- retour de Bourama (09/08) : l'orange
+        // détonnait, la référence (capture Vercel) est grise, comme les
+        // tons dj-bordure/dj-inactif déjà utilisés partout ailleurs dans
+        // l'app. Deux variantes, un seul keyframe partagé (dj-shimmer,
+        // voir plus bas) :
+        //   - dj-shimmer : pour les blocs (rectangles de contenu à venir),
+        //     opacité faible, sert de fond complet au composant Skeleton.
+        //   - dj-shimmer-texte : pour un texte qui scintille sur place (ex.
+        //     "{agent} réfléchit"), couleurs pleines, combiné à
+        //     bg-clip-text/text-transparent côté composant.
+        "dj-shimmer": "linear-gradient(100deg, rgba(43,33,24,0.04) 20%, rgba(176,167,155,0.45) 50%, rgba(43,33,24,0.04) 80%)",
+        "dj-shimmer-texte": "linear-gradient(100deg, #6E5F4D 25%, #B0A79B 50%, #6E5F4D 75%)",
       },
       fontFamily: {
         display: ["var(--font-bricolage)", "sans-serif"],
@@ -110,6 +125,15 @@ const config: Config = {
           "0%, 100%": { transform: "translateY(0)", opacity: ".5" },
           "35%": { transform: "translateY(-4px)", opacity: "1" },
         },
+        // Balayage du shimmer : déplace la position du dégradé (voir
+        // backgroundImage.dj-shimmer / dj-shimmer-texte) de droite à
+        // gauche sur un fond dont la taille est doublée (bg-[length:*_100%]
+        // côté composant) -- technique standard pour un shimmer en un seul
+        // élément, sans pseudo-élément séparé.
+        "dj-shimmer": {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
       },
       animation: {
         "dj-fade-up": "dj-fade-up 0.5s ease both",
@@ -120,6 +144,11 @@ const config: Config = {
         "cgpt-entree-message": "cgpt-entree-message 0.4s cubic-bezier(.25,.8,.35,1) both",
         "cgpt-entree-modal": "cgpt-entree-modal 0.35s cubic-bezier(.25,.8,.35,1) both",
         "cgpt-point-reflexion": "cgpt-point-reflexion 1.3s cubic-bezier(.25,.8,.35,1) infinite",
+        // ease-in-out (pas cgpt-doux) : le shimmer représente un balayage
+        // de lumière continu, pas une transition d'UI ponctuelle -- la
+        // décélération franche de cgpt-doux n'a pas de sens répétée en
+        // boucle.
+        "dj-shimmer": "dj-shimmer 2.2s ease-in-out infinite",
       },
     },
   },

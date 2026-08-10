@@ -151,7 +151,21 @@ export default function PageAccueilChat() {
             monRole = await appelerApi("/api/roles/moi");
           }
         }
-        const detail: AgentDetail = await appelerApi(`/api/agents/${monRole.agent_id}`);
+        // Repli (10/08, bug repéré par Bourama : "Agent introuvable" sur
+        // son propre compte) : un profil peut avoir un rôle qui existe
+        // bien en base mais n'est pas l'un des 3 rôles Class GPT
+        // (etudiant/enseignant/etablissement) -- ex. role="admin", un
+        // rôle plateforme légitime (voir
+        // api/permissions_hierarchie.py:_est_admin, utilisé pour
+        // djiguigne-frontend) mais absent de AGENT_PAR_ROLE côté
+        // backend. Dans ce cas monRole.agent_id reste null même après
+        // la tentative de provisioning ci-dessus (elle échoue en
+        // ROLE_DEJA_CHOISI, normal, le rôle existe déjà) -- sans ce
+        // repli, l'appel suivant part sur /api/agents/undefined. Ne
+        // touche PAS le rôle en base (qui reste "admin", légitime
+        // ailleurs) : uniquement l'agent affiché ici sur Class GPT.
+        const agentIdResolu = monRole.agent_id || AGENT_INVITE_ID;
+        const detail: AgentDetail = await appelerApi(`/api/agents/${agentIdResolu}`);
         if (!annule) {
           setAgent(detail);
           setRole(monRole.role);

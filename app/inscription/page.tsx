@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import { inscrireOuConnecter } from "@/lib/authFallback";
 import { creerEtudiantAutonome } from "@/lib/invitations";
 import { ErreurApi, messageErreur } from "@/lib/erreurs";
@@ -21,9 +22,17 @@ type MethodeAuth = "email" | "telephone";
 // avec Nitrux. Les autres rôles (enseignant/étudiant rattaché par code)
 // seront réintroduits plus tard, petit à petit -- ne pas les réactiver
 // sans demande explicite.
+//
+// Garde-fou (10/08) : app/page.tsx ne redirige plus jamais ici un compte
+// déjà connecté sans rôle (provisionnement silencieux directement là-bas
+// désormais, voir son commentaire "enlève ces histoires de rôles"). Si
+// cette page est quand même atteinte avec une session active (lien
+// direct, favori), inutile de repasser par le formulaire : retour "/"
+// immédiat, page.tsx s'occupe du reste.
 
 export default function PageInscription() {
   const router = useRouter();
+  const [verificationSession, setVerificationSession] = useState(true);
   const [methode, setMethode] = useState<MethodeAuth>("email");
   const [nom, setNom] = useState("");
   const [email, setEmail] = useState("");
@@ -31,6 +40,21 @@ export default function PageInscription() {
   const [motDePasse, setMotDePasse] = useState("");
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+
+  useEffect(() => {
+    let annule = false;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (annule) return;
+      if (session) {
+        router.push("/");
+        return;
+      }
+      setVerificationSession(false);
+    });
+    return () => {
+      annule = true;
+    };
+  }, [router]);
 
   async function gererSoumission(e: React.FormEvent) {
     e.preventDefault();
@@ -66,6 +90,10 @@ export default function PageInscription() {
 
     setEnCours(false);
     router.push("/");
+  }
+
+  if (verificationSession) {
+    return <main className="flex min-h-screen items-center justify-center px-4" />;
   }
 
   return (

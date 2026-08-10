@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { appelerApi } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { ChatIA } from "@/components/chat/ChatIA";
 import { MessageAffiche, nettoyerMessageHistorique } from "@/components/chat/BulleMessage";
 import { SidebarChatLite } from "@/components/chat/SidebarChatLite";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 import { Logo } from "@/components/Logo";
+import { creerEtudiantAutonome } from "@/lib/invitations";
 
 // Partie 3 du brief ("Expérience de chat directe") : contrairement à
 // djiguigne-frontend (app/agent/[id]/chat/page.tsx), il n'y a PAS de
@@ -124,19 +125,31 @@ export default function PageAccueilChat() {
         return;
       }
       try {
-        const monRole: { role: string | null; agent_id: string | null } = await appelerApi(
+        let monRole: { role: string | null; agent_id: string | null } = await appelerApi(
           "/api/roles/moi"
         );
         if (!monRole.agent_id) {
-          // Ne devrait normalement plus arriver -- /inscription attribue
-          // le rôle automatiquement (09/08, décision Bourama : parcours
-          // simple, pas d'écran "code ou établissement"). Filet de
-          // sécurité si un compte plus ancien ou créé autrement n'a
-          // vraiment aucun rôle : vers /inscription (formulaire par
-          // défaut, décision du 09/08), pas /rejoindre (désactivé, code
-          // encore présent pour une réactivation progressive plus tard).
-          window.location.href = "/inscription";
-          return;
+          // CORRIGÉ le 10/08 (Bourama : "enlève ces histoires de rôles,
+          // rend mon truc IA normal") -- avant : redirection forcée vers
+          // /inscription, qui refaisait passer un compte DÉJÀ CONNECTÉ
+          // par le formulaire email+mot de passe (signUp), cassé dès que
+          // le mot de passe retapé ne correspondait pas exactement à
+          // celui du compte existant (voir lib/authFallback.ts). Un
+          // compte avec une session valide n'a jamais besoin de repasser
+          // par là : il ne lui manque qu'un nom_affiche pour que le
+          // profil existe -- on le déduit automatiquement (email/
+          // téléphone) et on attribue le rôle "etudiant" en silence,
+          // sans écran ni redirection. Ne peut pas échouer pour "rôle
+          // déjà choisi" ici, vu qu'on vient de vérifier agent_id vide.
+          const nomAffiche =
+            session.user.email?.split("@")[0] || session.user.phone || "Utilisateur";
+          try {
+            await creerEtudiantAutonome(nomAffiche);
+            monRole = await appelerApi("/api/roles/moi");
+          } catch (e) {
+            if (!(e instanceof ErreurApi && e.code === "ROLE_DEJA_CHOISI")) throw e;
+            monRole = await appelerApi("/api/roles/moi");
+          }
         }
         const detail: AgentDetail = await appelerApi(`/api/agents/${monRole.agent_id}`);
         if (!annule) {

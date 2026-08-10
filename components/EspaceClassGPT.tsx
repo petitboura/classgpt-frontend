@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Briefcase, Sparkles, Library, Brain } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { lireMonRole, sectionComportementsActivee, type MonRole } from "@/lib/api";
+import { lireMonRole, type MonRole } from "@/lib/api";
 import { creerEtudiantAutonome } from "@/lib/invitations";
 import { supabase } from "@/lib/supabase";
 import { EspaceInviter } from "./EspaceInviter";
@@ -23,20 +23,37 @@ import { Skeleton } from "./Skeleton";
  * Passé en onglets (09/08, demande Bourama) :
  * - "Bureau" : l'ancien contenu unique de cette page (inviter, suivre son
  *   équipe, diffuser des documents) -- renommé, devient un onglet parmi
- *   d'autres au lieu d'être toute la page. Réservé à établissement/enseignant,
- *   comme avant (un étudiant n'a rien en dessous de lui à gérer).
- * - "Mes comportements" : consignes perso pour l'IA de la personne connectée,
- *   affiché seulement si activé pour cette IA précise (section_mes_comportements
- *   côté agent, résolu dynamiquement via monRole.agent_id -- jamais un id
- *   d'agent codé en dur).
- * - "Bibliothèque" et "Ma mémoire" : personnels à chaque utilisateur, donc
- *   ouverts à TOUS les rôles y compris étudiant (contrairement à "Bureau").
+ *   d'autres au lieu d'être toute la page.
+ * - "Mes comportements" : consignes perso pour l'IA de la personne connectée.
+ * - "Bibliothèque" et "Ma mémoire" : personnels à chaque utilisateur.
  *
- * Assumé ici (à confirmer par Bourama) : comme ces deux derniers onglets
- * concernent un étudiant autant qu'un enseignant/établissement, le lien
- * "Mon espace" dans la sidebar doit maintenant être visible pour TOUS les
- * rôles connectés, pas seulement établissement/enseignant comme avant --
- * voir SidebarChatLite.tsx.
+ * Correctif (10/08, demande explicite Bourama : "bureau activé toujours et
+ * mes comportements toujours dans class gpt") : les deux onglets sont
+ * désormais TOUJOURS affichés, quel que soit le rôle connecté ou la valeur
+ * de agents.section_mes_comportements en base -- avant, "Bureau" était
+ * réservé établissement/enseignant et "Mes comportements" conditionné à ce
+ * flag par agent (`sectionComportementsActivee`). Vérifié avant ce
+ * changement (audit backend, ne pas juste espérer que ça marche) :
+ * - EspaceInviter (`GET/POST /api/roles/invitation`) et EspaceEquipe
+ *   (`GET /api/roles/mon-equipe`) renvoient 403 ACTION_RESERVEE_A_CE_ROLE
+ *   pour un étudiant -- MAIS ce code a un message français propre côté
+ *   backend (core/erreurs.py:MESSAGES_FR), affiché tel quel par
+ *   messageErreur(), jamais de JSON brut. Un étudiant ouvrant "Bureau" voit
+ *   donc "Cette action n'est pas disponible pour ton rôle." sur ces deux
+ *   sections -- pas cassé, juste pas fonctionnel pour lui sur 2 des 3.
+ * - EspaceDiffuser fonctionne pour tout rôle (contrôle 403 déjà retiré
+ *   côté backend le 07/08, cibles vides si aucun rattachement réel).
+ * - Les endpoints comportements (api/comportements_etudiants.py) n'ont
+ *   AUCUNE restriction de rôle ni de vérification du flag
+ *   section_mes_comportements -- ce flag ne gouvernait que l'affichage de
+ *   l'onglet, jamais l'accès aux données. Donc "toujours" ici ne casse
+ *   rien côté backend, juste bypasse un interrupteur d'affichage.
+ * `sectionComportementsActivee` et le state qui en dépendait ici ont été
+ * retirés (code mort maintenant que l'onglet est inconditionnel) --
+ * SidebarChatLite.tsx a son PROPRE flag `sectionMesComportements` (prop
+ * distincte, alimentée par agent.section_mes_comportements), ça n'a
+ * jamais été un état partagé avec ce fichier.
+ *
  * Écran de repli "code reçu ou créer un établissement" (EspaceRejoindre,
  * fichier conservé mais retiré de l'affichage, 09/08 demande Bourama) :
  * n'a plus lieu d'être depuis que /inscription attribue déjà "etudiant"
@@ -52,17 +69,11 @@ export function EspaceClassGPT() {
   const [monRole, setMonRole] = useState<MonRole | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
-  const [comportementsActifs, setComportementsActifs] = useState(false);
   const [onglet, setOnglet] = useState<OngletId | null>(null);
 
   useEffect(() => {
     lireMonRole()
-      .then((r) => {
-        setMonRole(r);
-        if (r.agent_id) {
-          sectionComportementsActivee(r.agent_id).then(setComportementsActifs);
-        }
-      })
+      .then((r) => setMonRole(r))
       .catch((e) => setErreur(messageErreur(e)))
       .finally(() => setChargement(false));
   }, []);
@@ -90,16 +101,15 @@ export function EspaceClassGPT() {
     })();
   }, [chargement, erreur, monRole]);
 
-  const peutVoirBureau = monRole?.role === "etablissement" || monRole?.role === "enseignant";
-
   const onglets = useMemo(() => {
-    const liste: { id: OngletId; label: string; Icone: typeof Briefcase }[] = [];
-    if (peutVoirBureau) liste.push({ id: "bureau", label: "Bureau", Icone: Briefcase });
-    if (comportementsActifs) liste.push({ id: "comportements", label: "Mes comportements", Icone: Sparkles });
-    liste.push({ id: "bibliotheque", label: "Bibliothèque", Icone: Library });
-    liste.push({ id: "memoire", label: "Ma mémoire", Icone: Brain });
+    const liste: { id: OngletId; label: string; Icone: typeof Briefcase }[] = [
+      { id: "bureau", label: "Bureau", Icone: Briefcase },
+      { id: "comportements", label: "Mes comportements", Icone: Sparkles },
+      { id: "bibliotheque", label: "Bibliothèque", Icone: Library },
+      { id: "memoire", label: "Ma mémoire", Icone: Brain },
+    ];
     return liste;
-  }, [peutVoirBureau, comportementsActifs]);
+  }, []);
 
   useEffect(() => {
     if (onglet !== null) return;
@@ -179,7 +189,7 @@ export function EspaceClassGPT() {
         ))}
       </div>
 
-      {onglet === "bureau" && peutVoirBureau && (
+      {onglet === "bureau" && (
         <div className="flex flex-col gap-4">
           <EspaceInviter />
           <EspaceEquipe titre={titreEquipe} />
@@ -187,7 +197,7 @@ export function EspaceClassGPT() {
         </div>
       )}
 
-      {onglet === "comportements" && comportementsActifs && monRole.agent_id && (
+      {onglet === "comportements" && monRole.agent_id && (
         <div className="max-w-md">
           <MesComportements agentId={monRole.agent_id} />
         </div>

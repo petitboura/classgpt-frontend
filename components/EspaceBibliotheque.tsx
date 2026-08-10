@@ -9,6 +9,7 @@ import {
   ajouterTexteBibliothequePersonnelle,
 } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
+import { Skeleton } from "./Skeleton";
 
 // Onglet "Bibliothèque" de Mon espace, porté de
 // djiguigne-frontend/app/dashboard/espace/page.tsx (même logique,
@@ -176,7 +177,12 @@ export function EspaceBibliotheque() {
         ))}
       </div>
 
-      {fichiersAffiches === null && <p className="text-sm text-dj-texte-muet">Chargement...</p>}
+      {fichiersAffiches === null && (
+        <div className="flex flex-col gap-2" aria-hidden>
+          <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
+          <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
+        </div>
+      )}
       {fichiersAffiches?.length === 0 && <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>}
       {fichiersAffiches && fichiersAffiches.length > 0 && (
         <div className="flex flex-col gap-2">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { appelerApi } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
+import { Skeleton } from "./Skeleton";
 
 // Commentaires sur l'IA (porté de
 // djiguigne-frontend/components/CommentairesAgent.tsx). Contrat
@@ -90,7 +91,12 @@ export function CommentairesAgent({ agentId }: { agentId: string }) {
       </form>
 
       <div className="flex flex-col gap-3">
-        {commentaires === null && <p className="text-sm text-dj-texte-muet">Chargement...</p>}
+        {commentaires === null && (
+          <div className="flex flex-col gap-2" aria-hidden>
+            <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
+            <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
+          </div>
+        )}
         {commentaires?.length === 0 && (
           <p className="text-sm text-dj-texte-muet">Aucun commentaire pour l&apos;instant.</p>
         )}

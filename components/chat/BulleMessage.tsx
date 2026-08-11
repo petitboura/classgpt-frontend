@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, isValidElement, ReactNode } from "react";
+import { useEffect, useRef, useState, isValidElement, ReactNode, memo } from "react";
 import ReactMarkdown from "react-markdown";
+import type { PluggableList } from "unified";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
@@ -34,6 +35,14 @@ const GraphiqueDonnees = dynamic(() => import("./GraphiqueDonnees").then((m) => 
   ssr: false,
   loading: () => <Skeleton className="h-[260px] w-full rounded-xl border border-dj-bordure" />,
 });
+
+// Perf (10/08) : listes de plugins ReactMarkdown constantes, sorties du
+// composant. Définies inline dans le JSX, elles seraient recréées en
+// nouvelle référence à chaque rendu -- donc à chaque chunk reçu en
+// streaming pour le message en cours -- alors que leur contenu ne
+// change jamais. Même valeurs qu'avant, juste calculées une seule fois.
+const PLUGINS_REMARK: PluggableList = [remarkGfm, remarkMath];
+const PLUGINS_REHYPE: PluggableList = [rehypeRaw, [rehypeSanitize, defaultSchema], rehypeKatex];
 
 // Extrait le texte brut d'un enfant React -- nécessaire pour récupérer le
 // contenu source d'un bloc de code (```lang ... ```) tel que ReactMarkdown
@@ -228,7 +237,7 @@ export function nettoyerMessageHistorique(content: string): {
 
 // - heure affichée sous le message UTILISATEUR uniquement
 // - boutons différents selon le rôle
-export function BulleMessage({
+function BulleMessageInterne({
   message,
   onRegenerer,
   onEditer,
@@ -457,8 +466,8 @@ export function BulleMessage({
               moteur, cohérent, jamais de manipulation du texte brut à
               part la normalisation des délimiteurs ci-dessus. */}
           <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeRaw, [rehypeSanitize, defaultSchema], rehypeKatex]}
+            remarkPlugins={PLUGINS_REMARK}
+            rehypePlugins={PLUGINS_REHYPE}
             components={{
               // Bloc de code (```lang ... ```) : ReactMarkdown structure ça
               // en <pre><code className="language-xxx">...</code></pre> --
@@ -697,3 +706,40 @@ export function BulleMessage({
     </div>
   );
 }
+
+// Perf (10/08, demande Bourama : accélérer le rendu du chat) : sans ça,
+// CHAQUE bulle de la conversation entière se re-rendait -- et reparsait
+// tout son markdown (remark-gfm/remark-math + rehype-raw/sanitize/katex,
+// pas gratuit) -- à CHAQUE morceau de texte reçu en streaming pour le
+// DERNIER message, simplement parce que ChatIA.tsx re-render fait
+// tourner .map() sur toute la liste. Pour tous les messages SAUF celui
+// en cours de génération, `message` garde la même référence d'un rendu
+// à l'autre (voir majMessages dans ChatIA.tsx : seul le dernier élément
+// est remplacé pendant le streaming, les autres sont juste recopiés
+// tels quels) -- donc comparer `message` par référence suffit à savoir
+// si CETTE bulle a vraiment quelque chose de nouveau à afficher.
+//
+// Les callbacks (onRegenerer, onEditer, onLike...) sont volontairement
+// EXCLUS de cette comparaison : ChatIA.tsx les recrée en fonctions
+// inline à chaque rendu (une par position dans la liste), donc leur
+// référence change tout le temps même quand rien de visible n'a changé
+// pour cette bulle précise -- les comparer aurait annulé tout le
+// bénéfice du memo. Sans risque : ils ferment sur `index`/`message.id`
+// pour CETTE position, qui ne varie pas indépendamment de `message`.
+function memeApparence(
+  precedent: Parameters<typeof BulleMessageInterne>[0],
+  suivant: Parameters<typeof BulleMessageInterne>[0]
+) {
+  return (
+    precedent.message === suivant.message &&
+    precedent.nomAgent === suivant.nomAgent &&
+    precedent.enAttente === suivant.enAttente &&
+    precedent.raisonnement === suivant.raisonnement &&
+    precedent.raisonnementEnCours === suivant.raisonnementEnCours &&
+    precedent.outilsResultats === suivant.outilsResultats &&
+    precedent.outilsSuggeres === suivant.outilsSuggeres &&
+    precedent.fichiersGeneres === suivant.fichiersGeneres
+  );
+}
+
+export const BulleMessage = memo(BulleMessageInterne, memeApparence);

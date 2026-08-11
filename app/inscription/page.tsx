@@ -15,7 +15,7 @@ import { ChampTelephone } from "@/components/ChampTelephone";
 type MethodeAuth = "email" | "telephone";
 
 // Refonte du 09/08 (demande explicite Bourama : plus de rôle
-// enseignant/étudiant/établissement pour Class GPT -- "tu as une IA
+// enseignant/étudiant/établissement pour Clovis -- "tu as une IA
 // normale, tu es normal, tant que tu n'entres pas un code"). Avant :
 // cet écran attribuait silencieusement un rôle "etudiant" à la création
 // du compte (creerEtudiantAutonome). Maintenant : aucun rôle à
@@ -26,7 +26,7 @@ type MethodeAuth = "email" | "telephone";
 //
 // Garde-fou (10/08, Atik) : app/page.tsx ne redirige plus jamais ici un
 // compte déjà connecté sans rôle (il n'y a plus de rôle à vérifier, voir
-// EspaceClassGPT.tsx/app/page.tsx). Si cette page est quand même
+// EspaceClovis.tsx/app/page.tsx). Si cette page est quand même
 // atteinte avec une session active (lien direct, favori), inutile de
 // repasser par le formulaire : retour "/" immédiat plus bas.
 

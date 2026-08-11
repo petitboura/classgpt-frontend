@@ -12,7 +12,7 @@ import { MesComportements } from "./MesComportements";
 import { MaMemoire } from "./MaMemoire";
 import { Skeleton } from "./Skeleton";
 
-// Class GPT ne parle qu'à une seule IA, toujours -- voir app/page.tsx.
+// Clovis ne parle qu'à une seule IA, toujours -- voir app/page.tsx.
 // Plus aucune notion de rôle (établissement/enseignant/étudiant) depuis
 // le 09-10/08 (demande explicite Bourama, redite à Atik le 10/08 : "tout
 // le monde est pareil" -- voir contenu dynamique par matière,
@@ -20,13 +20,13 @@ import { Skeleton } from "./Skeleton";
 const AGENT_ID = "nitrux";
 
 /**
- * Espace utilisateur réduit de Class GPT (partie 4 du brief, refonte du
+ * Espace utilisateur réduit de Clovis (partie 4 du brief, refonte du
  * 09/08). Volontairement SANS : onglet "administrer", onglet "mes IA",
  * bouton retour vitrine, sélecteur/historique de plusieurs agents.
  *
  * Onglets, TOUS visibles pour TOUT LE MONDE (plus de rôle, plus de flag
  * section_mes_comportements à vérifier -- décision explicite Bourama
- * "bureau activé toujours et mes comportements toujours dans class gpt") :
+ * "bureau activé toujours et mes comportements toujours dans Clovis") :
  * - "Bureau" : écrire une matière (génère un code), entrer un code,
  *   voir qui a entré mes codes, diffuser des documents ciblés.
  * - "Mes comportements" : consignes perso pour l'IA de la personne
@@ -43,7 +43,7 @@ const ONGLETS: { id: OngletId; label: string; Icone: typeof Briefcase }[] = [
   { id: "memoire", label: "Ma mémoire", Icone: Brain },
 ];
 
-export function EspaceClassGPT() {
+export function EspaceClovis() {
   const [onglet, setOnglet] = useState<OngletId>("bureau");
 
   return (

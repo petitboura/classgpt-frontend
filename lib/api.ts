@@ -240,7 +240,7 @@ export async function ajouterFichierBibliotheque(
 export type ResultatDiffusion = { diffuse_a: number; total_receveurs: number; echecs: string[] };
 // MonRole/lireMonRole/diffuserDocumentEtablissement/diffuserLien/
 // listerMesDiffusions retirés le 09/08 (demande Bourama : plus de rôle
-// pour Class GPT) -- voir plus bas dans ce fichier les nouvelles
+// pour Clovis) -- voir plus bas dans ce fichier les nouvelles
 // fonctions basées sur /api/agents/nitrux/contenus-matiere et
 // /rattachements (contenu dynamique par matière, système déjà existant
 // et partagé avec Djiguignè, pas de vérification de rôle dessus).
@@ -534,7 +534,7 @@ export async function creerPageNotion(titre: string, contenu: string) {
  * peut faire les deux. Fonctions ci-dessous ajoutées le 09/08 (le bloc
  * repris tel quel de djiguigne-frontend au bootstrap du projet n'avait
  * jamais été câblé nulle part, retiré) -- toujours agent_id="nitrux"
- * en dur, Class GPT n'ayant qu'une seule IA (contrairement à
+ * en dur, Clovis n'ayant qu'une seule IA (contrairement à
  * djiguigne-frontend, générique sur plusieurs agents).
  */
 
@@ -569,9 +569,9 @@ export async function supprimerComportement(agentId: string, comportementId: str
   return appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}`, { method: "DELETE" });
 }
 
-// Utilisée par EspaceClassGPT.tsx pour savoir si l'onglet "Mes
+// Utilisée par EspaceClovis.tsx pour savoir si l'onglet "Mes
 // comportements" doit s'afficher -- agentId toujours "nitrux" ici (plus
-// de rôle, voir EspaceClassGPT.tsx), mais la fonction reste générique.
+// de rôle, voir EspaceClovis.tsx), mais la fonction reste générique.
 // Endpoint public (GET /api/agents/{id}), pas besoin d'appelerApi/auth.
 // Renvoie false silencieusement si l'agent n'existe pas ou en cas
 // d'erreur réseau, pour ne jamais faire planter Mon espace.

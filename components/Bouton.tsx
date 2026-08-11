@@ -1,4 +1,4 @@
-// Composant de référence pour la partie 1 (squelette du dépôt Class GPT).
+// Composant de référence pour la partie 1 (squelette du dépôt Clovis).
 // Nécessite les tokens "cgpt-*" ajoutés dans tailwind.config.ts
 // (voir styles/tailwind-ajouts.ts) -- coins légèrement irréguliers +
 // easings sur mesure, cf. brief section 4b.

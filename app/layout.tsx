@@ -15,7 +15,7 @@ import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistratio
 // djiguigne-frontend/app/layout.tsx, dont ce fichier est dérivé.
 //
 // Volontairement ABSENT ici : SessionSyncVitrine (synchronisation de
-// session avec djiguigne-ai.vercel.app). Class GPT ne doit jamais
+// session avec djiguigne-ai.vercel.app). Clovis ne doit jamais
 // laisser transparaître l'existence de l'écosystème Djiguignè (brief
 // section 1) — inclure ce composant romprait ce principe dès le layout
 // racine, avant même la moindre page.
@@ -62,9 +62,9 @@ const sourceSerif = Source_Serif_4({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
-  title: "Class GPT",
-  description: "Class GPT",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Class GPT" },
+  title: "Clovis",
+  description: "Clovis",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Clovis" },
   icons: { apple: "/icone-192.png" },
 };
 

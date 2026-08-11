@@ -8,7 +8,7 @@ import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 
 /**
- * Bloc "Écrire une matière" de l'espace Class GPT (réécrit le 09/08,
+ * Bloc "Écrire une matière" de l'espace Clovis (réécrit le 09/08,
  * demande Bourama : plus de rôle enseignant/étudiant, plus de simple
  * bouton "générer un code" -- ici on écrit d'abord un contenu, le code
  * est généré en même temps que la première sauvegarde. Réutilise tel

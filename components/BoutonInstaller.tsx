@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 // Porté de djiguigne-frontend/components/BoutonInstaller.tsx, texte
-// adapté à Class GPT. app/manifest.ts + public/sw.js existent
+// adapté à Clovis. app/manifest.ts + public/sw.js existent
 // désormais (voir ServiceWorkerRegistration.tsx) -- le bouton est
 // pleinement fonctionnel, plus seulement inerte-par-défaut.
 export function BoutonInstaller() {
@@ -56,7 +56,7 @@ export function BoutonInstaller() {
             className="w-full max-w-sm animate-cgpt-entree-modal rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-5 text-sm text-dj-texte"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="font-display text-base font-bold">Installer Class GPT</p>
+            <p className="font-display text-base font-bold">Installer Clovis</p>
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-dj-texte-muet">
               <li>
                 Appuie sur <span className="text-dj-texte">Partager</span> en bas de Safari

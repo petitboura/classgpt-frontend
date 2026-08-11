@@ -22,20 +22,20 @@ import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
 import { BoutonInstaller } from "@/components/BoutonInstaller";
 
-// Sidebar de Class GPT (partie 3 du brief) -- version délibérément réduite
+// Sidebar de Clovis (partie 3 du brief) -- version délibérément réduite
 // de SidebarChat.tsx (djiguigne-frontend) : reprend le même comportement
 // de rail (collapse/expand, panneau plein écran sur mobile, transitions
 // jamais brutales) mais SANS aucun des éléments qui révéleraient
 // l'écosystème Djiguignè -- pas de "Changer d'IA", pas de "Voir l'IA",
 // pas de lien "Retour à la vitrine". Les fonctionnalités "espace
 // utilisateur" (inviter, suivi élèves, diffusion) appartiennent à la
-// partie 4 du brief (voir EspaceClassGPT.tsx), pas à ce composant.
+// partie 4 du brief (voir EspaceClovis.tsx), pas à ce composant.
 //
 // Ajouté le 09/08 (demande Bourama, par comparaison avec
 // djiguigne-frontend/SidebarChat.tsx) : Mes comportements, bouton
 // Installer, et un bouton Actions réduit à Partager + Avis uniquement
 // -- PAS de "Voir l'IA"/"Changer d'IA"/"Retour à la vitrine", contraires
-// au principe ci-dessus. Le bouton Partager de Class GPT pointe
+// au principe ci-dessus. Le bouton Partager de Clovis pointe
 // volontairement vers la racine de l'appli (window.location.origin),
 // jamais vers /agent/{agentId} de djiguigne-frontend -- copier ce lien
 // ici aurait révélé l'écosystème.
@@ -130,13 +130,13 @@ export function SidebarChatLite({
     setOuverte(true);
   }
 
-  // Partage le lien de Class GPT lui-même, JAMAIS /agent/{agentId} --
+  // Partage le lien de Clovis lui-même, JAMAIS /agent/{agentId} --
   // ce lien pointerait vers l'écosystème Djiguignè, contraire au brief.
   async function partager() {
     const url = window.location.origin;
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: "Class GPT", url });
+        await navigator.share({ title: "Clovis", url });
       } catch {
         // Annulé par la personne -- flux normal du Web Share API.
       }
@@ -386,7 +386,7 @@ export function SidebarChatLite({
             <Logo taille={18} />
           </span>
           <LibelleRail ouverte={ouverte}>
-            <span className="font-display font-bold tracking-tight">Class GPT</span>
+            <span className="font-display font-bold tracking-tight">Clovis</span>
           </LibelleRail>
         </div>
       </div>

@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { inscrireOuConnecter } from "@/lib/authFallback";
-import { creerEtudiantAutonome } from "@/lib/invitations";
-import { ErreurApi, messageErreur } from "@/lib/erreurs";
+import { mettreAJourMonProfil } from "@/lib/api";
+import { messageErreur } from "@/lib/erreurs";
 import { Logo } from "@/components/Logo";
 import { Bouton } from "@/components/Bouton";
 import { ChampMotDePasse } from "@/components/ChampMotDePasse";
@@ -14,21 +14,21 @@ import { ChampTelephone } from "@/components/ChampTelephone";
 
 type MethodeAuth = "email" | "telephone";
 
-// Correctif (09/08, décision explicite de Bourama) : retour au parcours
-// direct et simple -- "une IA normale". PAS d'écran intermédiaire "code
-// reçu ou créer un établissement" après l'inscription (/rejoindre,
-// EspaceRejoindre) : le compte devient "etudiant" automatiquement et
-// silencieusement ici (sans enseignant rattaché), puis va droit au chat
-// avec Nitrux. Les autres rôles (enseignant/étudiant rattaché par code)
-// seront réintroduits plus tard, petit à petit -- ne pas les réactiver
-// sans demande explicite.
+// Refonte du 09/08 (demande explicite Bourama : plus de rôle
+// enseignant/étudiant/établissement pour Class GPT -- "tu as une IA
+// normale, tu es normal, tant que tu n'entres pas un code"). Avant :
+// cet écran attribuait silencieusement un rôle "etudiant" à la création
+// du compte (creerEtudiantAutonome). Maintenant : aucun rôle à
+// attribuer, juste le compte Supabase + le nom enregistré sur le
+// profil (mettreAJourMonProfil, endpoint générique déjà partagé, voir
+// api/profiles.py:mettre_a_jour_mon_profil) -- puis droit au chat avec
+// Nitrux.
 //
-// Garde-fou (10/08) : app/page.tsx ne redirige plus jamais ici un compte
-// déjà connecté sans rôle (provisionnement silencieux directement là-bas
-// désormais, voir son commentaire "enlève ces histoires de rôles"). Si
-// cette page est quand même atteinte avec une session active (lien
-// direct, favori), inutile de repasser par le formulaire : retour "/"
-// immédiat, page.tsx s'occupe du reste.
+// Garde-fou (10/08, Atik) : app/page.tsx ne redirige plus jamais ici un
+// compte déjà connecté sans rôle (il n'y a plus de rôle à vérifier, voir
+// EspaceClassGPT.tsx/app/page.tsx). Si cette page est quand même
+// atteinte avec une session active (lien direct, favori), inutile de
+// repasser par le formulaire : retour "/" immédiat plus bas.
 
 export default function PageInscription() {
   const router = useRouter();
@@ -72,20 +72,18 @@ export default function PageInscription() {
       return;
     }
 
-    // Attribution silencieuse du rôle "etudiant" (sans enseignant
-    // rattaché) -- aucune étape visible, conforme au brief "une IA
-    // normale". Si le compte existait déjà avec un rôle (repli "compte
-    // existant -> connexion" de inscrireOuConnecter), le backend renvoie
-    // déjà-choisi : pas une vraie erreur ici, on continue simplement vers
-    // le chat.
+    // Enregistrement du nom sur le profil -- aucune étape visible, aucun
+    // rôle attribué. Si le compte existait déjà (repli "compte existant
+    // -> connexion" de inscrireOuConnecter) et avait déjà un nom, ce
+    // PATCH l'écrase avec celui tapé ici -- comportement volontairement
+    // simple, pas de cas particulier à gérer contrairement à l'ancien
+    // ROLE_DEJA_CHOISI (qui n'existe plus, il n'y a plus de rôle).
     try {
-      await creerEtudiantAutonome(nom);
+      await mettreAJourMonProfil(nom);
     } catch (e) {
-      if (!(e instanceof ErreurApi && e.code === "ROLE_DEJA_CHOISI")) {
-        setEnCours(false);
-        setErreur(messageErreur(e));
-        return;
-      }
+      setEnCours(false);
+      setErreur(messageErreur(e));
+      return;
     }
 
     setEnCours(false);

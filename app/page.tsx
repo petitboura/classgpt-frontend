@@ -10,9 +10,8 @@ import { SidebarChatLite } from "@/components/chat/SidebarChatLite";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 import { Logo } from "@/components/Logo";
-import { creerEtudiantAutonome } from "@/lib/invitations";
 
-// Partie 3 du brief ("Expérience de chat directe") : contrairement à
+// Partie 3 du brief ("Expérience de chat direct") : contrairement à
 // djiguigne-frontend (app/agent/[id]/chat/page.tsx), il n'y a PAS de
 // paramètre [id] dans l'URL -- Class GPT n'a qu'un seul agent, pour
 // tout le monde, connecté ou pas (brief section 3 : pas de sélecteur).
@@ -24,10 +23,22 @@ import { creerEtudiantAutonome } from "@/lib/invitations";
 // un provisionnement silencieux si le compte n'en avait pas. Ce
 // mécanisme n'existe plus ici : l'agent est TOUJOURS "nitrux"
 // (AGENT_INVITE_ID plus bas), qu'on soit connecté ou non -- plus aucun
-// appel à /api/roles/moi ni à creerEtudiantAutonome dans ce fichier. La
-// notion de rôle continue d'exister côté backend/base pour d'autres
-// produits Djiguignè (djiguigne-frontend), mais Class GPT ne la lit
-// plus du tout.
+// appel à /api/roles/moi ni à creerEtudiantAutonome dans ce fichier. Ce
+// qui différencie une IA d'une autre pour un compte donné, ce sont
+// désormais les matières débloquées par code (voir
+// api/contenu_dynamique_matiere.py), jamais un rôle. La notion de rôle
+// continue d'exister côté backend/base pour d'autres produits Djiguignè
+// (djiguigne-frontend), mais Class GPT ne la lit plus du tout.
+//
+// Mode invité (09/08, demande Bourama) : "atterrir dans le chat
+// d'abord avant l'inscription". Arrivée sans session -> plus de
+// redirection immédiate vers /connexion, on atterrit directement ici.
+// Toute action qui exige un compte (ici : envoyer un message au-delà de
+// la limite invité, voir LIMITE_MESSAGES_INVITE) ouvre CompteRequisModal
+// au lieu d'un message d'erreur -- jamais de redirection silencieuse.
+// Le modal pointe par défaut vers /inscription, pas /connexion
+// (décision explicite de Bourama : la création de compte est le
+// chemin par défaut).
 
 type AgentDetail = {
   id: string;
@@ -89,19 +100,6 @@ export default function PageAccueilChat() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!annule) setConnecte(!!session);
-
-      // Best-effort, en arrière-plan, jamais bloquant : si le compte
-      // connecté n'a encore aucun profil (nom_affiche/slug), on lui en
-      // crée un silencieusement pour que les commentaires/notes/articles
-      // qu'il publie ailleurs sur Djiguignè affichent un nom -- sans le
-      // moindre effet sur l'agent affiché ici (toujours "nitrux", voir
-      // plus haut) ni sur l'accès au chat, qui ne dépend jamais du
-      // résultat de cet appel.
-      if (session) {
-        const nomAffiche =
-          session.user.email?.split("@")[0] || session.user.phone || "Utilisateur";
-        creerEtudiantAutonome(nomAffiche).catch(() => {});
-      }
 
       try {
         const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
@@ -178,6 +176,7 @@ export default function PageAccueilChat() {
     );
   }
 
+
   if (etat === "erreur" || !agent) {
     return (
       <div className="flex h-dvh flex-col items-center justify-center gap-3 bg-dj-fond px-6 text-center">
@@ -196,7 +195,7 @@ export default function PageAccueilChat() {
     <div className="flex h-dvh" style={{ height: "var(--vh-visuelle, 100dvh)" }}>
       <SidebarChatLite
         agentId={agent.id}
-        role={connecte ? "etudiant" : null}
+        connecte={connecte}
         aDesMessages={nbMessages > 0}
         conversationActiveId={cle}
         onNouvelleConversation={nouvelleConversation}

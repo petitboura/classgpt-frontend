@@ -1,45 +1,57 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { genererMonInvitation, lireMonInvitation, type Invitation } from "@/lib/invitations";
+import { Check, Copy } from "lucide-react";
+import { ecrireContenuMatiere, listerMesContenus, type ContenuMatiere } from "@/lib/api";
+import { MATIERES } from "@/lib/matieres";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 
-const LIBELLE_ROLE_CIBLE: Record<Invitation["role_cible"], string> = {
-  enseignant: "enseignants",
-  etudiant: "élèves",
-};
-
 /**
- * Bloc "Inviter" de l'espace Class GPT (partie 4). Un seul code actif à
- * la fois (voir POST /api/roles/invitation côté backend) : régénérer
- * remplace l'ancien plutôt que d'en accumuler plusieurs.
+ * Bloc "Écrire une matière" de l'espace Class GPT (réécrit le 09/08,
+ * demande Bourama : plus de rôle enseignant/étudiant, plus de simple
+ * bouton "générer un code" -- ici on écrit d'abord un contenu, le code
+ * est généré en même temps que la première sauvegarde. Réutilise tel
+ * quel /api/agents/nitrux/contenus-matiere (déjà construit et utilisé
+ * par ailleurs via la page "L'IA de mes élèves" de djiguigne-frontend,
+ * voir lib/api.ts:ecrireContenuMatiere).
  *
- * Chargement en squelette + apparitions en fondu partout (jamais
- * d'affichage brut) -- convention déjà utilisée dans le reste du produit
- * (animate-dj-fade-in-rapide).
+ * Chargement en squelette + apparitions en fondu (convention
+ * animate-dj-fade-in-rapide déjà utilisée dans le reste du produit).
  */
 export function EspaceInviter() {
-  const [invitation, setInvitation] = useState<Invitation | null>(null);
+  const [contenus, setContenus] = useState<ContenuMatiere[]>([]);
   const [chargement, setChargement] = useState(true);
-  const [enCours, setEnCours] = useState(false);
-  const [copie, setCopie] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  useEffect(() => {
-    lireMonInvitation()
-      .then(setInvitation)
+  const [matiere, setMatiere] = useState<string>(MATIERES[0]);
+  const [texte, setTexte] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const [codeCopie, setCodeCopie] = useState<string | null>(null);
+
+  function charger() {
+    setChargement(true);
+    listerMesContenus()
+      .then(setContenus)
       .catch((e) => setErreur(messageErreur(e)))
       .finally(() => setChargement(false));
-  }, []);
+  }
 
-  async function generer() {
+  useEffect(charger, []);
+
+  const contenuExistant = contenus.find((c) => c.matiere === matiere) || null;
+
+  useEffect(() => {
+    setTexte(contenuExistant?.system_prompt ?? "");
+  }, [matiere, contenuExistant?.system_prompt]);
+
+  async function enregistrer() {
+    if (!texte.trim()) return;
     setErreur(null);
     setEnCours(true);
     try {
-      const nouvelle = await genererMonInvitation();
-      setInvitation(nouvelle);
-      setCopie(false);
+      await ecrireContenuMatiere(matiere, texte.trim());
+      charger();
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
@@ -47,68 +59,92 @@ export function EspaceInviter() {
     }
   }
 
-  async function copier() {
-    if (!invitation) return;
+  async function copier(code: string) {
     try {
-      await navigator.clipboard.writeText(invitation.code);
-      setCopie(true);
-      setTimeout(() => setCopie(false), 2000);
+      await navigator.clipboard.writeText(code);
+      setCodeCopie(code);
+      setTimeout(() => setCodeCopie(null), 2000);
     } catch {
-      // Pas grave si le presse-papier échoue (permission refusée,
-      // navigateur ancien) -- le code reste affiché à l'écran, copiable à
-      // la main. Pas d'erreur bloquante pour si peu.
+      // Pas grave si le presse-papier échoue -- le code reste affiché à
+      // l'écran, copiable à la main.
     }
   }
 
   return (
     <section className="rounded-2xl border border-dj-bordure bg-dj-surface p-5">
-      <h2 className="font-display text-base font-semibold text-dj-texte">Inviter</h2>
+      <h2 className="font-display text-base font-semibold text-dj-texte">Écrire une matière</h2>
+      <p className="mt-1 text-xs text-dj-texte-muet">
+        Choisis une matière et écris ce que l'IA doit savoir ou comment elle doit répondre. Un code se génère à
+        l'enregistrement -- partage-le, il débloque exactement ce texte pour celui qui l'entre.
+      </p>
 
       {chargement && <Skeleton className="mt-4 h-24 rounded-xl border border-dj-bordure" />}
 
       {erreur && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-[#F87171]">{erreur}</p>}
 
-      {!chargement && !invitation && !erreur && (
-        <div className="mt-4 animate-dj-fade-in-rapide text-center">
-          <p className="text-sm text-dj-texte-muet">Pas encore de code à partager.</p>
-          <button
-            onClick={generer}
-            disabled={enCours}
-            className="mt-3 rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+      {!chargement && (
+        <div className="mt-4 animate-dj-fade-in-rapide space-y-3">
+          <select
+            value={matiere}
+            onChange={(e) => setMatiere(e.target.value)}
+            className="w-full rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte"
           >
-            {enCours ? "Génération…" : "Générer mon code"}
-          </button>
-        </div>
-      )}
+            {MATIERES.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
 
-      {invitation && (
-        <div className="mt-4 animate-dj-fade-in-rapide">
-          <p className="text-xs text-dj-texte-muet">
-            Partage ce code avec tes futurs {LIBELLE_ROLE_CIBLE[invitation.role_cible]}.
-          </p>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="flex-1 rounded-xl border border-dj-bordure-forte bg-dj-surface-haute px-4 py-3 text-center font-mono text-xl tracking-[0.3em] text-dj-texte">
-              {invitation.code}
-            </span>
-            <button
-              onClick={copier}
-              className="rounded-full border border-dj-bordure px-4 py-3 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
-            >
-              {copie ? "Copié !" : "Copier"}
-            </button>
-          </div>
-          <p className="mt-2 text-xs text-dj-texte-muet">
-            {invitation.utilisations === 0
-              ? "Personne ne l'a encore utilisé."
-              : `Utilisé ${invitation.utilisations} fois.`}
-          </p>
+          <textarea
+            value={texte}
+            onChange={(e) => setTexte(e.target.value)}
+            rows={5}
+            placeholder="Ex : Concentre-toi sur le programme de terminale, donne toujours un exemple avant la théorie…"
+            className="w-full resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte placeholder:text-dj-texte-muet"
+          />
+
           <button
-            onClick={generer}
-            disabled={enCours}
-            className="mt-3 rounded-full border border-dj-bordure px-4 py-1.5 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte disabled:opacity-50"
+            onClick={enregistrer}
+            disabled={enCours || !texte.trim()}
+            className="rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
           >
-            {enCours ? "Génération…" : "Régénérer (l'ancien code arrêtera de marcher)"}
+            {enCours ? "Enregistrement…" : contenuExistant ? "Mettre à jour" : "Enregistrer et générer le code"}
           </button>
+
+          {contenuExistant && (
+            <div className="flex items-center gap-2 pt-1">
+              <span className="flex-1 rounded-xl border border-dj-bordure-forte bg-dj-surface-haute px-4 py-3 text-center font-mono text-xl tracking-[0.3em] text-dj-texte">
+                {contenuExistant.code}
+              </span>
+              <button
+                onClick={() => copier(contenuExistant.code)}
+                className="flex items-center gap-1.5 rounded-full border border-dj-bordure px-4 py-3 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
+              >
+                {codeCopie === contenuExistant.code ? <Check size={14} /> : <Copy size={14} />}
+                {codeCopie === contenuExistant.code ? "Copié !" : "Copier"}
+              </button>
+            </div>
+          )}
+
+          {contenus.length > 0 && (
+            <div className="border-t border-dj-bordure pt-3">
+              <p className="text-xs font-semibold text-dj-texte-muet">Mes autres matières</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {contenus
+                  .filter((c) => c.matiere !== matiere)
+                  .map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setMatiere(c.matiere)}
+                      className="rounded-full border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+                    >
+                      {c.matiere} · {c.code}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>

@@ -237,96 +237,13 @@ export async function ajouterFichierBibliotheque(
   return reponse.json();
 }
 
-export type ResultatDiffusion = { diffuse_a: number; total_cibles: number; echecs: string[] };
-
-export type MonRole = {
-  role: "etablissement" | "enseignant" | "etudiant" | null;
-  etablissement_id: string | null;
-  enseignant_id: string | null;
-  agent_id: string | null;
-};
-
-/** Voir api/roles.py:mon_role. Utilisée pour savoir si la personne
- * connectée a un rôle hiérarchique (et lequel), notamment pour afficher
- * la section "Envoyer à mes étudiants" côté enseignant dans le chat. */
-export async function lireMonRole() {
-  return appelerApi("/api/roles/moi") as Promise<MonRole>;
-}
-
-/**
- * Diffusion en masse d'un document (2026-08-05, partie D du
- * reste-à-faire hiérarchie de rôles ; ouverte à l'enseignant le
- * 2026-08-06, plus seulement l'établissement) -- voir
- * api/roles.py:diffuser_document. Même mécanique FormData que
- * ajouterFichierBibliotheque, sur l'endpoint dédié qui répète l'ajout
- * pour chaque destinataire autorisé (établissement -> ses enseignants +
- * leurs étudiants ; enseignant -> ses étudiants) plutôt qu'un seul
- * agent. Retourne {diffuse_a, total_cibles, echecs}.
- */
-export type ElementDiffuse = {
-  id: string;
-  nom_fichier: string;
-  description: string | null;
-  type_mime: string;
-  role_cible: "enseignant" | "etudiant";
-  created_at: string;
-};
-
-/** Voir api/roles.py:lister_mes_diffusions. Ce que la personne connectée
- * a déjà ajouté via diffuserDocumentEtablissement/diffuserLien -- pour
- * éviter d'envoyer deux fois le même document sans le savoir. */
-export async function listerMesDiffusions() {
-  return appelerApi("/api/roles/diffusions") as Promise<ElementDiffuse[]>;
-}
-
-export type CibleDiffusion = "tous" | "enseignant" | "etudiant";
-
-export async function diffuserDocumentEtablissement(
-  fichier: File,
-  description: string,
-  titre?: string,
-  cible: CibleDiffusion = "tous",
-) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.access_token) {
-    throw new Error("Connecte-toi pour envoyer un fichier.");
-  }
-
-  const corps = new FormData();
-  corps.append("fichier", fichier);
-  if (titre?.trim()) corps.append("titre", titre.trim());
-  corps.append("description", description);
-  corps.append("cible", cible);
-
-  const reponse = await fetch(`${API_URL}/api/roles/documents/diffuser`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${session.access_token}` },
-    body: corps,
-  });
-
-  if (!reponse.ok) {
-    throw await construireErreurApi(reponse, "/api/roles/documents/diffuser");
-  }
-
-  return reponse.json() as Promise<ResultatDiffusion>;
-}
-
-/**
- * Pendant de diffuserDocumentEtablissement pour un lien (pas de fichier,
- * juste une URL) -- voir api/roles.py:diffuser_lien. Ajoutée le
- * 2026-08-06 en même temps que l'ouverture du droit de diffusion à
- * l'enseignant. Même portée par rôle réel que le document : établissement
- * -> ses enseignants + leurs étudiants, enseignant -> ses étudiants.
- */
-export async function diffuserLien(url: string, description: string, titre?: string, cible: CibleDiffusion = "tous") {
-  return appelerApi("/api/roles/liens/diffuser", {
-    method: "POST",
-    body: JSON.stringify({ url, titre, description, cible }),
-  }) as Promise<ResultatDiffusion>;
-}
+export type ResultatDiffusion = { diffuse_a: number; total_receveurs: number; echecs: string[] };
+// MonRole/lireMonRole/diffuserDocumentEtablissement/diffuserLien/
+// listerMesDiffusions retirés le 09/08 (demande Bourama : plus de rôle
+// pour Class GPT) -- voir plus bas dans ce fichier les nouvelles
+// fonctions basées sur /api/agents/nitrux/contenus-matiere et
+// /rattachements (contenu dynamique par matière, système déjà existant
+// et partagé avec Djiguignè, pas de vérification de rôle dessus).
 
 /**
  * Upload vers la bibliothèque PERSONNELLE de l'utilisateur connecté
@@ -614,63 +531,12 @@ export async function creerPageNotion(titre: string, contenu: string) {
  * "Enseignant" et "étudiant" ici ne sont pas des rôles de compte : ce
  * sont juste les deux rôles qu'on joue sur CET agent précis en écrivant
  * du contenu ou en entrant un code -- n'importe quel compte connecté
- * peut faire les deux.
+ * peut faire les deux. Fonctions ci-dessous ajoutées le 09/08 (le bloc
+ * repris tel quel de djiguigne-frontend au bootstrap du projet n'avait
+ * jamais été câblé nulle part, retiré) -- toujours agent_id="nitrux"
+ * en dur, Class GPT n'ayant qu'une seule IA (contrairement à
+ * djiguigne-frontend, générique sur plusieurs agents).
  */
-export type ContenuMatiere = { id: string; matiere: string; system_prompt: string; code: string };
-export type Rattachement = {
-  contenu_id: string;
-  matiere: string;
-  enseignant_nom: string;
-  actif: boolean;
-  surnom: string | null;
-};
-export type AgentContenuDynamique = { id: string; nom: string };
-
-// Pour afficher dynamiquement l'entrée "Matières" dans Mon espace
-// (2026-08-06) sans coder un id d'agent en dur : renvoie tous les
-// agents actifs marqués contenu_dynamique_par_matiere (aujourd'hui
-// seul Nitrux, potentiellement d'autres plus tard).
-export async function listerAgentsContenuDynamique() {
-  const resultat = await appelerApi(`/api/agents-contenu-dynamique`);
-  return resultat as AgentContenuDynamique[];
-}
-
-export async function lireMesContenusMatiere(agentId: string) {
-  const resultat = await appelerApi(`/api/agents/${agentId}/contenus-matiere`);
-  return resultat as ContenuMatiere[];
-}
-
-export async function ecrireContenuMatiere(agentId: string, matiere: string, systemPrompt: string) {
-  const resultat = await appelerApi(`/api/agents/${agentId}/contenus-matiere`, {
-    method: "PUT",
-    body: JSON.stringify({ matiere, system_prompt: systemPrompt }),
-  });
-  return resultat as ContenuMatiere;
-}
-
-export async function lireMesRattachements(agentId: string) {
-  const resultat = await appelerApi(`/api/agents/${agentId}/rattachements`);
-  return resultat as Rattachement[];
-}
-
-export async function entrerCodeMatiere(agentId: string, code: string) {
-  const resultat = await appelerApi(`/api/agents/${agentId}/rattachements`, {
-    method: "POST",
-    body: JSON.stringify({ code }),
-  });
-  return resultat as Rattachement;
-}
-
-export async function activerRattachementMatiere(agentId: string, contenuId: string) {
-  return appelerApi(`/api/agents/${agentId}/rattachements/${contenuId}/activer`, { method: "PATCH" });
-}
-
-export async function renommerRattachementMatiere(agentId: string, contenuId: string, surnom: string) {
-  return appelerApi(`/api/agents/${agentId}/rattachements/${contenuId}/surnom`, {
-    method: "PATCH",
-    body: JSON.stringify({ surnom }),
-  });
-}
 
 // Section "Mes comportements" (06/08/2026, demande Bourama : "on peut en
 // mettre plusieurs hein, pas juste un") : plusieurs instructions perso
@@ -703,13 +569,12 @@ export async function supprimerComportement(agentId: string, comportementId: str
   return appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}`, { method: "DELETE" });
 }
 
-// Utilisée par /dashboard/espace pour savoir si l'onglet "Mes
-// comportements" doit s'afficher pour l'IA de l'utilisateur connecté
-// (récupérée dynamiquement via lireMonRole, jamais un id d'agent codé en
-// dur -- si demain une autre IA active `section_mes_comportements`, ça
-// marche pareil). Endpoint public (GET /api/agents/{id}), pas besoin
-// d'appelerApi/auth. Renvoie false silencieusement si l'agent n'existe
-// pas ou en cas d'erreur réseau, pour ne jamais faire planter Mon espace.
+// Utilisée par EspaceClassGPT.tsx pour savoir si l'onglet "Mes
+// comportements" doit s'afficher -- agentId toujours "nitrux" ici (plus
+// de rôle, voir EspaceClassGPT.tsx), mais la fonction reste générique.
+// Endpoint public (GET /api/agents/{id}), pas besoin d'appelerApi/auth.
+// Renvoie false silencieusement si l'agent n'existe pas ou en cas
+// d'erreur réseau, pour ne jamais faire planter Mon espace.
 export async function sectionComportementsActivee(agentId: string): Promise<boolean> {
   try {
     const reponse = await fetch(`${API_URL}/api/agents/${agentId}`);
@@ -720,4 +585,129 @@ export async function sectionComportementsActivee(agentId: string): Promise<bool
     return false;
   }
 }
+
+/** Voir api/profiles.py:mettre_a_jour_mon_profil -- endpoint générique
+ * partagé (upsert), utilisé ici juste pour enregistrer le nom saisi à
+ * l'inscription, sans aucun rôle (09/08, remplace l'ancien
+ * creerEtudiantAutonome qui écrivait aussi role="etudiant"). */
+export async function mettreAJourMonProfil(nomAffiche: string) {
+  return appelerApi("/api/profiles/me", {
+    method: "PATCH",
+    body: JSON.stringify({ nom_affiche: nomAffiche }),
+  });
+}
+
+export type ContenuMatiere = {
+  id: string;
+  matiere: string;
+  system_prompt: string;
+  code: string;
+};
+
+/** Les matières que J'AI écrites (mes codes à partager). */
+export async function listerMesContenus() {
+  return appelerApi("/api/agents/nitrux/contenus-matiere") as Promise<ContenuMatiere[]>;
+}
+
+/** Crée ou met à jour (même matière = même ligne) le contenu d'une
+ * matière. Le code ne change jamais après la première création. */
+export async function ecrireContenuMatiere(matiere: string, systemPrompt: string) {
+  return appelerApi("/api/agents/nitrux/contenus-matiere", {
+    method: "PUT",
+    body: JSON.stringify({ matiere, system_prompt: systemPrompt }),
+  }) as Promise<ContenuMatiere>;
+}
+
+export type Rattachement = {
+  contenu_id: string;
+  matiere: string;
+  enseignant_nom: string;
+  actif: boolean;
+  surnom: string | null;
+};
+
+/** Les matières que J'AI débloquées en entrant un code, actives ou non. */
+export async function listerMesRattachements() {
+  return appelerApi("/api/agents/nitrux/rattachements") as Promise<Rattachement[]>;
+}
+
+/** Entre un code à 6 caractères pour débloquer la matière correspondante. */
+export async function entrerCode(code: string) {
+  return appelerApi("/api/agents/nitrux/rattachements", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  }) as Promise<Rattachement>;
+}
+
+export async function renommerRattachement(contenuId: string, surnom: string) {
+  return appelerApi(`/api/agents/nitrux/rattachements/${contenuId}/surnom`, {
+    method: "PATCH",
+    body: JSON.stringify({ surnom }),
+  });
+}
+
+/** Bascule quelle matière est active quand plusieurs rattachements se
+ * chevauchent sur la même matière (ex: deux codes reçus pour "Maths"). */
+export async function activerRattachement(contenuId: string) {
+  return appelerApi(`/api/agents/nitrux/rattachements/${contenuId}/activer`, { method: "PATCH" });
+}
+
+export type Receveur = {
+  user_id: string;
+  nom_affiche: string;
+  surnom: string | null;
+  actif: boolean;
+};
+
+/** Qui a entré MON code pour cette matière précise (contenu_id = un des
+ * miens, voir listerMesContenus). */
+export async function listerReceveurs(contenuId: string) {
+  return appelerApi(`/api/agents/nitrux/contenus-matiere/${contenuId}/receveurs`) as Promise<Receveur[]>;
+}
+
+/** Diffuse un fichier à tous ceux qui ont entré mon code pour ce
+ * contenu_id -- ajouté à la bibliothèque personnelle de chacun, pas à
+ * la base partagée de Nitrux. */
+export async function diffuserDocumentMatiere(
+  contenuId: string,
+  fichier: File,
+  description: string,
+  titre?: string
+) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Connecte-toi pour envoyer un fichier.");
+  }
+
+  const corps = new FormData();
+  corps.append("fichier", fichier);
+  if (titre?.trim()) corps.append("titre", titre.trim());
+  corps.append("description", description);
+
+  const chemin = `/api/agents/nitrux/contenus-matiere/${contenuId}/diffuser`;
+  const reponse = await fetch(`${API_URL}${chemin}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body: corps,
+  });
+
+  if (!reponse.ok) {
+    throw await construireErreurApi(reponse, chemin);
+  }
+
+  return reponse.json() as Promise<ResultatDiffusion>;
+}
+
+/** Pendant de diffuserDocumentMatiere pour un lien (pas de fichier, juste
+ * une URL). */
+export async function diffuserLienMatiere(contenuId: string, url: string, description: string, titre?: string) {
+  return appelerApi(`/api/agents/nitrux/contenus-matiere/${contenuId}/diffuser-lien`, {
+    method: "POST",
+    body: JSON.stringify({ url, titre, description }),
+  }) as Promise<ResultatDiffusion>;
+}
+
 

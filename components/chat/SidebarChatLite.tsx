@@ -81,7 +81,7 @@ function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.
 
 export function SidebarChatLite({
   agentId,
-  role,
+  connecte,
   aDesMessages,
   conversationActiveId,
   onNouvelleConversation,
@@ -90,7 +90,7 @@ export function SidebarChatLite({
   onNecessiteCompte,
 }: {
   agentId: string;
-  role: string | null;
+  connecte: boolean;
   aDesMessages: boolean;
   conversationActiveId: string | null;
   onNouvelleConversation: () => void;
@@ -98,6 +98,8 @@ export function SidebarChatLite({
   sectionMesComportements?: boolean;
   onNecessiteCompte: () => void;
 }) {
+  // "Mon espace" est toujours visible, connecté ou non (voir
+  // commentaire d'en-tête, 09-10/08) : plus de rôle à tester.
   const [ouverte, setOuverte] = useState(false);
   const [fils, setFils] = useState<FilConversation[] | null>(null);
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
@@ -155,14 +157,14 @@ export function SidebarChatLite({
   }
 
   function clicMonEspace(e: React.MouseEvent) {
-    if (!role) {
+    if (!connecte) {
       e.preventDefault();
       onNecessiteCompte();
     }
   }
 
   async function seDeconnecter() {
-    if (!role) {
+    if (!connecte) {
       onNecessiteCompte();
       return;
     }
@@ -376,7 +378,7 @@ export function SidebarChatLite({
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
             <LogOut size={18} />
           </span>
-          <LibelleRail ouverte={ouverte}>{role ? "Se déconnecter" : "Se connecter"}</LibelleRail>
+          <LibelleRail ouverte={ouverte}>{connecte ? "Se déconnecter" : "Se connecter"}</LibelleRail>
         </button>
 
         <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
@@ -411,7 +413,7 @@ export function SidebarChatLite({
             href="/mon-espace"
             onClick={(e) => {
               clicMonEspace(e);
-              if (role) setOuverte(false);
+              if (connecte) setOuverte(false);
             }}
             className={`flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
               aDesMessages ? "mt-2" : "mt-8"
@@ -514,7 +516,7 @@ export function SidebarChatLite({
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
               <LogOut size={18} />
             </span>
-            <span className="text-sm">{role ? "Se déconnecter" : "Se connecter"}</span>
+            <span className="text-sm">{connecte ? "Se déconnecter" : "Se connecter"}</span>
           </button>
         </div>
       )}

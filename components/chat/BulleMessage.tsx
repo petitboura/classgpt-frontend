@@ -406,7 +406,7 @@ function BulleMessageInterne({
           la réponse, ce qui ne reflétait pas l'ordre réel "le modèle
           réfléchit D'ABORD, répond ENSUITE". */}
       {!estUtilisateur && enAttente && (
-        <IndicateurReflexion nomAgent={nomAgent ?? "Class GPT"} />
+        <IndicateurReflexion nomAgent={nomAgent ?? "Clovis"} />
       )}
       {!estUtilisateur && raisonnement && (
         <RaisonnementBulle nomAgent={nomAgent ?? "L'agent"} texte={raisonnement} enCours={!!raisonnementEnCours} />

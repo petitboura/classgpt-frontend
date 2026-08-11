@@ -14,7 +14,7 @@ import { creerEtudiantAutonome } from "@/lib/invitations";
 
 // Partie 3 du brief ("Expérience de chat directe") : contrairement à
 // djiguigne-frontend (app/agent/[id]/chat/page.tsx), il n'y a PAS de
-// paramètre [id] dans l'URL -- Class GPT n'a qu'un seul agent, pour
+// paramètre [id] dans l'URL -- Clovis n'a qu'un seul agent, pour
 // tout le monde, connecté ou pas (brief section 3 : pas de sélecteur).
 //
 // SIMPLIFIÉ le 10/08 (Bourama : "enlève ces histoires de rôles [...]
@@ -26,7 +26,7 @@ import { creerEtudiantAutonome } from "@/lib/invitations";
 // (AGENT_INVITE_ID plus bas), qu'on soit connecté ou non -- plus aucun
 // appel à /api/roles/moi ni à creerEtudiantAutonome dans ce fichier. La
 // notion de rôle continue d'exister côté backend/base pour d'autres
-// produits Djiguignè (djiguigne-frontend), mais Class GPT ne la lit
+// produits Djiguignè (djiguigne-frontend), mais Clovis ne la lit
 // plus du tout.
 
 type AgentDetail = {
@@ -47,7 +47,7 @@ type FilConversation = {
   derniere_activite: string;
 };
 
-// Seul agent de Class GPT, pour tout le monde (voir commentaire plus
+// Seul agent de Clovis, pour tout le monde (voir commentaire plus
 // haut) -- endpoint public (`/api/agents/{id}`), consultable sans
 // session.
 const AGENT_INVITE_ID = "nitrux";
@@ -58,18 +58,18 @@ const AGENT_INVITE_ID = "nitrux";
 // anonymes sans limite (api/chat.py:envoyer_message, utilisateur_optionnel) --
 // la limite est donc uniquement appliquée ici, côté client.
 const LIMITE_MESSAGES_INVITE = 5;
-const CLE_COMPTEUR_INVITE = "classgpt_nb_messages_invite";
+const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
 
-// Même logique que nomAgent="Class GPT" plus bas (fuite du nom
+// Même logique que nomAgent="Clovis" plus bas (fuite du nom
 // technique de l'agent réel) mais pour le titre et le sous-titre de
 // l'écran de démarrage (09/08, bug repéré par Bourama) : titre_accueil
 // ("Nitrux") et sous_titre_accueil ("Débloque une matière avec le code
 // de ton enseignant...") viennent de l'agent partagé avec
 // djiguigne-frontend, où le déblocage par code est un vrai mécanisme,
-// absent de Class GPT. Titre/sous-titre/icône fixes volontaires, pas un
+// absent de Clovis. Titre/sous-titre/icône fixes volontaires, pas un
 // oubli de dynamisme.
-const TITRE_ACCUEIL_CLASSGPT = "Class GPT";
-const SOUS_TITRE_ACCUEIL_CLASSGPT = "L'IA qui t'aide dans tes études.";
+const TITRE_ACCUEIL_CLOVIS = "Clovis";
+const SOUS_TITRE_ACCUEIL_CLOVIS = "L'IA qui t'aide dans tes études.";
 
 export default function PageAccueilChat() {
   const [etat, setEtat] = useState<"chargement" | "pret" | "erreur">("chargement");
@@ -215,12 +215,12 @@ export default function PageAccueilChat() {
           // contraire au brief (section 3 : l'IA ne doit jamais révéler
           // qu'elle a un nom technique ou qu'il existe d'autres agents).
           // Nom de marque fixe volontaire ici, pas un oubli de
-          // dynamisme : c'est justement le point, Class GPT n'a qu'un
+          // dynamisme : c'est justement le point, Clovis n'a qu'un
           // seul nom, toujours le même, quel que soit l'agent réel
           // derrière.
-          nomAgent="Class GPT"
-          titreAccueil={TITRE_ACCUEIL_CLASSGPT}
-          sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLASSGPT}
+          nomAgent="Clovis"
+          titreAccueil={TITRE_ACCUEIL_CLOVIS}
+          sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
           iconePersonnalisee={<Logo taille={28} />}
           conversationId={cle}
           messagesInitiaux={messagesInitiaux}

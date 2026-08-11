@@ -1,4 +1,4 @@
-# Class GPT — frontend
+# Clovis — frontend
 
 Produit autonome dérivé de l'écosystème Djiguignè (rôle "établissement"),
 mais qui ne doit **jamais** laisser transparaître ce lien. Pour
@@ -44,7 +44,7 @@ multi-agents (historique de conversations de CET agent uniquement, pas de
 contenait ~58 codes d'erreur du reste de l'écosystème Djiguignè
 (création/modification d'agent, feed social, publications, vitrine,
 signature électronique, génération 3D/vidéo...) — jamais déclenchés par
-Class GPT mais présents en clair dans le bundle JS livré au navigateur,
+Clovis mais présents en clair dans le bundle JS livré au navigateur,
 donc inspectables via les devtools et révélateurs de l'écosystème plus
 large derrière le produit. Retirés. Le fallback de `messageErreur()` sur
 le message déjà en français renvoyé par le backend reste inchangé, aucune

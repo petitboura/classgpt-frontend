@@ -68,10 +68,10 @@ export function ChatIA({
   // comme si la prop n'existait pas.
   avantEnvoi?: () => boolean;
   // Écran de démarrage : remplace iconeUrl/IconeGenerique par cet
-  // élément quand fourni (09/08, demande Bourama : sur Class GPT, l'IA
+  // élément quand fourni (09/08, demande Bourama : sur Clovis, l'IA
   // "étudiant autonome" ne doit montrer ni le nom technique de l'agent
   // réel -- déjà géré via nomAgent -- ni son icône réelle, remplacée ici
-  // par le logo Class GPT).
+  // par le logo Clovis).
   iconePersonnalisee?: React.ReactNode;
 }) {
   const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);

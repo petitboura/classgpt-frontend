@@ -11,7 +11,7 @@ const LIBELLE_ROLE_CIBLE: Record<Invitation["role_cible"], string> = {
 };
 
 /**
- * Bloc "Inviter" de l'espace Class GPT (partie 4). Un seul code actif à
+ * Bloc "Inviter" de l'espace Clovis (partie 4). Un seul code actif à
  * la fois (voir POST /api/roles/invitation côté backend) : régénérer
  * remplace l'ancien plutôt que d'en accumuler plusieurs.
  *

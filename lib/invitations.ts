@@ -3,7 +3,7 @@ import { ErreurApi } from "@/lib/erreurs";
 
 /**
  * Client pour /api/roles/invitation, /api/roles/rejoindre et
- * /api/roles/etablissement-racine (partie 4, Class GPT, 2026-08-08).
+ * /api/roles/etablissement-racine (partie 4, Clovis, 2026-08-08).
  * Réutilise appelerApi tel quel (même gestion d'erreurs/parsing que le
  * reste du produit, voir lib/api.ts) -- aucune nouvelle logique réseau.
  */
@@ -44,7 +44,7 @@ export async function rejoindreParCode(code: string, nomAffiche: string): Promis
 // rattaché (décision Bourama, 09/08). Le nom de la route reste
 // /etablissement-racine côté backend (nom d'URL inchangé pour éviter un
 // aller-retour inutile), seul le rôle attribué a changé -- voir
-// api/invitations_classgpt.py:creer_etudiant_autonome.
+// api/invitations_clovis.py:creer_etudiant_autonome.
 export async function creerEtudiantAutonome(nomAffiche: string): Promise<ResultatRejoindre> {
   return (await appelerApi("/api/roles/etablissement-racine", {
     method: "POST",

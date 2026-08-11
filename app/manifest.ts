@@ -10,15 +10,15 @@ import type { MetadataRoute } from "next";
 // ServiceWorkerRegistration.tsx pour l'installabilité.
 //
 // Icônes (icone-192.png, icone-512.png) générées à partir du logo
-// existant (public/classgpt-logo.svg, chapeau de diplômé), sur fond
+// existant (public/clovis-logo.svg, plume), sur fond
 // #f4f3ee (couleur de fond actuelle de l'appli, thème clair) pour un
 // rendu carré cohérent une fois installée -- jamais de logo flottant
 // sur fond transparent, qui rendrait mal selon le launcher.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Class GPT",
-    short_name: "Class GPT",
+    name: "Clovis",
+    short_name: "Clovis",
     description: "Ton assistant IA pour la classe.",
     start_url: "/",
     scope: "/",

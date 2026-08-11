@@ -16,7 +16,7 @@ import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 
 /**
- * Espace utilisateur réduit de Class GPT (partie 4 du brief). Volontairement
+ * Espace utilisateur réduit de Clovis (partie 4 du brief). Volontairement
  * SANS : onglet "administrer", onglet "mes IA", bouton retour vitrine,
  * sélecteur/historique de plusieurs agents.
  *
@@ -28,7 +28,7 @@ import { Skeleton } from "./Skeleton";
  * - "Bibliothèque" et "Ma mémoire" : personnels à chaque utilisateur.
  *
  * Correctif (10/08, demande explicite Bourama : "bureau activé toujours et
- * mes comportements toujours dans class gpt") : les deux onglets sont
+ * mes comportements toujours dans clovis") : les deux onglets sont
  * désormais TOUJOURS affichés, quel que soit le rôle connecté ou la valeur
  * de agents.section_mes_comportements en base -- avant, "Bureau" était
  * réservé établissement/enseignant et "Mes comportements" conditionné à ce
@@ -65,7 +65,7 @@ import { Skeleton } from "./Skeleton";
 
 type OngletId = "bureau" | "comportements" | "bibliotheque" | "memoire";
 
-export function EspaceClassGPT() {
+export function EspaceClovis() {
   const [monRole, setMonRole] = useState<MonRole | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);

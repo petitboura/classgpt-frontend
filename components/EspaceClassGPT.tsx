@@ -147,9 +147,9 @@ export function EspaceClassGPT() {
       <main className="mx-auto max-w-2xl px-4 pb-24 pt-6">
         <div className="space-y-2" aria-hidden>
           {[0, 1, 2].map((i) => (
-            <div
+            <Skeleton
               key={i}
-              className="h-14 animate-pulse rounded-xl border border-dj-bordure bg-dj-surface-haute"
+              className="h-14 rounded-xl border border-dj-bordure"
               style={{ animationDelay: `${i * 100}ms` }}
             />
           ))}

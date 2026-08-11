@@ -93,7 +93,11 @@ export default function PageInscription() {
   }
 
   if (verificationSession) {
-    return <main className="flex min-h-screen items-center justify-center px-4" />;
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-dj-bordure border-t-dj-accent-1" />
+      </main>
+    );
   }
 
   return (

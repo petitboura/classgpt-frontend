@@ -710,4 +710,106 @@ export async function diffuserLienMatiere(contenuId: string, url: string, descri
   }) as Promise<ResultatDiffusion>;
 }
 
+/**
+ * Onglet "Mon programme" (lot 4/5, chantier programme étudiant) --
+ * navigation classe/niveau -> matière -> chapitre. Voir
+ * components/EspaceProgramme.tsx. Contrat backend construit en parallèle
+ * par le lot 1 (peut ne pas encore être mergé au moment où ce fichier est
+ * écrit) -- pas de agentId ici, ces routes sont personnelles à
+ * l'utilisateur connecté, pas rattachées à un agent précis.
+ */
+
+export type Programme = {
+  id: string;
+  niveau: string;
+  nom: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MatiereDuProgramme = {
+  id: string;
+  nom: string;
+  limites: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChapitreDeLaMatiere = {
+  id: string;
+  nom: string;
+  ordre: number;
+  limites: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listerProgrammes() {
+  return appelerApi("/api/programmes") as Promise<Programme[]>;
+}
+
+export async function creerProgramme(niveau: string, nom?: string) {
+  return appelerApi("/api/programmes", {
+    method: "POST",
+    body: JSON.stringify({ niveau, nom }),
+  }) as Promise<Programme>;
+}
+
+export async function modifierProgramme(id: string, donnees: { niveau?: string; nom?: string }) {
+  return appelerApi(`/api/programmes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(donnees),
+  }) as Promise<Programme>;
+}
+
+export async function supprimerProgramme(id: string) {
+  return appelerApi(`/api/programmes/${id}`, { method: "DELETE" });
+}
+
+export async function listerMatieresProgramme(programmeId: string) {
+  return appelerApi(`/api/programmes/${programmeId}/matieres`) as Promise<MatiereDuProgramme[]>;
+}
+
+export async function creerMatiereProgramme(programmeId: string, nom: string, limites?: string) {
+  return appelerApi(`/api/programmes/${programmeId}/matieres`, {
+    method: "POST",
+    body: JSON.stringify({ nom, limites }),
+  }) as Promise<MatiereDuProgramme>;
+}
+
+export async function modifierMatiereProgramme(id: string, donnees: { nom?: string; limites?: string }) {
+  return appelerApi(`/api/matieres/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(donnees),
+  }) as Promise<MatiereDuProgramme>;
+}
+
+export async function supprimerMatiereProgramme(id: string) {
+  return appelerApi(`/api/matieres/${id}`, { method: "DELETE" });
+}
+
+export async function listerChapitresMatiere(matiereId: string) {
+  return appelerApi(`/api/matieres/${matiereId}/chapitres`) as Promise<ChapitreDeLaMatiere[]>;
+}
+
+export async function creerChapitreMatiere(matiereId: string, nom: string, ordre?: number, limites?: string) {
+  return appelerApi(`/api/matieres/${matiereId}/chapitres`, {
+    method: "POST",
+    body: JSON.stringify({ nom, ordre, limites }),
+  }) as Promise<ChapitreDeLaMatiere>;
+}
+
+export async function modifierChapitreMatiere(
+  id: string,
+  donnees: { nom?: string; ordre?: number; limites?: string }
+) {
+  return appelerApi(`/api/chapitres/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(donnees),
+  }) as Promise<ChapitreDeLaMatiere>;
+}
+
+export async function supprimerChapitreMatiere(id: string) {
+  return appelerApi(`/api/chapitres/${id}`, { method: "DELETE" });
+}
 

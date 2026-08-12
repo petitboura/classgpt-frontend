@@ -814,6 +814,24 @@ export async function supprimerChapitreMatiere(id: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Audits IA hebdomadaires par matière (2026-08-12, chantier "connexion IA
+// <-> structure programme"). Lecture seule : l'audit est écrit uniquement
+// par la boucle planificatrice du lundi côté backend (core/audit_programme.py),
+// jamais modifiable directement -- ce serait de toute façon écrasé au lundi
+// suivant.
+
+export type AuditMatiere = {
+  matiere_id: string;
+  matiere_nom: string;
+  texte: string | null;
+  derniere_execution: string | null;
+};
+
+export async function listerAuditsProgramme(programmeId: string) {
+  return appelerApi(`/api/programmes/${programmeId}/audits`) as Promise<AuditMatiere[]>;
+}
+
+// ---------------------------------------------------------------------------
 // Programme étudiant (classe -> matière -> chapitre), lot 5 -- documents et
 // exercices d'un chapitre, examens/devoirs multi-chapitres d'un programme,
 // classements transversaux, et système de plugins. Contrat backend construit

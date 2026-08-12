@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Briefcase, Sparkles, Library, Brain, BookOpen, Puzzle } from "lucide-react";
+import { ArrowLeft, Briefcase, Sparkles, Library, Brain, BookOpen, Puzzle, ScanSearch } from "lucide-react";
 import { useState } from "react";
 import { EspaceInviter } from "./EspaceInviter";
 import { EspaceEntrerCode } from "./EspaceEntrerCode";
@@ -12,6 +12,7 @@ import { MesComportements } from "./MesComportements";
 import { MaMemoire } from "./MaMemoire";
 import { EspaceProgramme } from "./EspaceProgramme";
 import { EspacePlugins } from "./EspacePlugins";
+import { EspaceAudits } from "./EspaceAudits";
 import { Skeleton } from "./Skeleton";
 
 // Clovis ne parle qu'à une seule IA, toujours -- voir app/page.tsx.
@@ -36,7 +37,7 @@ const AGENT_ID = "nitrux";
  * - "Bibliothèque" et "Ma mémoire" : personnels à chaque utilisateur.
  */
 
-type OngletId = "bureau" | "comportements" | "bibliotheque" | "memoire" | "programme" | "plugins";
+type OngletId = "bureau" | "comportements" | "bibliotheque" | "memoire" | "programme" | "plugins" | "audits";
 
 const ONGLETS: { id: OngletId; label: string; Icone: typeof Briefcase }[] = [
   { id: "bureau", label: "Bureau", Icone: Briefcase },
@@ -45,6 +46,7 @@ const ONGLETS: { id: OngletId; label: string; Icone: typeof Briefcase }[] = [
   { id: "memoire", label: "Ma mémoire", Icone: Brain },
   { id: "programme", label: "Mon programme", Icone: BookOpen },
   { id: "plugins", label: "Plugins", Icone: Puzzle },
+  { id: "audits", label: "Audits", Icone: ScanSearch },
 ];
 
 export function EspaceClovis() {
@@ -101,6 +103,8 @@ export function EspaceClovis() {
       {onglet === "programme" && <EspaceProgramme />}
 
       {onglet === "plugins" && <EspacePlugins />}
+
+      {onglet === "audits" && <EspaceAudits />}
     </main>
   );
 }

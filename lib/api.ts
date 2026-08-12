@@ -813,3 +813,162 @@ export async function supprimerChapitreMatiere(id: string) {
   return appelerApi(`/api/chapitres/${id}`, { method: "DELETE" });
 }
 
+// ---------------------------------------------------------------------------
+// Programme étudiant (classe -> matière -> chapitre), lot 5 -- documents et
+// exercices d'un chapitre, examens/devoirs multi-chapitres d'un programme,
+// classements transversaux, et système de plugins. Contrat backend construit
+// en parallèle par les lots 2/3 (voir chantier-programme-etudiant.md) --
+// endpoints ci-dessous suivent ce contrat tel quel.
+
+export type DocumentChapitre = { id: string; titre: string; url_ou_contenu: string; created_at: string };
+
+export async function lireDocumentsChapitre(chapitreId: string) {
+  const resultat = await appelerApi(`/api/chapitres/${chapitreId}/documents`);
+  return resultat as DocumentChapitre[];
+}
+
+export async function ajouterDocumentChapitre(chapitreId: string, titre: string, urlOuContenu: string) {
+  const resultat = await appelerApi(`/api/chapitres/${chapitreId}/documents`, {
+    method: "POST",
+    body: JSON.stringify({ titre, url_ou_contenu: urlOuContenu }),
+  });
+  return resultat as DocumentChapitre;
+}
+
+export async function supprimerDocumentChapitre(documentId: string) {
+  return appelerApi(`/api/documents/${documentId}`, { method: "DELETE" });
+}
+
+export type ExerciceChapitre = { id: string; enonce: string; created_at: string; updated_at: string };
+
+export async function lireExercicesChapitre(chapitreId: string) {
+  const resultat = await appelerApi(`/api/chapitres/${chapitreId}/exercices`);
+  return resultat as ExerciceChapitre[];
+}
+
+export async function ajouterExerciceChapitre(chapitreId: string, enonce: string) {
+  const resultat = await appelerApi(`/api/chapitres/${chapitreId}/exercices`, {
+    method: "POST",
+    body: JSON.stringify({ enonce }),
+  });
+  return resultat as ExerciceChapitre;
+}
+
+export async function modifierExerciceChapitre(exerciceId: string, enonce: string) {
+  const resultat = await appelerApi(`/api/exercices/${exerciceId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ enonce }),
+  });
+  return resultat as ExerciceChapitre;
+}
+
+export async function supprimerExerciceChapitre(exerciceId: string) {
+  return appelerApi(`/api/exercices/${exerciceId}`, { method: "DELETE" });
+}
+
+export type TypeExamen = "examen" | "devoir" | "probleme_composite";
+
+export type Examen = {
+  id: string;
+  titre: string;
+  type: TypeExamen;
+  chapitre_ids: string[];
+  created_at: string;
+};
+
+export async function lireExamensProgramme(programmeId: string) {
+  const resultat = await appelerApi(`/api/programmes/${programmeId}/examens`);
+  return resultat as Examen[];
+}
+
+export async function creerExamen(titre: string, type: TypeExamen, chapitreIds: string[]) {
+  const resultat = await appelerApi(`/api/examens`, {
+    method: "POST",
+    body: JSON.stringify({ titre, type, chapitre_ids: chapitreIds }),
+  });
+  return resultat as Examen;
+}
+
+export async function modifierExamen(
+  examenId: string,
+  patch: { titre?: string; type?: TypeExamen; chapitre_ids?: string[] }
+) {
+  const resultat = await appelerApi(`/api/examens/${examenId}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  return resultat as Examen;
+}
+
+export async function supprimerExamen(examenId: string) {
+  return appelerApi(`/api/examens/${examenId}`, { method: "DELETE" });
+}
+
+export type TypeClassement = "semestre" | "annee" | "section";
+export type CibleClassement = "matiere" | "chapitre" | "document" | "exercice" | "examen";
+
+export type Classement = { id: string; type: TypeClassement; label: string; created_at: string };
+
+export async function lireClassements() {
+  const resultat = await appelerApi(`/api/classements`);
+  return resultat as Classement[];
+}
+
+export async function creerClassement(type: TypeClassement, label: string) {
+  const resultat = await appelerApi(`/api/classements`, {
+    method: "POST",
+    body: JSON.stringify({ type, label }),
+  });
+  return resultat as Classement;
+}
+
+export async function ajouterItemClassement(classementId: string, cibleType: CibleClassement, cibleId: string) {
+  return appelerApi(`/api/classements/${classementId}/items`, {
+    method: "POST",
+    body: JSON.stringify({ cible_type: cibleType, cible_id: cibleId }),
+  });
+}
+
+export async function supprimerItemClassement(classementId: string, itemId: string) {
+  return appelerApi(`/api/classements/${classementId}/items/${itemId}`, { method: "DELETE" });
+}
+
+export async function supprimerClassement(classementId: string) {
+  return appelerApi(`/api/classements/${classementId}`, { method: "DELETE" });
+}
+
+export type Plugin = {
+  id: string;
+  nom: string;
+  niveau: string;
+  auteur_id: string;
+  gratuit: boolean;
+  telechargements_count: number;
+};
+
+export async function publierProgrammeCommePlugin(programmeId: string, nom: string) {
+  const resultat = await appelerApi(`/api/programmes/${programmeId}/publier-plugin`, {
+    method: "POST",
+    body: JSON.stringify({ nom }),
+  });
+  return resultat as Plugin;
+}
+
+export async function rechercherPlugins(filtre: { niveau?: string; auteur?: string }) {
+  const params = new URLSearchParams();
+  if (filtre.niveau) params.set("niveau", filtre.niveau);
+  if (filtre.auteur) params.set("auteur", filtre.auteur);
+  const suffixe = params.toString() ? `?${params.toString()}` : "";
+  const resultat = await appelerApi(`/api/plugins${suffixe}`);
+  return resultat as Plugin[];
+}
+
+export async function classementPlugins() {
+  const resultat = await appelerApi(`/api/plugins/classement`);
+  return resultat as Plugin[];
+}
+
+export async function telechargerPlugin(pluginId: string) {
+  const resultat = await appelerApi(`/api/plugins/${pluginId}/telecharger`, { method: "POST" });
+  return resultat as { programme_id: string };
+}

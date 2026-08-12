@@ -21,6 +21,13 @@ import {
 } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+// Lot 5 -- contenu d'un chapitre (documents/exercices), examens/plugin au
+// niveau programme, et bouton de classement transversal. Voir
+// EspaceProgrammeContenu.tsx / AjouterAClassementBouton.tsx : fichiers
+// séparés écrits pendant que ce fichier (lot 4) n'existait pas encore,
+// branchés ici a posteriori sans reprendre la navigation elle-même.
+import { VueChapitreContenu, VueProgrammeContenu } from "./EspaceProgrammeContenu";
+import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
 
 // Onglet "Mon programme" (lot 4/5, chantier programme étudiant, brief
 // "4-frontend-onglet-navigation.md"). Navigation à 3 niveaux : programmes
@@ -34,7 +41,8 @@ import { Skeleton } from "./Skeleton";
 type Vue =
   | { niveau: "programmes" }
   | { niveau: "matieres"; programme: Programme }
-  | { niveau: "chapitres"; programme: Programme; matiere: MatiereDuProgramme };
+  | { niveau: "chapitres"; programme: Programme; matiere: MatiereDuProgramme }
+  | { niveau: "chapitre"; programme: Programme; matiere: MatiereDuProgramme; chapitre: ChapitreDeLaMatiere };
 
 export function EspaceProgramme() {
   const [vue, setVue] = useState<Vue>({ niveau: "programmes" });
@@ -61,7 +69,18 @@ export function EspaceProgramme() {
           programme={vue.programme}
           matiere={vue.matiere}
           onRetour={() => setVue({ niveau: "matieres", programme: vue.programme })}
+          onOuvrir={(chapitre) => setVue({ niveau: "chapitre", programme: vue.programme, matiere: vue.matiere, chapitre })}
         />
+      )}
+
+      {vue.niveau === "chapitre" && (
+        <div className="flex flex-col gap-3">
+          <FilAriane
+            elements={[vue.programme.nom || vue.programme.niveau, vue.matiere.nom, vue.chapitre.nom]}
+            onRetour={() => setVue({ niveau: "chapitres", programme: vue.programme, matiere: vue.matiere })}
+          />
+          <VueChapitreContenu chapitreId={vue.chapitre.id} />
+        </div>
       )}
     </div>
   );
@@ -435,6 +454,7 @@ function ListeMatieres({
                     {m.nom}
                   </button>
                   <div className="flex flex-shrink-0 items-center gap-1">
+                    <AjouterAClassementBouton cibleType="matiere" cibleId={m.id} />
                     <button
                       onClick={() => setEdition({ id: m.id, nom: m.nom, limites: m.limites || "" })}
                       title="Modifier"
@@ -504,8 +524,50 @@ function ListeMatieres({
           <Plus size={14} /> Nouvelle matière
         </button>
       )}
+
+      <div className="mt-2 border-t border-dj-bordure pt-4">
+        <SectionExamensDuProgramme programme={programme} matieres={matieres || []} />
+      </div>
     </div>
   );
+}
+
+// Lot 5 -- au niveau "programme sélectionné" (au-dessus des matières) :
+// examens/devoirs multi-chapitres + publication en plugin (VueProgramme-
+// Contenu, voir EspaceProgrammeContenu.tsx). Un examen peut couvrir des
+// chapitres de plusieurs matières à la fois, donc on aplatit ici les
+// chapitres de toutes les matières du programme (un appel par matière),
+// préfixés par leur matière pour rester lisibles dans le sélecteur.
+function SectionExamensDuProgramme({
+  programme,
+  matieres,
+}: {
+  programme: Programme;
+  matieres: MatiereDuProgramme[];
+}) {
+  const [chapitres, setChapitres] = useState<{ id: string; titre: string }[] | null>(null);
+
+  useEffect(() => {
+    if (matieres.length === 0) {
+      setChapitres([]);
+      return;
+    }
+    setChapitres(null);
+    Promise.all(
+      matieres.map((m) =>
+        listerChapitresMatiere(m.id)
+          .then((chs) => chs.map((c) => ({ id: c.id, titre: `${m.nom} — ${c.nom}` })))
+          .catch(() => [] as { id: string; titre: string }[])
+      )
+    ).then((listes) => setChapitres(listes.flat()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [programme.id, matieres.map((m) => m.id).join(",")]);
+
+  if (chapitres === null) {
+    return <Skeleton className="h-24 rounded-2xl border border-dj-bordure" />;
+  }
+
+  return <VueProgrammeContenu programmeId={programme.id} chapitres={chapitres} />;
 }
 
 /* ------------------------------- Chapitres -------------------------------- */
@@ -514,10 +576,12 @@ function ListeChapitres({
   programme,
   matiere,
   onRetour,
+  onOuvrir,
 }: {
   programme: Programme;
   matiere: MatiereDuProgramme;
   onRetour: () => void;
+  onOuvrir: (c: ChapitreDeLaMatiere) => void;
 }) {
   const [chapitres, setChapitres] = useState<ChapitreDeLaMatiere[] | null>(null);
   const [creation, setCreation] = useState(false);
@@ -674,11 +738,12 @@ function ListeChapitres({
                     <ArrowDown size={13} />
                   </button>
                 </div>
-                <div className="min-w-0 flex-1">
+                <button onClick={() => onOuvrir(c)} className="min-w-0 flex-1 text-left" title="Ouvrir ce chapitre">
                   <span className="block truncate text-sm font-semibold text-dj-texte">{c.nom}</span>
                   {c.limites && <p className="truncate text-xs text-dj-texte-muet">{c.limites}</p>}
-                </div>
+                </button>
                 <div className="flex flex-shrink-0 items-center gap-1">
+                  <AjouterAClassementBouton cibleType="chapitre" cibleId={c.id} />
                   <button
                     onClick={() => setEdition({ id: c.id, nom: c.nom, limites: c.limites || "" })}
                     title="Modifier"

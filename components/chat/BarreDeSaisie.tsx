@@ -316,14 +316,24 @@ export function BarreDeSaisie({
   // outilsPourAgent au lieu d'un onglet parmi d'autres.
   const outilsUtilitairesPourAgent = outilsPourAgent.filter((o) => o.onglet === "utilitaires");
 
+  // Interrupteurs (13/08/2026, demande Bourama) -- désactivent l'AFFICHAGE
+  // des boutons "Outils" et "Applications" (et toutes leurs variantes :
+  // menu complet, slots fixes, raccourci "dernier utilisé") sans toucher
+  // au reste du code (state, effets, appels API, logique de sélection).
+  // Remettre à true pour les réactiver.
+  const AFFICHER_BOUTON_OUTILS = false;
+  const AFFICHER_BOUTON_APPLICATIONS = false;
+
   // Flux 3 : bascules d'affichage adaptatif de la barre selon le nombre
   // d'outils/applis réellement activés pour l'agent.
   const NB_MIN_POUR_MENU_OUTILS = 3;
-  const outilsButtonVisible = outilsPourAgent.length >= NB_MIN_POUR_MENU_OUTILS;
+  const outilsButtonVisible = AFFICHER_BOUTON_OUTILS && outilsPourAgent.length >= NB_MIN_POUR_MENU_OUTILS;
   const outilsSlotsFixes =
-    outilsPourAgent.length > 0 && outilsPourAgent.length < NB_MIN_POUR_MENU_OUTILS ? outilsPourAgent : [];
-  const appliButtonVisible = applisPourAgent.length > 1;
-  const appliSlotUnique = applisPourAgent.length === 1 ? applisPourAgent[0] : null;
+    AFFICHER_BOUTON_OUTILS && outilsPourAgent.length > 0 && outilsPourAgent.length < NB_MIN_POUR_MENU_OUTILS
+      ? outilsPourAgent
+      : [];
+  const appliButtonVisible = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length > 1;
+  const appliSlotUnique = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length === 1 ? applisPourAgent[0] : null;
 
   const [menuOutilsOuvert, setMenuOutilsOuvert] = useState(false);
   // Menus custom pour les selecteurs modele premium / longueur de reponse
@@ -2410,7 +2420,7 @@ export function BarreDeSaisie({
               }
 
               const recentValide = recentsCombines.find((r) => {
-                if (r.type === "outil") return outilsPourAgent.some((o) => o.nom === r.nom);
+                if (r.type === "outil") return AFFICHER_BOUTON_OUTILS && outilsPourAgent.some((o) => o.nom === r.nom);
                 return appliButtonVisible && applisPourAgent.some((a) => a.nom === r.nom);
               });
               if (recentValide) {

@@ -227,7 +227,13 @@ export default function PageAccueilChat() {
           onMessagesChange={setNbMessages}
           modelesDisponibles={agent.modeles_disponibles}
           modeleChoisi={agent.modele_choisi}
-          boutonSansEnseignant={agent.bouton_sans_enseignant ?? true}
+          // Désactivé (13/08/2026, demande Bourama) -- le bouton "Sans
+          // enseignant" ne s'affiche plus dans la barre de Clovis, mais le
+          // réglage agent.bouton_sans_enseignant et tout le code du bouton
+          // dans BarreDeSaisie.tsx restent intacts pour une réactivation
+          // future (il suffira de repasser à `agent.bouton_sans_enseignant
+          // ?? true`).
+          boutonSansEnseignant={false}
           avantEnvoi={verifierLimiteInvite}
         />
       </div>

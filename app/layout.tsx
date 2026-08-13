@@ -9,6 +9,7 @@ import "./globals.css";
 import "katex/dist/katex.min.css";
 import "mathlive/fonts.css";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { ReveilBackend } from "@/components/ReveilBackend";
 
 // Polices identiques à la charte Djiguignè (brief section 4a), chargées en
 // local (next/font, zéro requête Google au runtime) — même mécanisme que
@@ -80,6 +81,7 @@ export default function RacineLayout({
     >
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
         <ServiceWorkerRegistration />
+        <ReveilBackend />
         {children}
       </body>
     </html>

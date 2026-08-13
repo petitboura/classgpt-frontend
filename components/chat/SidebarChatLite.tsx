@@ -216,7 +216,7 @@ export function SidebarChatLite({
         {aDesMessages && (
           <button
             onClick={onNouvelleConversation}
-            className="mt-2 flex w-full items-center gap-2 rounded-xl border border-dj-bordure text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
               <MessageSquarePlus size={18} />
@@ -237,7 +237,7 @@ export function SidebarChatLite({
         </Link>
 
         {fils && fils.length > 0 && (
-          <div className="mt-2 rounded-xl border border-dj-bordure">
+          <div className="mt-2 rounded-xl">
             <button
               onClick={() => basculerVoletRail("historique")}
               title="Historique"
@@ -282,7 +282,7 @@ export function SidebarChatLite({
         )}
 
         {sectionMesComportements && (
-          <div className="mt-2 rounded-xl border border-dj-bordure">
+          <div className="mt-2 rounded-xl">
             <button
               onClick={() => basculerVoletRail("comportements")}
               title="Mes comportements"
@@ -315,7 +315,7 @@ export function SidebarChatLite({
           </div>
         )}
 
-        <div className={`rounded-xl border border-dj-bordure ${ouverte ? "mt-2" : "mt-auto"}`}>
+        <div className={`rounded-xl ${ouverte ? "mt-2" : "mt-auto"}`}>
           <button
             onClick={basculerActions}
             title="Actions"
@@ -344,7 +344,7 @@ export function SidebarChatLite({
                     {copie ? "Copié !" : "Partager"}
                   </button>
 
-                  <div className="rounded-lg border border-dj-bordure">
+                  <div className="rounded-lg">
                     <button
                       onClick={() => setAvisDeplie((v) => !v)}
                       className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
@@ -402,7 +402,7 @@ export function SidebarChatLite({
                 onNouvelleConversation();
                 setOuverte(false);
               }}
-              className="mt-8 flex w-full items-center gap-2 rounded-xl border border-dj-bordure px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              className="mt-8 flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
             >
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
                 <MessageSquarePlus size={18} />
@@ -428,7 +428,7 @@ export function SidebarChatLite({
           </Link>
 
           {fils && fils.length > 0 && (
-            <div className="mt-2 flex-1 overflow-y-auto rounded-xl border border-dj-bordure">
+            <div className="mt-2 flex-1 overflow-y-auto rounded-xl">
               <div className="flex items-center gap-2 border-b border-dj-bordure px-2 py-2 text-dj-texte-muet">
                 <History size={16} />
                 <span className="text-sm">Historique</span>
@@ -455,7 +455,7 @@ export function SidebarChatLite({
           )}
 
           {sectionMesComportements && (
-            <div className="mt-2 rounded-xl border border-dj-bordure">
+            <div className="mt-2 rounded-xl">
               <button
                 onClick={() => setComportementsDeplie((v) => !v)}
                 className={`flex w-full items-center gap-2 px-2 py-2 text-sm transition-colors ${
@@ -473,7 +473,7 @@ export function SidebarChatLite({
             <BoutonInstaller />
           </div>
 
-          <div className="mt-2 rounded-xl border border-dj-bordure px-2">
+          <div className="mt-2 rounded-xl px-2">
             <button
               onClick={() => setActionsDeplie((v) => !v)}
               className={`flex w-full items-center gap-2 py-2 text-sm transition-colors ${

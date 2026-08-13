@@ -195,9 +195,10 @@ export function MesComportements({ agentId }: { agentId: string }) {
           key={c.id}
           onClick={() => ouvrirEdition(c)}
           title="Ouvrir et modifier"
-          className="flex items-start justify-between gap-2 rounded-lg border border-dj-bordure/60 px-2 py-1.5 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+          className="flex items-start gap-2 rounded-lg border border-dj-bordure/60 px-2 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
         >
-          <span className="min-w-0 flex-1 truncate text-xs text-dj-texte">{c.texte}</span>
+          <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-dj-gradient" />
+          <span className="min-w-0 flex-1 line-clamp-2 text-xs leading-relaxed text-dj-texte">{c.description}</span>
         </button>
       ))}
 

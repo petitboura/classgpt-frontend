@@ -542,7 +542,7 @@ export async function creerPageNotion(titre: string, contenu: string) {
 // mettre plusieurs hein, pas juste un") : plusieurs instructions perso
 // écrites par l'étudiant, chacune ajoutée EN PLUS du system_prompt déjà
 // résolu (voir core/main.py::_construire_system_prompt côté backend).
-export type Comportement = { id: string; texte: string };
+export type Comportement = { id: string; texte: string; description: string };
 
 export async function lireMesComportements(agentId: string) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`);

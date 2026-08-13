@@ -241,7 +241,7 @@ export type ResultatDiffusion = { diffuse_a: number; total_receveurs: number; ec
 // MonRole/lireMonRole/diffuserDocumentEtablissement/diffuserLien/
 // listerMesDiffusions retirés le 09/08 (demande Bourama : plus de rôle
 // pour Clovis) -- voir plus bas dans ce fichier les nouvelles
-// fonctions basées sur /api/agents/nitrux/contenus-matiere et
+// fonctions basées sur /api/agents/clovis/contenus-matiere et
 // /rattachements (contenu dynamique par matière, système déjà existant
 // et partagé avec Djiguignè, pas de vérification de rôle dessus).
 
@@ -526,14 +526,14 @@ export async function creerPageNotion(titre: string, contenu: string) {
 }
 
 /**
- * Contenu dynamique par matière -- agent "Nitrux" (06/08/2026, demande
+ * Contenu dynamique par matière -- agent "Clovis" (06/08/2026, demande
  * Bourama). Voir djiguigne-backend/api/contenu_dynamique_matiere.py.
  * "Enseignant" et "étudiant" ici ne sont pas des rôles de compte : ce
  * sont juste les deux rôles qu'on joue sur CET agent précis en écrivant
  * du contenu ou en entrant un code -- n'importe quel compte connecté
  * peut faire les deux. Fonctions ci-dessous ajoutées le 09/08 (le bloc
  * repris tel quel de djiguigne-frontend au bootstrap du projet n'avait
- * jamais été câblé nulle part, retiré) -- toujours agent_id="nitrux"
+ * jamais été câblé nulle part, retiré) -- toujours agent_id="clovis"
  * en dur, Clovis n'ayant qu'une seule IA (contrairement à
  * djiguigne-frontend, générique sur plusieurs agents).
  */
@@ -570,7 +570,7 @@ export async function supprimerComportement(agentId: string, comportementId: str
 }
 
 // Utilisée par EspaceClovis.tsx pour savoir si l'onglet "Mes
-// comportements" doit s'afficher -- agentId toujours "nitrux" ici (plus
+// comportements" doit s'afficher -- agentId toujours "clovis" ici (plus
 // de rôle, voir EspaceClovis.tsx), mais la fonction reste générique.
 // Endpoint public (GET /api/agents/{id}), pas besoin d'appelerApi/auth.
 // Renvoie false silencieusement si l'agent n'existe pas ou en cas
@@ -606,13 +606,13 @@ export type ContenuMatiere = {
 
 /** Les matières que J'AI écrites (mes codes à partager). */
 export async function listerMesContenus() {
-  return appelerApi("/api/agents/nitrux/contenus-matiere") as Promise<ContenuMatiere[]>;
+  return appelerApi("/api/agents/clovis/contenus-matiere") as Promise<ContenuMatiere[]>;
 }
 
 /** Crée ou met à jour (même matière = même ligne) le contenu d'une
  * matière. Le code ne change jamais après la première création. */
 export async function ecrireContenuMatiere(matiere: string, systemPrompt: string) {
-  return appelerApi("/api/agents/nitrux/contenus-matiere", {
+  return appelerApi("/api/agents/clovis/contenus-matiere", {
     method: "PUT",
     body: JSON.stringify({ matiere, system_prompt: systemPrompt }),
   }) as Promise<ContenuMatiere>;
@@ -628,19 +628,19 @@ export type Rattachement = {
 
 /** Les matières que J'AI débloquées en entrant un code, actives ou non. */
 export async function listerMesRattachements() {
-  return appelerApi("/api/agents/nitrux/rattachements") as Promise<Rattachement[]>;
+  return appelerApi("/api/agents/clovis/rattachements") as Promise<Rattachement[]>;
 }
 
 /** Entre un code à 6 caractères pour débloquer la matière correspondante. */
 export async function entrerCode(code: string) {
-  return appelerApi("/api/agents/nitrux/rattachements", {
+  return appelerApi("/api/agents/clovis/rattachements", {
     method: "POST",
     body: JSON.stringify({ code }),
   }) as Promise<Rattachement>;
 }
 
 export async function renommerRattachement(contenuId: string, surnom: string) {
-  return appelerApi(`/api/agents/nitrux/rattachements/${contenuId}/surnom`, {
+  return appelerApi(`/api/agents/clovis/rattachements/${contenuId}/surnom`, {
     method: "PATCH",
     body: JSON.stringify({ surnom }),
   });
@@ -649,7 +649,7 @@ export async function renommerRattachement(contenuId: string, surnom: string) {
 /** Bascule quelle matière est active quand plusieurs rattachements se
  * chevauchent sur la même matière (ex: deux codes reçus pour "Maths"). */
 export async function activerRattachement(contenuId: string) {
-  return appelerApi(`/api/agents/nitrux/rattachements/${contenuId}/activer`, { method: "PATCH" });
+  return appelerApi(`/api/agents/clovis/rattachements/${contenuId}/activer`, { method: "PATCH" });
 }
 
 export type Receveur = {
@@ -662,12 +662,12 @@ export type Receveur = {
 /** Qui a entré MON code pour cette matière précise (contenu_id = un des
  * miens, voir listerMesContenus). */
 export async function listerReceveurs(contenuId: string) {
-  return appelerApi(`/api/agents/nitrux/contenus-matiere/${contenuId}/receveurs`) as Promise<Receveur[]>;
+  return appelerApi(`/api/agents/clovis/contenus-matiere/${contenuId}/receveurs`) as Promise<Receveur[]>;
 }
 
 /** Diffuse un fichier à tous ceux qui ont entré mon code pour ce
  * contenu_id -- ajouté à la bibliothèque personnelle de chacun, pas à
- * la base partagée de Nitrux. */
+ * la base partagée de Clovis. */
 export async function diffuserDocumentMatiere(
   contenuId: string,
   fichier: File,
@@ -687,7 +687,7 @@ export async function diffuserDocumentMatiere(
   if (titre?.trim()) corps.append("titre", titre.trim());
   corps.append("description", description);
 
-  const chemin = `/api/agents/nitrux/contenus-matiere/${contenuId}/diffuser`;
+  const chemin = `/api/agents/clovis/contenus-matiere/${contenuId}/diffuser`;
   const reponse = await fetch(`${API_URL}${chemin}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${session.access_token}` },
@@ -704,7 +704,7 @@ export async function diffuserDocumentMatiere(
 /** Pendant de diffuserDocumentMatiere pour un lien (pas de fichier, juste
  * une URL). */
 export async function diffuserLienMatiere(contenuId: string, url: string, description: string, titre?: string) {
-  return appelerApi(`/api/agents/nitrux/contenus-matiere/${contenuId}/diffuser-lien`, {
+  return appelerApi(`/api/agents/clovis/contenus-matiere/${contenuId}/diffuser-lien`, {
     method: "POST",
     body: JSON.stringify({ url, titre, description }),
   }) as Promise<ResultatDiffusion>;

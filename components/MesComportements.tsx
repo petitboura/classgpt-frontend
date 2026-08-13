@@ -12,7 +12,7 @@ import { Skeleton } from "./Skeleton";
 // écrites par l'étudiant, chacune ajoutée EN PLUS du system_prompt déjà
 // résolu (généraliste, matière d'un enseignant, ou "Sans enseignant") --
 // jamais un remplacement, voir core/main.py::_construire_system_prompt.
-// Affichage piloté par agents.section_mes_comportements (Nitrux
+// Affichage piloté par agents.section_mes_comportements (Clovis
 // uniquement pour l'instant), gaté par le parent (SidebarChat.tsx et/ou
 // /dashboard/espace) -- ce composant est partagé entre les deux, jamais
 // dupliqué.

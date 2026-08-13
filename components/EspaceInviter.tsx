@@ -12,7 +12,7 @@ import { Skeleton } from "./Skeleton";
  * demande Bourama : plus de rôle enseignant/étudiant, plus de simple
  * bouton "générer un code" -- ici on écrit d'abord un contenu, le code
  * est généré en même temps que la première sauvegarde. Réutilise tel
- * quel /api/agents/nitrux/contenus-matiere (déjà construit et utilisé
+ * quel /api/agents/clovis/contenus-matiere (déjà construit et utilisé
  * par ailleurs via la page "L'IA de mes élèves" de djiguigne-frontend,
  * voir lib/api.ts:ecrireContenuMatiere).
  *

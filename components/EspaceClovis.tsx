@@ -20,7 +20,7 @@ import { Skeleton } from "./Skeleton";
 // le 09-10/08 (demande explicite Bourama, redite à Atik le 10/08 : "tout
 // le monde est pareil" -- voir contenu dynamique par matière,
 // api/contenu_dynamique_matiere.py).
-const AGENT_ID = "nitrux";
+const AGENT_ID = "clovis";
 
 /**
  * Espace utilisateur réduit de Clovis (partie 4 du brief, refonte du

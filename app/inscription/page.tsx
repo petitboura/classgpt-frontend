@@ -22,7 +22,7 @@ type MethodeAuth = "email" | "telephone";
 // attribuer, juste le compte Supabase + le nom enregistré sur le
 // profil (mettreAJourMonProfil, endpoint générique déjà partagé, voir
 // api/profiles.py:mettre_a_jour_mon_profil) -- puis droit au chat avec
-// Nitrux.
+// Clovis.
 //
 // Garde-fou (10/08, Atik) : app/page.tsx ne redirige plus jamais ici un
 // compte déjà connecté sans rôle (il n'y a plus de rôle à vérifier, voir

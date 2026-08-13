@@ -55,7 +55,7 @@ export function ChatIA({
   // l'utilisateur peut la changer pour la session via le selecteur.
   modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
   modeleChoisi?: string | null;
-  // Agent "Nitrux" / contenu dynamique par matière (06/08/2026) -- voir
+  // Agent "Clovis" / contenu dynamique par matière (06/08/2026) -- voir
   // core/contenu_dynamique_matiere.py. Passé jusqu'à BarreDeSaisie pour
   // afficher le bouton "Sans enseignant" (forcer le prompt généraliste
   // pour un message précis, sans passer par le routeur de matière).
@@ -423,7 +423,7 @@ export function ChatIA({
           ignorer_suggestion_outils: ignorerRouteurOutils,
           // Bouton "Sans enseignant" (06/08/2026, demande Bourama) --
           // uniquement pour les agents à contenu dynamique par matière
-          // (Nitrux) : force le prompt généraliste pour CE message
+          // (Clovis) : force le prompt généraliste pour CE message
           // précis, sans passer par le routeur de matière ni utiliser le
           // contenu d'aucun enseignant, même si l'étudiant a des
           // matières débloquées. Voir core/contenu_dynamique_matiere.py.

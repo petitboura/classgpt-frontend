@@ -21,7 +21,7 @@ import { Logo } from "@/components/Logo";
 // avant : l'agent dépendait d'un rôle résolu via /api/roles/moi
 // (étudiant/enseignant/établissement, chacun un agent différent), avec
 // un provisionnement silencieux si le compte n'en avait pas. Ce
-// mécanisme n'existe plus ici : l'agent est TOUJOURS "nitrux"
+// mécanisme n'existe plus ici : l'agent est TOUJOURS "clovis"
 // (AGENT_INVITE_ID plus bas), qu'on soit connecté ou non -- plus aucun
 // appel à /api/roles/moi ni à creerEtudiantAutonome dans ce fichier. Ce
 // qui différencie une IA d'une autre pour un compte donné, ce sont
@@ -60,8 +60,9 @@ type FilConversation = {
 
 // Seul agent de Clovis, pour tout le monde (voir commentaire plus
 // haut) -- endpoint public (`/api/agents/{id}`), consultable sans
-// session.
-const AGENT_INVITE_ID = "nitrux";
+// session. 12/08 : agent "clovis" dédié et indépendant en base
+// (détaché de nitrux/stirux/lirinus, voir clovis-backend).
+const AGENT_INVITE_ID = "clovis";
 
 // L'inscription n'est demandée qu'à partir du 5ème message envoyé par un
 // visiteur non connecté (09/08, décision Bourama) -- avant ça, le chat
@@ -74,7 +75,7 @@ const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
 // Même logique que nomAgent="Clovis" plus bas (fuite du nom
 // technique de l'agent réel) mais pour le titre et le sous-titre de
 // l'écran de démarrage (09/08, bug repéré par Bourama) : titre_accueil
-// ("Nitrux") et sous_titre_accueil ("Débloque une matière avec le code
+// ("Clovis") et sous_titre_accueil ("Débloque une matière avec le code
 // de ton enseignant...") viennent de l'agent partagé avec
 // djiguigne-frontend, où le déblocage par code est un vrai mécanisme,
 // absent de Clovis. Titre/sous-titre/icône fixes volontaires, pas un

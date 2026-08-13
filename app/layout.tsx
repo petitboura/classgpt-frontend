@@ -66,7 +66,16 @@ export const metadata: Metadata = {
   title: "Clovis",
   description: "Clovis",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Clovis" },
-  icons: { apple: "/icone-192.png" },
+  // Icône d'onglet (favicon) et icône iOS "ajouter à l'écran d'accueil"
+  // (12/08) : désormais générées automatiquement par Next.js depuis
+  // app/icon.png et app/apple-icon.png (convention native du App
+  // Router, aucune config ici nécessaire). Avant ça, ni djiguigne-
+  // frontend ni ce dépôt n'avaient de vrai favicon -- seule l'icône
+  // PWA (manifest) était branchée, ce qui laissait un onglet
+  // navigateur sans icône. La ligne `icons: { apple: ... }` qui
+  // pointait vers icone-192.png est retirée : app/apple-icon.png fait
+  // maintenant ce travail nativement, la garder aurait dupliqué la
+  // balise <link rel="apple-touch-icon">.
 };
 
 export default function RacineLayout({

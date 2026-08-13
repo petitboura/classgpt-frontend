@@ -1,9 +1,12 @@
 <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
   <defs>
+    <!-- Dégradé resserré (12/08, demande Bourama) vers les tons réels de
+         l'ancien logo Djiguignè (échantillonnés depuis logo.png) : plus
+         sombre et plus saturé que l'ancien dj-gradient pastel. -->
     <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#F2A65A"/>
-      <stop offset="55%" stop-color="#D9631F"/>
-      <stop offset="100%" stop-color="#8A2E0A"/>
+      <stop offset="0%" stop-color="#C2661C"/>
+      <stop offset="55%" stop-color="#8F3B00"/>
+      <stop offset="100%" stop-color="#551A00"/>
     </linearGradient>
   </defs>
   <!-- Plume : vanne asymétrique (bord droit plus bombé que le bord gauche),

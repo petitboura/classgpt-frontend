@@ -46,9 +46,11 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 // (débloquer une matière). Retiré entièrement (états, fonctions,
 // rendu desktop ET mobile, ListeMatieresDebloquees, imports liés).
 //
-// Logo (chapeau de diplômé, identité graphique) : branché depuis la
-// partie 5 (composant Logo.tsx), remplace l'icône GraduationCap
-// générique utilisée en repli le temps que cette partie soit livrée.
+// Logo (plume, identité graphique) : branché depuis la partie 5
+// (composant Logo.tsx), remplace l'icône GraduationCap générique
+// utilisée en repli le temps que cette partie soit livrée. Le
+// composant Logo.tsx dessinait encore l'ancien chapeau de diplômé
+// en dur jusqu'au 12/08 (corrigé pour dessiner la plume).
 
 // CORRIGÉ le 09/08 (Bourama, suite à la disparition de la barre en mode
 // invité) : "tout est visible, visiteur ou pas -- la seule différence,

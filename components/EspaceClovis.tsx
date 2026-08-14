@@ -22,6 +22,13 @@ import { Skeleton } from "./Skeleton";
 // api/contenu_dynamique_matiere.py).
 const AGENT_ID = "clovis";
 
+// Bureau masqué temporairement (14/08, demande Bourama : "la section va
+// revenir, donc fait en sorte qu'on ne le voit tout simplement pas") --
+// onglet + contenu (EspaceInviter/EspaceEntrerCode/EspaceEquipe/
+// EspaceDiffuser) volontairement gardés intacts ci-dessous, juste
+// exclus du rendu via ce flag. Repasser à true pour le faire revenir.
+const AFFICHER_BUREAU = false;
+
 /**
  * Espace utilisateur réduit de Clovis (partie 4 du brief, refonte du
  * 09/08). Volontairement SANS : onglet "administrer", onglet "mes IA",
@@ -50,7 +57,7 @@ const ONGLETS: { id: OngletId; label: string; Icone: typeof Briefcase }[] = [
 ];
 
 export function EspaceClovis() {
-  const [onglet, setOnglet] = useState<OngletId>("bureau");
+  const [onglet, setOnglet] = useState<OngletId>(AFFICHER_BUREAU ? "bureau" : "comportements");
 
   return (
     <main className="mx-auto max-w-2xl animate-dj-fade-in space-y-4 px-4 pb-24 pt-6">
@@ -64,7 +71,7 @@ export function EspaceClovis() {
       <h1 className="font-display text-xl font-bold text-dj-texte">Mon espace</h1>
 
       <div className="flex gap-2 overflow-x-auto border-b border-dj-bordure">
-        {ONGLETS.map((o) => (
+        {ONGLETS.filter((o) => AFFICHER_BUREAU || o.id !== "bureau").map((o) => (
           <button
             key={o.id}
             onClick={() => setOnglet(o.id)}
@@ -81,7 +88,7 @@ export function EspaceClovis() {
         ))}
       </div>
 
-      {onglet === "bureau" && (
+      {AFFICHER_BUREAU && onglet === "bureau" && (
         <div className="flex flex-col gap-4">
           <EspaceInviter />
           <EspaceEntrerCode />

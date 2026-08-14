@@ -1,55 +1,114 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Download, Trophy, Check } from "lucide-react";
-import { rechercherPlugins, classementPlugins, telechargerPlugin, type Plugin } from "@/lib/api";
+import { listerPlugins, telechargerPlugin, type Plugin } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 
 // Lot 5 (chantier programme étudiant) -- interface de recherche/téléchar-
 // gement des plugins (espaces de classe exportés en bloc, voir Partie 1 du
-// document source) et classement des plus téléchargés (mécanique de
-// lancement : le plus téléchargé fait gagner un an de gratuité à son
-// auteur). Ne gère PAS le paiement des plugins payants (hors scope du
-// lancement) -- `gratuit` est affiché à titre indicatif seulement.
+// document source). Ne gère PAS le paiement des plugins payants (hors
+// scope du lancement) -- `gratuit` est affiché à titre indicatif seulement.
+//
+// 2026-08-14 : fusion demandée par Bourama -- plus de sections "Rechercher"
+// / "Les plus téléchargés" séparées. Une seule liste, toujours triée par
+// téléchargements décroissant (classement de la mécanique de lancement :
+// le plus téléchargé fait gagner un an de gratuité à son auteur), avec un
+// champ de recherche libre intégré (recherche en direct, débounce 300ms)
+// qui filtre sur nom + niveau + auteur sans changer le tri.
+//
+// Pas de mécanisme i18n disponible dans ce composant (vérifié 2026-08-14,
+// aucun i18n branché sur ce fichier ni sur le reste de l'espace plugins) --
+// textes en dur en français comme le reste du fichier, à signaler à
+// Bourama si la traduction doit être ajoutée plus tard.
 //
 // Pas encore de point d'entrée dans la navigation : composant autonome,
 // à brancher par Bourama où il le souhaite (menu, onglet dédié…).
 
-type SousOnglet = "recherche" | "classement";
+const DELAI_DEBOUNCE_MS = 300;
 
 export function EspacePlugins() {
-  const [sousOnglet, setSousOnglet] = useState<SousOnglet>("recherche");
+  const [motCle, setMotCle] = useState("");
+  const [plugins, setPlugins] = useState<Plugin[] | null>(null);
+  const [chargement, setChargement] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const requeteEnCours = useRef(0);
+
+  useEffect(() => {
+    const idAppel = ++requeteEnCours.current;
+    setChargement(true);
+    setErreur(null);
+
+    const minuteur = setTimeout(async () => {
+      try {
+        const r = await listerPlugins(motCle);
+        if (idAppel === requeteEnCours.current) {
+          setPlugins(r);
+        }
+      } catch (e) {
+        if (idAppel === requeteEnCours.current) {
+          setErreur(messageErreur(e));
+          setPlugins([]);
+        }
+      } finally {
+        if (idAppel === requeteEnCours.current) {
+          setChargement(false);
+        }
+      }
+    }, motCle.trim() ? DELAI_DEBOUNCE_MS : 0);
+
+    return () => clearTimeout(minuteur);
+  }, [motCle]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-1 text-xs">
-        <button
-          onClick={() => setSousOnglet("recherche")}
-          className={
-            "rounded-full px-3 py-1.5 font-semibold transition-colors " +
-            (sousOnglet === "recherche" ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
-          }
-        >
-          Rechercher
-        </button>
-        <button
-          onClick={() => setSousOnglet("classement")}
-          className={
-            "rounded-full px-3 py-1.5 font-semibold transition-colors " +
-            (sousOnglet === "classement" ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
-          }
-        >
-          Les plus téléchargés
-        </button>
+    <div className="flex flex-col gap-3">
+      <div className="relative">
+        <Search
+          size={15}
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-dj-texte-muet"
+        />
+        <input
+          value={motCle}
+          onChange={(e) => setMotCle(e.target.value)}
+          placeholder="Rechercher un plugin par nom, niveau ou créateur…"
+          className="w-full rounded-full border border-dj-bordure bg-dj-surface py-2.5 pl-10 pr-4 text-sm text-dj-texte outline-none transition-colors focus:border-dj-bordure-forte"
+        />
       </div>
 
-      {sousOnglet === "recherche" ? <SectionRecherche /> : <SectionClassement />}
+      <p className="text-xs text-dj-texte-muet">
+        Le plugin le plus téléchargé fait gagner à son auteur un an de gratuité sur la version payante la moins
+        chère.
+      </p>
+
+      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+
+      {chargement && (
+        <div className="flex flex-col gap-2 transition-opacity duration-200" aria-hidden>
+          <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
+          <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
+          <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "200ms" }} />
+        </div>
+      )}
+
+      {!chargement && plugins?.length === 0 && !erreur && (
+        <p className="text-sm text-dj-texte-muet">
+          {motCle.trim() ? "Aucun plugin ne correspond à cette recherche." : "Aucun plugin publié pour l'instant."}
+        </p>
+      )}
+
+      {!chargement && plugins && plugins.length > 0 && (
+        <div className="flex flex-col gap-2 animate-dj-fade-in-rapide">
+          {plugins.map((p, i) => (
+            <LignePlugin key={p.id} plugin={p} rang={i} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function LignePlugin({ plugin, onTelecharge }: { plugin: Plugin; onTelecharge: (p: Plugin) => void }) {
+function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
   const [confirmation, setConfirmation] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -62,7 +121,6 @@ function LignePlugin({ plugin, onTelecharge }: { plugin: Plugin; onTelecharge: (
       await telechargerPlugin(plugin.id);
       setTelecharge(true);
       setConfirmation(false);
-      onTelecharge(plugin);
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
@@ -71,13 +129,18 @@ function LignePlugin({ plugin, onTelecharge }: { plugin: Plugin; onTelecharge: (
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3">
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-dj-texte">{plugin.nom}</p>
-        <p className="text-xs text-dj-texte-muet">
-          {plugin.niveau} · {plugin.telechargements_count} téléchargement(s) · {plugin.gratuit ? "Gratuit" : "Payant"}
-        </p>
-        {erreur && <p className="mt-1 text-xs text-[#F87171]">{erreur}</p>}
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex w-6 flex-shrink-0 items-center justify-center text-sm font-bold text-dj-texte-muet">
+          {rang === 0 ? <Trophy size={16} className="text-dj-accent-1" /> : `#${rang + 1}`}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm text-dj-texte">{plugin.nom}</p>
+          <p className="text-xs text-dj-texte-muet">
+            {plugin.niveau} · {plugin.telechargements_count} téléchargement(s) · {plugin.gratuit ? "Gratuit" : "Payant"}
+          </p>
+          {erreur && <p className="mt-1 text-xs text-[#F87171]">{erreur}</p>}
+        </div>
       </div>
 
       {telecharge ? (
@@ -109,129 +172,6 @@ function LignePlugin({ plugin, onTelecharge }: { plugin: Plugin; onTelecharge: (
         >
           <Download size={13} /> Télécharger
         </button>
-      )}
-    </div>
-  );
-}
-
-function SectionRecherche() {
-  const [niveau, setNiveau] = useState("");
-  const [auteur, setAuteur] = useState("");
-  const [resultats, setResultats] = useState<Plugin[] | null>(null);
-  const [recherche, setRecherche] = useState(false);
-  const [erreur, setErreur] = useState<string | null>(null);
-  const [aDejaCherche, setADejaCherche] = useState(false);
-
-  async function lancerRecherche() {
-    setRecherche(true);
-    setErreur(null);
-    try {
-      const r = await rechercherPlugins({ niveau: niveau.trim() || undefined, auteur: auteur.trim() || undefined });
-      setResultats(r);
-      setADejaCherche(true);
-    } catch (e) {
-      setErreur(messageErreur(e));
-    } finally {
-      setRecherche(false);
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-4 sm:flex-row sm:items-center">
-        <input
-          value={niveau}
-          onChange={(e) => setNiveau(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && lancerRecherche()}
-          placeholder="Niveau / classe"
-          className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
-        />
-        <input
-          value={auteur}
-          onChange={(e) => setAuteur(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && lancerRecherche()}
-          placeholder="Nom du créateur"
-          className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
-        />
-        <button
-          onClick={lancerRecherche}
-          disabled={recherche || (!niveau.trim() && !auteur.trim())}
-          className="flex flex-shrink-0 items-center gap-1.5 self-end rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50 sm:self-auto"
-        >
-          <Search size={14} /> {recherche ? "Recherche…" : "Rechercher"}
-        </button>
-      </div>
-
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
-
-      {recherche && (
-        <div className="flex flex-col gap-2" aria-hidden>
-          <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
-          <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
-        </div>
-      )}
-      {!recherche && aDejaCherche && resultats?.length === 0 && (
-        <p className="text-sm text-dj-texte-muet">Aucun plugin trouvé.</p>
-      )}
-      {!recherche && resultats && resultats.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {resultats.map((p) => (
-            <LignePlugin key={p.id} plugin={p} onTelecharge={() => {}} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SectionClassement() {
-  const [plugins, setPlugins] = useState<Plugin[] | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
-
-  useEffect(() => {
-    classementPlugins()
-      .then(setPlugins)
-      .catch((e) => {
-        setErreur(messageErreur(e));
-        setPlugins([]);
-      });
-  }, []);
-
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-xs text-dj-texte-muet">
-        Le plugin le plus téléchargé fait gagner à son auteur un an de gratuité sur la version payante la moins
-        chère.
-      </p>
-
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
-
-      {plugins === null && (
-        <div className="flex flex-col gap-2" aria-hidden>
-          <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
-          <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
-        </div>
-      )}
-      {plugins?.length === 0 && !erreur && <p className="text-sm text-dj-texte-muet">Aucun plugin publié pour l&apos;instant.</p>}
-      {plugins && plugins.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {plugins.map((p, i) => (
-            <div
-              key={p.id}
-              className="flex items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
-            >
-              <span className="flex w-6 flex-shrink-0 items-center justify-center text-sm font-bold text-dj-texte-muet">
-                {i === 0 ? <Trophy size={16} className="text-dj-accent-1" /> : `#${i + 1}`}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-dj-texte">{p.nom}</p>
-                <p className="text-xs text-dj-texte-muet">
-                  {p.niveau} · {p.telechargements_count} téléchargement(s)
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
       )}
     </div>
   );

@@ -972,17 +972,9 @@ export async function publierProgrammeCommePlugin(programmeId: string, nom: stri
   return resultat as Plugin;
 }
 
-export async function rechercherPlugins(filtre: { niveau?: string; auteur?: string }) {
-  const params = new URLSearchParams();
-  if (filtre.niveau) params.set("niveau", filtre.niveau);
-  if (filtre.auteur) params.set("auteur", filtre.auteur);
-  const suffixe = params.toString() ? `?${params.toString()}` : "";
+export async function listerPlugins(motCle?: string) {
+  const suffixe = motCle && motCle.trim() ? `?q=${encodeURIComponent(motCle.trim())}` : "";
   const resultat = await appelerApi(`/api/plugins${suffixe}`);
-  return resultat as Plugin[];
-}
-
-export async function classementPlugins() {
-  const resultat = await appelerApi(`/api/plugins/classement`);
   return resultat as Plugin[];
 }
 

@@ -8,6 +8,7 @@ import { ChatIA } from "@/components/chat/ChatIA";
 import { MessageAffiche, nettoyerMessageHistorique } from "@/components/chat/BulleMessage";
 import { SidebarChatLite } from "@/components/chat/SidebarChatLite";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
+import { CatalogueClovis } from "@/components/CatalogueClovis";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 import { Logo } from "@/components/Logo";
 
@@ -92,6 +93,7 @@ export default function PageAccueilChat() {
   const [messagesInitiaux, setMessagesInitiaux] = useState<MessageAffiche[]>([]);
   const [nbMessages, setNbMessages] = useState(0);
   const [compteRequis, setCompteRequis] = useState(false);
+  const [catalogueOuvert, setCatalogueOuvert] = useState(false);
   useHauteurVisuelle();
 
   useEffect(() => {
@@ -203,6 +205,7 @@ export default function PageAccueilChat() {
         onSelectionnerConversation={selectionnerConversation}
         sectionMesComportements={agent.section_mes_comportements}
         onNecessiteCompte={() => setCompteRequis(true)}
+        onOuvrirCatalogue={() => setCatalogueOuvert(true)}
       />
       <div className="flex-1 overflow-hidden">
         <ChatIA
@@ -235,6 +238,7 @@ export default function PageAccueilChat() {
           // ?? true`).
           boutonSansEnseignant={false}
           avantEnvoi={verifierLimiteInvite}
+          onOuvrirCatalogue={() => setCatalogueOuvert(true)}
         />
       </div>
 
@@ -244,6 +248,8 @@ export default function PageAccueilChat() {
           onFerme={() => setCompteRequis(false)}
         />
       )}
+
+      {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
     </div>
   );
 }

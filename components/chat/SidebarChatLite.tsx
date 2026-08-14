@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   Share2,
   Star,
+  Compass,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { appelerApi } from "@/lib/api";
@@ -91,6 +92,7 @@ export function SidebarChatLite({
   onSelectionnerConversation,
   sectionMesComportements,
   onNecessiteCompte,
+  onOuvrirCatalogue,
 }: {
   agentId: string;
   connecte: boolean;
@@ -100,6 +102,10 @@ export function SidebarChatLite({
   onSelectionnerConversation: (fil: FilConversation) => void;
   sectionMesComportements?: boolean;
   onNecessiteCompte: () => void;
+  // Bouton réouvrable "Ce qui différencie Clovis" (14/08) -- ouvre
+  // CatalogueClovis, état géré par le parent (app/page.tsx), même
+  // pattern que onNecessiteCompte ci-dessus.
+  onOuvrirCatalogue: () => void;
 }) {
   // "Mon espace" est toujours visible, connecté ou non (voir
   // commentaire d'en-tête, 09-10/08) : plus de rôle à tester.
@@ -236,6 +242,16 @@ export function SidebarChatLite({
           </span>
           <LibelleRail ouverte={ouverte}>Mon espace</LibelleRail>
         </Link>
+
+        <button
+          onClick={onOuvrirCatalogue}
+          className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        >
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <Compass size={18} />
+          </span>
+          <LibelleRail ouverte={ouverte}>Pourquoi Clovis ?</LibelleRail>
+        </button>
 
         {fils && fils.length > 0 && (
           <div className="mt-2 rounded-xl">
@@ -427,6 +443,19 @@ export function SidebarChatLite({
             </span>
             <span className="text-sm">Mon espace</span>
           </Link>
+
+          <button
+            onClick={() => {
+              onOuvrirCatalogue();
+              setOuverte(false);
+            }}
+            className="mt-2 flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          >
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+              <Compass size={18} />
+            </span>
+            <span className="text-sm">Pourquoi Clovis ?</span>
+          </button>
 
           {fils && fils.length > 0 && (
             <div className="mt-2 flex-1 overflow-y-auto rounded-xl">

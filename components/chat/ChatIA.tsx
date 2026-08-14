@@ -35,6 +35,7 @@ export function ChatIA({
   boutonSansEnseignant = false,
   avantEnvoi,
   iconePersonnalisee,
+  onOuvrirCatalogue,
 }: {
   agentId: string;
   nomAgent: string;
@@ -73,6 +74,9 @@ export function ChatIA({
   // réel -- déjà géré via nomAgent -- ni son icône réelle, remplacée ici
   // par le logo Clovis).
   iconePersonnalisee?: React.ReactNode;
+  // Teaser catalogue (14/08) : ouvre CatalogueClovis, géré par le parent
+  // (app/page.tsx) -- optionnelle, ne s'affiche que si fournie.
+  onOuvrirCatalogue?: () => void;
 }) {
   const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
   const [messages, setMessages] = useState<MessageAffiche[]>(messagesInitiaux);
@@ -574,6 +578,14 @@ export function ChatIA({
               </span>
               <h1 className="font-display text-3xl font-bold tracking-[-0.01em] text-dj-texte sm:text-4xl">{titreAccueil}</h1>
               {sousTitreAccueil && <p className="mt-2 text-base text-dj-texte-muet">{sousTitreAccueil}</p>}
+              {onOuvrirCatalogue && (
+                <button
+                  onClick={onOuvrirCatalogue}
+                  className="mt-3 inline-flex items-center gap-1.5 text-sm text-dj-texte-muet underline decoration-dj-bordure-forte decoration-1 underline-offset-4 transition-colors hover:text-dj-accent-1"
+                >
+                  Ce qui différencie {nomAgent}
+                </button>
+              )}
             </div>
           ) : (
             <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>

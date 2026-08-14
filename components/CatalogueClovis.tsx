@@ -1,0 +1,172 @@
+"use client";
+
+import {
+  X,
+  Compass,
+  Brain,
+  Library,
+  Calculator,
+  BookOpen,
+  Puzzle,
+  Bell,
+  ShieldCheck,
+  Smartphone,
+  Upload,
+  Download,
+} from "lucide-react";
+
+// Catalogue "Ce qui différencie Clovis" (14/08, demande Bourama : "un
+// catalogue qui explique les choses différentes des autres IA quand on
+// arrive dans le chat"). Contenu audité directement sur le code réel des
+// deux dépôts (clovis-backend + classgpt-frontend), pas un texte marketing
+// générique -- voir la conversation d'origine pour le détail par fichier.
+//
+// Deux points d'entrée (demande explicite) : un teaser sur l'écran
+// d'accueil du chat (ChatIA.tsx, tant qu'aucun message n'a été envoyé) et
+// un bouton dédié réouvrable à tout moment (SidebarChatLite.tsx). Les deux
+// pointent vers ce même composant, état géré par le parent (app/page.tsx),
+// même pattern que CompteRequisModal.
+
+type Fonctionnalite = {
+  Icone: typeof Brain;
+  titre: string;
+  description: string;
+};
+
+const FONCTIONNALITES: Fonctionnalite[] = [
+  {
+    Icone: Brain,
+    titre: "Une mémoire qui se construit seule",
+    description:
+      "Clovis retient qui tu es et comment tu travailles au fil des conversations -- pas de questionnaire à remplir, et le résumé reste modifiable dans Mon espace.",
+  },
+  {
+    Icone: Library,
+    titre: "Bibliothèque personnelle",
+    description:
+      "Les documents que tu envoies restent exploitables dans toutes tes conversations, pas seulement celle où tu les as postés.",
+  },
+  {
+    Icone: Calculator,
+    titre: "De vrais outils de maths",
+    description:
+      "Calcul symbolique, éditeur de formules et de réactions chimiques, dessin de géométrie -- pas juste du texte qui décrit une réponse.",
+  },
+  {
+    Icone: BookOpen,
+    titre: "Ton programme, structuré par toi",
+    description:
+      "Organise tes matières et chapitres toi-même ; Clovis s'appuie dessus et écrit un point chaque semaine sur chaque matière.",
+  },
+  {
+    Icone: Puzzle,
+    titre: "Plugins communautaires",
+    description: "Télécharge ou partage des espaces de classe entiers créés par d'autres utilisateurs.",
+  },
+  {
+    Icone: Bell,
+    titre: "Peut prendre les devants",
+    description: "Si tu l'autorises, Clovis peut te relancer de lui-même après une période d'inactivité.",
+  },
+  {
+    Icone: ShieldCheck,
+    titre: "Toujours disponible",
+    description: "Plusieurs modèles prennent le relais automatiquement en cas de souci, sans jamais couper la conversation.",
+  },
+  {
+    Icone: Smartphone,
+    titre: "Une vraie application",
+    description: "S'installe sur téléphone ou ordinateur, avec notifications -- pas juste un site ouvert dans un onglet.",
+  },
+];
+
+const ENTREES = [
+  "Images (JPEG, PNG, WebP)",
+  "Documents (PDF, Word, Excel)",
+  "Vidéo (jusqu'à 2 min)",
+  "Audio (dictée vocale)",
+  "Position géographique",
+  "Photo d'une formule",
+];
+
+const SORTIES = [
+  "Documents Word, Excel, PowerPoint, LaTeX",
+  "Code et sites web déployables",
+  "Images et voix de synthèse",
+  "Modèles 3D et vidéos",
+  "Documents à signer électroniquement",
+  "Rappels programmés",
+];
+
+export function CatalogueClovis({ onFerme }: { onFerme: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex animate-dj-fade-in-rapide items-end justify-center bg-black/50 p-4 sm:items-center"
+      onClick={onFerme}
+    >
+      <div
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col animate-cgpt-entree-modal rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_2px_24px_rgba(0,0,0,0.35)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-shrink-0 items-start justify-between border-b border-dj-bordure px-6 py-4">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-1/10 text-dj-accent-1">
+              <Compass size={18} />
+            </span>
+            <h2 className="font-display text-lg font-bold tracking-[-0.01em] text-dj-texte">Ce qui différencie Clovis</h2>
+          </div>
+          <button
+            onClick={onFerme}
+            aria-label="Fermer"
+            className="flex-shrink-0 text-dj-texte-muet transition-colors hover:text-dj-texte"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-6 py-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {FONCTIONNALITES.map(({ Icone, titre, description }) => (
+              <div key={titre} className="flex flex-col gap-1.5 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute p-3.5">
+                <div className="flex items-center gap-2">
+                  <Icone size={16} className="flex-shrink-0 text-dj-accent-1" />
+                  <span className="text-sm font-semibold text-dj-texte">{titre}</span>
+                </div>
+                <p className="text-xs leading-relaxed text-dj-texte-muet">{description}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-3 border-t border-dj-bordure pt-5 sm:grid-cols-2">
+            <div>
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-dj-texte-muet">
+                <Upload size={13} />
+                Ce que tu peux lui envoyer
+              </div>
+              <ul className="space-y-1">
+                {ENTREES.map((item) => (
+                  <li key={item} className="text-sm text-dj-texte">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-dj-texte-muet">
+                <Download size={13} />
+                Ce qu'il peut créer pour toi
+              </div>
+              <ul className="space-y-1">
+                {SORTIES.map((item) => (
+                  <li key={item} className="text-sm text-dj-texte">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

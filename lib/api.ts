@@ -964,10 +964,25 @@ export type Plugin = {
   telechargements_count: number;
 };
 
-export async function publierProgrammeCommePlugin(programmeId: string, nom: string) {
+export type ExamenTransverse = {
+  id: string;
+  titre: string;
+  type: string;
+};
+
+export async function examensTransversesProgramme(programmeId: string) {
+  const resultat = await appelerApi(`/api/programmes/${programmeId}/examens-transverses`);
+  return resultat as ExamenTransverse[];
+}
+
+export async function publierProgrammeCommePlugin(
+  programmeId: string,
+  nom: string,
+  examensTransversesInclus: string[] = []
+) {
   const resultat = await appelerApi(`/api/programmes/${programmeId}/publier-plugin`, {
     method: "POST",
-    body: JSON.stringify({ nom }),
+    body: JSON.stringify({ nom, examens_transverses_inclus: examensTransversesInclus }),
   });
   return resultat as Plugin;
 }

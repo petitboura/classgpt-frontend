@@ -18,6 +18,8 @@ import {
   type Examen,
   type TypeExamen,
   publierProgrammeCommePlugin,
+  examensTransversesProgramme,
+  type ExamenTransverse,
 } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
@@ -547,6 +549,24 @@ function SectionPublierPlugin({ programmeId }: { programmeId: string }) {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [publie, setPublie] = useState(false);
+  const [examensTransverses, setExamensTransverses] = useState<ExamenTransverse[] | null>(null);
+  const [examensChoisis, setExamensChoisis] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!ouvert || examensTransverses !== null) return;
+    examensTransversesProgramme(programmeId)
+      .then(setExamensTransverses)
+      .catch(() => setExamensTransverses([]));
+  }, [ouvert, examensTransverses, programmeId]);
+
+  function basculerExamenChoisi(id: string) {
+    setExamensChoisis((precedent) => {
+      const suivant = new Set(precedent);
+      if (suivant.has(id)) suivant.delete(id);
+      else suivant.add(id);
+      return suivant;
+    });
+  }
 
   async function publier() {
     if (!nom.trim()) return;
@@ -555,7 +575,7 @@ function SectionPublierPlugin({ programmeId }: { programmeId: string }) {
     setEnvoi(true);
     setErreur(null);
     try {
-      await publierProgrammeCommePlugin(programmeId, nom.trim());
+      await publierProgrammeCommePlugin(programmeId, nom.trim(), Array.from(examensChoisis));
       setPublie(true);
       setOuvert(false);
     } catch (e) {
@@ -572,8 +592,8 @@ function SectionPublierPlugin({ programmeId }: { programmeId: string }) {
         <h3 className="text-sm font-semibold text-dj-texte">Publier comme plugin</h3>
       </div>
       <p className="text-xs text-dj-texte-muet">
-        Rend cet espace (matières, chapitres, documents, exercices) téléchargeable en un bloc par d&apos;autres élèves
-        de la même classe.
+        Rend cet espace (matières, chapitres, documents, exercices, examens, classements) téléchargeable en un bloc
+        par d&apos;autres élèves de la même classe.
       </p>
 
       {publie ? (
@@ -581,20 +601,48 @@ function SectionPublierPlugin({ programmeId }: { programmeId: string }) {
           <Check size={14} /> Plugin publié.
         </p>
       ) : ouvert ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            placeholder="Nom du plugin"
-            className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
-          />
-          <button
-            onClick={publier}
-            disabled={envoi || !nom.trim()}
-            className="rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {envoi ? "Publication…" : "Publier"}
-          </button>
+        <div className="flex flex-col gap-3 animate-dj-fade-in-rapide">
+          {examensTransverses === null && (
+            <Skeleton className="h-10 rounded-xl border border-dj-bordure" />
+          )}
+
+          {examensTransverses && examensTransverses.length > 0 && (
+            <div className="flex flex-col gap-2 rounded-xl border border-dj-bordure bg-dj-fond p-3">
+              <p className="text-xs text-dj-texte-muet">
+                Ces examens/devoirs couvrent aussi des chapitres d&apos;un autre de tes programmes. Coche ceux à
+                inclure quand même dans la copie (seuls les chapitres de <em>ce</em> programme seront repris) :
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {examensTransverses.map((ex) => (
+                  <label key={ex.id} className="flex items-center gap-2 text-xs text-dj-texte">
+                    <input
+                      type="checkbox"
+                      checked={examensChoisis.has(ex.id)}
+                      onChange={() => basculerExamenChoisi(ex.id)}
+                      className="h-3.5 w-3.5 accent-dj-accent-1"
+                    />
+                    <span className="truncate">{ex.titre}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              value={nom}
+              onChange={(e) => setNom(e.target.value)}
+              placeholder="Nom du plugin"
+              className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+            />
+            <button
+              onClick={publier}
+              disabled={envoi || !nom.trim()}
+              className="rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              {envoi ? "Publication…" : "Publier"}
+            </button>
+          </div>
         </div>
       ) : (
         <button

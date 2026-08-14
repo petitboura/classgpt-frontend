@@ -8,6 +8,7 @@ import {
   MessageSquarePlus,
   History,
   LogOut,
+  LogIn,
   Users,
   Sparkles,
   MoreHorizontal,
@@ -378,7 +379,7 @@ export function SidebarChatLite({
           className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            <LogOut size={18} />
+            {connecte ? <LogOut size={18} /> : <LogIn size={18} />}
           </span>
           <LibelleRail ouverte={ouverte}>{connecte ? "Se déconnecter" : "Se connecter"}</LibelleRail>
         </button>
@@ -516,7 +517,7 @@ export function SidebarChatLite({
             className="mt-auto flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <LogOut size={18} />
+              {connecte ? <LogOut size={18} /> : <LogIn size={18} />}
             </span>
             <span className="text-sm">{connecte ? "Se déconnecter" : "Se connecter"}</span>
           </button>

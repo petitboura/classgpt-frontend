@@ -16,7 +16,6 @@ import {
   Archive,
   Download,
   Image as IconImage,
-  Rocket,
   Bell,
   FolderTree,
   FileCode,
@@ -122,8 +121,6 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   { nom: "notion-create-view", label: "Créer une vue Notion", Icone: PanelsTopLeft, onglet: "action_app", appli: "notion" },
   { nom: "notion-update-view", label: "Modifier une vue Notion", Icone: SlidersHorizontal, onglet: "action_app", appli: "notion" },
 
-  { nom: "exporter_donnees", label: "Exporter des données", Icone: Download, onglet: "utilitaires" },
-  { nom: "deployer_site", label: "Déployer un site", Icone: Rocket, onglet: "utilitaires" },
   { nom: "planifier_rappel", label: "Planifier un rappel", Icone: Bell, onglet: "utilitaires" },
   // Actions locales (2026-07-28, refonte barre de saisie demandée par
   // Bourama) -- ces 4 entrées ne sont PAS des outils envoyés au backend

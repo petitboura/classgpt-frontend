@@ -1421,7 +1421,7 @@ export function BarreDeSaisie({
 
       {/* Rectangle à coins arrondis (plus une pilule ovale complète), tous
           les éléments alignés en bas -- voir section 3.3. */}
-      <div className="relative hidden rounded-3xl bg-dj-surface-haute px-4 py-3 shadow-[0_1px_12px_rgba(0,0,0,0.08)] focus-within:shadow-[0_1px_16px_rgba(0,0,0,0.14)] md:block">
+      <div className="relative hidden rounded-3xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 focus-within:border-dj-bordure-forte md:block">
         {/* Aperçu formules (2026-07-27) -- affiché seulement si le
             brouillon contient au moins un "$", pour ne pas dupliquer
             inutilement un simple message texte sans maths. Placé
@@ -2243,7 +2243,38 @@ export function BarreDeSaisie({
           )}
         </div>
       )}
-      <div className="flex items-end gap-1 rounded-3xl bg-dj-surface-haute px-2 py-1 shadow-[0_1px_12px_rgba(0,0,0,0.08)] focus-within:shadow-[0_1px_16px_rgba(0,0,0,0.14)] md:hidden">
+      <div className="flex flex-col gap-1 rounded-3xl border border-dj-bordure bg-dj-surface-haute px-3 py-2.5 focus-within:border-dj-bordure-forte md:hidden">
+        <textarea
+          ref={zoneTexteMobileRef}
+          value={texte}
+          onChange={(e) => setTexte(e.target.value)}
+          onPaste={gererCollage}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              envoyer();
+            }
+          }}
+          onFocus={(e) => {
+            // Correctif mobile (2026-07-30) : à l'ouverture du clavier,
+            // iOS Safari met quelques centaines de ms à réduire le
+            // viewport visible (voir lib/useHauteurVisuelle.ts) -- sans
+            // ça le champ reste visuellement "sous" le clavier le temps
+            // de l'animation. setTimeout laisse cette animation démarrer
+            // avant de forcer le champ dans la zone désormais visible.
+            const el = e.currentTarget;
+            setTimeout(() => el.scrollIntoView({ block: "end", behavior: "smooth" }), 300);
+          }}
+          placeholder={transcriptionEnCours ? "Transcription en cours..." : "Pose ta question..."}
+          rows={1}
+          className="max-h-32 min-h-8 w-full resize-none overflow-y-auto bg-transparent px-1 py-1 text-[15px] leading-normal text-dj-texte outline-none placeholder:text-dj-texte-muet"
+        />
+
+        {/* Deuxième ligne (14/08, demande Bourama : forme carte en deux
+            lignes empilées comme la référence Claude fournie, au lieu
+            d'une seule ligne "pilule" plate -- texte au-dessus, icônes
+            actions en dessous, "+" à gauche / micro-envoi à droite). */}
+        <div className="flex items-center justify-between gap-1">
         <div className="relative flex-shrink-0">
           <button
             ref={boutonPlusRef}
@@ -2360,32 +2391,7 @@ export function BarreDeSaisie({
           )}
         </div>
 
-        <textarea
-          ref={zoneTexteMobileRef}
-          value={texte}
-          onChange={(e) => setTexte(e.target.value)}
-          onPaste={gererCollage}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              envoyer();
-            }
-          }}
-          onFocus={(e) => {
-            // Correctif mobile (2026-07-30) : à l'ouverture du clavier,
-            // iOS Safari met quelques centaines de ms à réduire le
-            // viewport visible (voir lib/useHauteurVisuelle.ts) -- sans
-            // ça le champ reste visuellement "sous" le clavier le temps
-            // de l'animation. setTimeout laisse cette animation démarrer
-            // avant de forcer le champ dans la zone désormais visible.
-            const el = e.currentTarget;
-            setTimeout(() => el.scrollIntoView({ block: "end", behavior: "smooth" }), 300);
-          }}
-          placeholder={transcriptionEnCours ? "Transcription en cours..." : "Pose ta question..."}
-          rows={1}
-          className="max-h-32 min-h-10 flex-1 resize-none overflow-y-auto bg-transparent px-2 py-2 text-[15px] leading-normal text-dj-texte outline-none placeholder:text-dj-texte-muet"
-        />
-
+        <div className="flex items-center gap-1">
         {dictant ? (
           <button
             onClick={arreterDictee}
@@ -2504,6 +2510,8 @@ export function BarreDeSaisie({
             })()}
           </>
         )}
+        </div>
+        </div>
       </div>
 
       {/* Éditeur maths/chimie mobile (2026-07-30, bug signalé par Bourama :

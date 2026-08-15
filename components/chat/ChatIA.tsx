@@ -578,14 +578,6 @@ export function ChatIA({
               </span>
               <h1 className="font-display text-3xl font-bold tracking-[-0.01em] text-dj-texte sm:text-4xl">{titreAccueil}</h1>
               {sousTitreAccueil && <p className="mt-2 text-base text-dj-texte-muet">{sousTitreAccueil}</p>}
-              {onOuvrirCatalogue && (
-                <button
-                  onClick={onOuvrirCatalogue}
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm text-dj-texte-muet underline decoration-dj-bordure-forte decoration-1 underline-offset-4 transition-colors hover:text-dj-accent-1"
-                >
-                  Ce qui différencie {nomAgent}
-                </button>
-              )}
             </div>
           ) : (
             <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>
@@ -598,6 +590,7 @@ export function ChatIA({
             modeleSelectionne={modeleSelectionne}
             onModeleChange={setModeleSelectionne}
             boutonSansEnseignant={boutonSansEnseignant}
+            onOuvrirCatalogue={onOuvrirCatalogue}
           />
         </div>
       </div>
@@ -701,6 +694,7 @@ export function ChatIA({
           modeleSelectionne={modeleSelectionne}
           onModeleChange={setModeleSelectionne}
           boutonSansEnseignant={boutonSansEnseignant}
+          onOuvrirCatalogue={onOuvrirCatalogue}
         />
       </div>
 

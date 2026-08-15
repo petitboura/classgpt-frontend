@@ -96,6 +96,17 @@ export default function PageAccueilChat() {
   const [catalogueOuvert, setCatalogueOuvert] = useState(false);
   useHauteurVisuelle();
 
+  // Catalogue "Pourquoi Clovis ?" (14/08, demande Bourama : "que s'affiche
+  // si c'est ta première fois d'ouvrir l'app pas à chaque fois... c'est
+  // juste pour une première impression") -- s'ouvre une seule fois par
+  // appareil, jamais plus après, indépendamment de connecte/invité. Reste
+  // réouvrable à tout moment via le menu Actions (voir BarreDeSaisie.tsx).
+  useEffect(() => {
+    if (localStorage.getItem("clovis_catalogue_vu")) return;
+    localStorage.setItem("clovis_catalogue_vu", "1");
+    setCatalogueOuvert(true);
+  }, []);
+
   useEffect(() => {
     let annule = false;
     (async () => {
@@ -205,7 +216,6 @@ export default function PageAccueilChat() {
         onSelectionnerConversation={selectionnerConversation}
         sectionMesComportements={agent.section_mes_comportements}
         onNecessiteCompte={() => setCompteRequis(true)}
-        onOuvrirCatalogue={() => setCatalogueOuvert(true)}
       />
       <div className="flex-1 overflow-hidden">
         <ChatIA

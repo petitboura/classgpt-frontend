@@ -235,7 +235,7 @@ export default function PageAccueilChat() {
           nomAgent="Clovis"
           titreAccueil={TITRE_ACCUEIL_CLOVIS}
           sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
-          iconePersonnalisee={<Logo taille={28} />}
+          iconePersonnalisee={<Logo taille={40} />}
           conversationId={cle}
           messagesInitiaux={messagesInitiaux}
           onMessagesChange={setNbMessages}

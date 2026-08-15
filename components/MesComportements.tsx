@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Trash2, Plus, X, Check, Maximize2 } from "lucide-react";
 import { lireMesComportements, ajouterComportement, modifierComportement, supprimerComportement, type Comportement } from "@/lib/api";
+import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Skeleton } from "./Skeleton";
@@ -55,7 +56,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
   const [sansCompte, setSansCompte] = useState(false);
   const [modaleCompteOuverte, setModaleCompteOuverte] = useState(false);
 
-  useEffect(() => {
+  function charger() {
     lireMesComportements(agentId)
       .then(setListe)
       .catch((e) => {
@@ -66,8 +67,18 @@ export function MesComportements({ agentId }: { agentId: string }) {
           setListe([]);
         }
       });
+  }
+
+  useEffect(() => {
+    charger();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
+
+  // 15/08 (demande Bourama : "quand l'IA crée un comportement on ne le
+  // voit pas") : l'IA peut créer/modifier/supprimer un comportement
+  // elle-même depuis le chat (ajouter_comportement, etc.) -- ce panneau
+  // ne rechargeait avant que sur montage. Voir lib/evenementsDonnees.ts.
+  useEffect(() => ecouterDonneesModifiees("comportements", charger), [agentId]);
 
   async function ajouter() {
     if (!nouveauTexte.trim()) return;

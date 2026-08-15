@@ -22,6 +22,7 @@ import {
   type ExamenTransverse,
 } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
+import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { Skeleton } from "./Skeleton";
 import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
 
@@ -61,6 +62,9 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
     charger();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapitreId]);
+
+  // 15/08 (demande Bourama) : voir lib/evenementsDonnees.ts.
+  useEffect(() => ecouterDonneesModifiees("programme", charger), [chapitreId]);
 
   function charger() {
     lireDocumentsChapitre(chapitreId)
@@ -192,6 +196,9 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
     charger();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapitreId]);
+
+  // 15/08 (demande Bourama) : voir lib/evenementsDonnees.ts.
+  useEffect(() => ecouterDonneesModifiees("programme", charger), [chapitreId]);
 
   function charger() {
     lireExercicesChapitre(chapitreId)
@@ -396,12 +403,20 @@ function SectionExamens({
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
-  useEffect(() => {
+  function charger() {
     setExamens(null);
     lireExamensProgramme(programmeId)
       .then(setExamens)
       .catch(() => setExamens([]));
+  }
+
+  useEffect(() => {
+    charger();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programmeId]);
+
+  // 15/08 (demande Bourama) : voir lib/evenementsDonnees.ts.
+  useEffect(() => ecouterDonneesModifiees("programme", charger), [programmeId]);
 
   function basculerChapitre(id: string) {
     setChapitreIdsChoisis((prec) => (prec.includes(id) ? prec.filter((c) => c !== id) : [...prec, id]));

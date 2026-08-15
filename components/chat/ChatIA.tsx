@@ -10,6 +10,7 @@ import { PopupFeedback } from "./PopupFeedback";
 import { StatutOutil, EtatStatut } from "./StatutOutil";
 import { ConfirmationOutil } from "./ConfirmationOutil";
 import { messageErreur } from "@/lib/erreurs";
+import { emettreDonneesModifieesPourOutil } from "@/lib/evenementsDonnees";
 import { IconeGenerique } from "@/components/icones/IconeGenerique";
 
 // Page de chat qui remplace chat.py (Streamlit). Consomme la
@@ -219,6 +220,12 @@ export function ChatIA({
       // d'outil, PAS de dédoublonnage (contrairement à "sources") -- deux
       // appels au même outil dans le même tour (ex: deux recherches
       // distinctes) doivent chacun garder leur propre résultat affiché.
+      //
+      // 15/08 (demande Bourama : "quand l'IA crée un comportement on ne
+      // le voit pas") : en plus de l'affichage dans le fil, on signale
+      // aux sections concernées (programme, comportements) de se
+      // recharger si elles sont déjà montées -- voir lib/evenementsDonnees.ts.
+      emettreDonneesModifieesPourOutil(evenement.nom_outil);
       majMessages((prec) => {
         const copie = [...prec];
         const dernier = copie[copie.length - 1];

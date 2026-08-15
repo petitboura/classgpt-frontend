@@ -20,6 +20,7 @@ import {
   type ChapitreDeLaMatiere,
 } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
+import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { Skeleton } from "./Skeleton";
 // Lot 5 -- contenu d'un chapitre (documents/exercices), examens/plugin au
 // niveau programme, et bouton de classement transversal. Voir
@@ -139,6 +140,9 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
   useEffect(() => {
     charger();
   }, []);
+
+  // 15/08 (demande Bourama) : voir lib/evenementsDonnees.ts.
+  useEffect(() => ecouterDonneesModifiees("programme", charger), []);
 
   function charger() {
     listerProgrammes()
@@ -349,6 +353,9 @@ function ListeMatieres({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programme.id]);
 
+  // 15/08 (demande Bourama) : voir lib/evenementsDonnees.ts.
+  useEffect(() => ecouterDonneesModifiees("programme", charger), [programme.id]);
+
   function charger() {
     listerMatieresProgramme(programme.id)
       .then(setMatieres)
@@ -547,7 +554,7 @@ function SectionExamensDuProgramme({
 }) {
   const [chapitres, setChapitres] = useState<{ id: string; titre: string }[] | null>(null);
 
-  useEffect(() => {
+  function charger() {
     if (matieres.length === 0) {
       setChapitres([]);
       return;
@@ -560,8 +567,15 @@ function SectionExamensDuProgramme({
           .catch(() => [] as { id: string; titre: string }[])
       )
     ).then((listes) => setChapitres(listes.flat()));
+  }
+
+  useEffect(() => {
+    charger();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programme.id, matieres.map((m) => m.id).join(",")]);
+
+  // 15/08 (demande Bourama) : voir lib/evenementsDonnees.ts.
+  useEffect(() => ecouterDonneesModifiees("programme", charger), [programme.id, matieres.map((m) => m.id).join(",")]);
 
   if (chapitres === null) {
     return <Skeleton className="h-24 rounded-2xl border border-dj-bordure" />;
@@ -596,6 +610,9 @@ function ListeChapitres({
     charger();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matiere.id]);
+
+  // 15/08 (demande Bourama) : voir lib/evenementsDonnees.ts.
+  useEffect(() => ecouterDonneesModifiees("programme", charger), [matiere.id]);
 
   function charger() {
     listerChapitresMatiere(matiere.id)

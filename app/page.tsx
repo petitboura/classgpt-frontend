@@ -216,6 +216,7 @@ export default function PageAccueilChat() {
         onSelectionnerConversation={selectionnerConversation}
         sectionMesComportements={agent.section_mes_comportements}
         onNecessiteCompte={() => setCompteRequis(true)}
+        onOuvrirCatalogue={() => setCatalogueOuvert(true)}
       />
       <div className="flex-1 overflow-hidden">
         <ChatIA
@@ -248,7 +249,6 @@ export default function PageAccueilChat() {
           // ?? true`).
           boutonSansEnseignant={false}
           avantEnvoi={verifierLimiteInvite}
-          onOuvrirCatalogue={() => setCatalogueOuvert(true)}
         />
       </div>
 

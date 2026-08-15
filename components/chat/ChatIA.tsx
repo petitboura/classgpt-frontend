@@ -36,7 +36,6 @@ export function ChatIA({
   boutonSansEnseignant = false,
   avantEnvoi,
   iconePersonnalisee,
-  onOuvrirCatalogue,
 }: {
   agentId: string;
   nomAgent: string;
@@ -75,9 +74,6 @@ export function ChatIA({
   // réel -- déjà géré via nomAgent -- ni son icône réelle, remplacée ici
   // par le logo Clovis).
   iconePersonnalisee?: React.ReactNode;
-  // Teaser catalogue (14/08) : ouvre CatalogueClovis, géré par le parent
-  // (app/page.tsx) -- optionnelle, ne s'affiche que si fournie.
-  onOuvrirCatalogue?: () => void;
 }) {
   const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
   const [messages, setMessages] = useState<MessageAffiche[]>(messagesInitiaux);
@@ -598,7 +594,6 @@ export function ChatIA({
             modeleSelectionne={modeleSelectionne}
             onModeleChange={setModeleSelectionne}
             boutonSansEnseignant={boutonSansEnseignant}
-            onOuvrirCatalogue={onOuvrirCatalogue}
           />
         </div>
       </div>
@@ -702,7 +697,6 @@ export function ChatIA({
           modeleSelectionne={modeleSelectionne}
           onModeleChange={setModeleSelectionne}
           boutonSansEnseignant={boutonSansEnseignant}
-          onOuvrirCatalogue={onOuvrirCatalogue}
         />
       </div>
 

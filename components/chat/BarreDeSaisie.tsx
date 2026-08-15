@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX, Compass } from "lucide-react";
+import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
 import { OngletOutil, OUTILS_DISPONIBLES, ONGLETS_OUTILS, APPLIS_DISPONIBLES } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
@@ -199,7 +199,6 @@ export function BarreDeSaisie({
   modeleSelectionne = null,
   onModeleChange,
   boutonSansEnseignant = false,
-  onOuvrirCatalogue,
 }: {
   onEnvoyer: (
     texte: string,
@@ -231,11 +230,6 @@ export function BarreDeSaisie({
   // sans utiliser le contenu d'aucun enseignant même si des matières
   // sont débloquées. Absent pour tous les autres agents.
   boutonSansEnseignant?: boolean;
-  // Entrée "Pourquoi Clovis ?" du menu Actions (14/08, remplace le lien
-  // permanent accueil/sidebar -- voir CatalogueClovis.tsx) : optionnelle,
-  // n'affiche l'entrée nulle part (ni le + mobile, ni l'icône desktop)
-  // si absente.
-  onOuvrirCatalogue?: () => void;
 }) {
   const [texte, setTexte] = useState("");
   const [longueur, setLongueur] = useState<LongueurReponse>("moyenne");
@@ -2022,23 +2016,6 @@ export function BarreDeSaisie({
               </div>
             )}
 
-            {/* "Pourquoi Clovis ?" (14/08, demande Bourama : retire le lien
-                permanent accueil/sidebar -- première impression seulement,
-                voir logique d'ouverture auto dans page.tsx -- et le
-                remplace par une entrée dans les actions du composeur,
-                repliée comme Outils/Utilitaires plutôt qu'affichée en
-                texte fixe). */}
-            {onOuvrirCatalogue && (
-              <button
-                onClick={onOuvrirCatalogue}
-                aria-label="Pourquoi Clovis ?"
-                title="Pourquoi Clovis ?"
-                className="text-dj-texte-muet transition-colors hover:text-dj-texte"
-              >
-                <Compass size={18} />
-              </button>
-            )}
-
             {/* Sélecteur de modèle premium (02/08/2026, voir capture
                 Bourama : "Sonnet 5   Moyen ⌄" dans la barre de saisie
                 desktop, puis "ce style d'affichage n'est pas propre à ma
@@ -2375,18 +2352,6 @@ export function BarreDeSaisie({
               >
                 <Maximize2 size={16} /> Plein écran
               </button>
-              {onOuvrirCatalogue && (
-              <button
-                type="button"
-                onClick={() => {
-                  onOuvrirCatalogue();
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <Compass size={16} /> Pourquoi Clovis ?
-              </button>
-              )}
             </div>
           )}
         </div>

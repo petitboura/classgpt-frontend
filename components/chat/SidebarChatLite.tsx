@@ -14,6 +14,7 @@ import {
   MoreHorizontal,
   Share2,
   Star,
+  Compass,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { appelerApi } from "@/lib/api";
@@ -91,6 +92,7 @@ export function SidebarChatLite({
   onSelectionnerConversation,
   sectionMesComportements,
   onNecessiteCompte,
+  onOuvrirCatalogue,
 }: {
   agentId: string;
   connecte: boolean;
@@ -100,6 +102,11 @@ export function SidebarChatLite({
   onSelectionnerConversation: (fil: FilConversation) => void;
   sectionMesComportements?: boolean;
   onNecessiteCompte: () => void;
+  // "Pourquoi Clovis ?" (14/08, demande Bourama : doit vivre dans le menu
+  // "Actions" existant de la sidebar -- à côté de Partager/Avis sur cette
+  // IA -- PAS dans le "+" du composeur, erreur commise une première fois
+  // et corrigée ici. Ouvre CatalogueClovis, état géré par app/page.tsx).
+  onOuvrirCatalogue: () => void;
 }) {
   // "Mon espace" est toujours visible, connecté ou non (voir
   // commentaire d'en-tête, 09-10/08) : plus de rôle à tester.
@@ -368,6 +375,14 @@ export function SidebarChatLite({
                       </div>
                     </div>
                   </div>
+
+                  <button
+                    onClick={onOuvrirCatalogue}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
+                  >
+                    <Compass size={16} className="flex-shrink-0" />
+                    Pourquoi Clovis ?
+                  </button>
                 </div>
               </div>
             </div>
@@ -508,6 +523,16 @@ export function SidebarChatLite({
                     <CommentairesAgent agentId={agentId} />
                   </div>
                 )}
+                <button
+                  onClick={() => {
+                    onOuvrirCatalogue();
+                    setOuverte(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <Compass size={16} />
+                  Pourquoi Clovis ?
+                </button>
               </div>
             )}
           </div>

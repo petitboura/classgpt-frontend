@@ -19,9 +19,10 @@ import {
   type MatiereDuProgramme,
   type ChapitreDeLaMatiere,
 } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { Skeleton } from "./Skeleton";
+import { CTACompteRequis } from "./CTACompteRequis";
 // Lot 5 -- contenu d'un chapitre (documents/exercices), examens/plugin au
 // niveau programme, et bouton de classement transversal. Voir
 // EspaceProgrammeContenu.tsx / AjouterAClassementBouton.tsx : fichiers
@@ -136,6 +137,9 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [edition, setEdition] = useState<{ id: string; niveau: string; nom: string } | null>(null);
+  // Refonte "Mon espace = l'app" : onglet auparavant inatteignable sans
+  // compte, même détection 401 que les autres sections.
+  const [sansCompte, setSansCompte] = useState(false);
 
   useEffect(() => {
     charger();
@@ -147,7 +151,16 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
   function charger() {
     listerProgrammes()
       .then(setProgrammes)
-      .catch(() => setProgrammes([]));
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statusCode === 401) {
+          setSansCompte(true);
+        }
+        setProgrammes([]);
+      });
+  }
+
+  if (sansCompte) {
+    return <CTACompteRequis texte="Crée un compte pour organiser ton programme." />;
   }
 
   async function creer() {

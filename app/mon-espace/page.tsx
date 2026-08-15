@@ -1,10 +1,9 @@
-import { EspaceClovis } from "@/components/EspaceClovis";
+import { redirect } from "next/navigation";
 
-// Correctif (08/08) : rien ne pointait vers /mon-espace nulle part dans
-// l'interface -- EspaceClovis (partie 4) existait mais était
-// inatteignable. Lien ajouté dans SidebarChatLite.tsx, visible pour
-// tout compte connecté depuis le 09/08 (plus de rôle, voir
-// EspaceClovis.tsx).
+// Ancienne route (page à onglets EspaceClovis.tsx, remplacée par les 7
+// routes dédiées sous app/(app)/). Conservée en redirect uniquement pour
+// ne pas casser un lien ou favori existant vers /mon-espace -- pointe
+// vers "Bureau", premier onglet de l'ancienne page.
 export default function PageMonEspace() {
-  return <EspaceClovis />;
+  redirect("/bureau");
 }

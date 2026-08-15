@@ -8,8 +8,9 @@ import {
   retirerRattachementCode,
   type RattachementCode,
 } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { CTACompteRequis } from "./CTACompteRequis";
 
 /**
  * Bloc "Entrer un code" (réécrit le 14/08/2026, demande Bourama --
@@ -31,12 +32,21 @@ export function EspaceEntrerCode() {
   const [code, setCode] = useState("");
   const [enCours, setEnCours] = useState(false);
   const [messageOk, setMessageOk] = useState<string | null>(null);
+  // Refonte "Mon espace = l'app" : section auparavant inatteignable sans
+  // compte, même détection 401 que les autres.
+  const [sansCompte, setSansCompte] = useState(false);
 
   function charger() {
     setChargement(true);
     listerMesRattachementsCodes()
       .then(setRattachements)
-      .catch((e) => setErreur(messageErreur(e)))
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statusCode === 401) {
+          setSansCompte(true);
+        } else {
+          setErreur(messageErreur(e));
+        }
+      })
       .finally(() => setChargement(false));
   }
 
@@ -70,6 +80,10 @@ export function EspaceEntrerCode() {
   }
 
   const avecTexteLibre = rattachements.filter((r) => r.texte_libre);
+
+  if (sansCompte) {
+    return <CTACompteRequis texte="Crée un compte pour entrer un code reçu." />;
+  }
 
   return (
     <section className="rounded-2xl border border-dj-bordure bg-dj-surface p-5">

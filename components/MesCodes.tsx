@@ -12,8 +12,9 @@ import {
   type CodePartage,
   type Programme,
 } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { CTACompteRequis } from "./CTACompteRequis";
 
 /**
  * "Mes codes" (14/08/2026, demande Bourama -- remplace EspaceInviter /
@@ -34,11 +35,20 @@ export function MesCodes() {
   const [ouvert, setOuvert] = useState<string | null>(null); // id du code en édition
   const [creation, setCreation] = useState(false);
   const [copieOk, setCopieOk] = useState<string | null>(null);
+  // Refonte "Mon espace = l'app" : section auparavant inatteignable sans
+  // compte, même détection 401 que les autres.
+  const [sansCompte, setSansCompte] = useState(false);
 
   function charger() {
     listerMesCodes()
       .then(setCodes)
-      .catch((e) => setErreur(messageErreur(e)));
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statusCode === 401) {
+          setSansCompte(true);
+        } else {
+          setErreur(messageErreur(e));
+        }
+      });
   }
 
   useEffect(() => {
@@ -94,6 +104,10 @@ export function MesCodes() {
       setCopieOk(code);
       setTimeout(() => setCopieOk(null), 1500);
     });
+  }
+
+  if (sansCompte) {
+    return <CTACompteRequis texte="Crée un compte pour créer des codes de partage." />;
   }
 
   if (codes === undefined) {

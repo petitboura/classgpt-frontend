@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { appelerApi } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { CTACompteRequis } from "./CTACompteRequis";
 
 /**
  * Extrait de app/dashboard/memoire/page.tsx (2026-08-01, demande Bourama :
@@ -19,11 +20,21 @@ export function MaMemoire() {
   const [enregistrement, setEnregistrement] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  // Visiteur sans compte (refonte "Mon espace = l'app", cette section
+  // n'avait jamais eu à le gérer avant) -- même détection que
+  // MesComportements.tsx : 401 -> CTA plutôt qu'une erreur brute.
+  const [sansCompte, setSansCompte] = useState(false);
 
   useEffect(() => {
     appelerApi("/api/memoire")
       .then((r: { resume: string }) => setResume(r.resume || ""))
-      .catch((e) => setErreur(messageErreur(e)))
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statusCode === 401) {
+          setSansCompte(true);
+        } else {
+          setErreur(messageErreur(e));
+        }
+      })
       .finally(() => setChargement(false));
   }, []);
 
@@ -62,6 +73,10 @@ export function MaMemoire() {
     } finally {
       setEnregistrement(false);
     }
+  }
+
+  if (sansCompte) {
+    return <CTACompteRequis texte="Crée un compte pour que Clovis se souvienne de vos échanges." />;
   }
 
   return (

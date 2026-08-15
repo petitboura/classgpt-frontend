@@ -8,8 +8,9 @@ import {
   ajouterLienBibliothequePersonnelle,
   ajouterTexteBibliothequePersonnelle,
 } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { CTACompteRequis } from "./CTACompteRequis";
 
 // Onglet "Bibliothèque" de Mon espace, porté de
 // djiguigne-frontend/app/dashboard/espace/page.tsx (même logique,
@@ -57,6 +58,10 @@ export function EspaceBibliotheque() {
   const [texteOuLien, setTexteOuLien] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreursEnvoi, setErreursEnvoi] = useState<{ nom: string; erreur: string }[]>([]);
+  // Visiteur sans compte (refonte "Mon espace = l'app") -- section
+  // auparavant inatteignable sans compte, même détection que
+  // MesComportements.tsx : 401 -> CTA plutôt qu'une liste vide.
+  const [sansCompte, setSansCompte] = useState(false);
 
   useEffect(() => {
     chargerFichiers();
@@ -65,7 +70,12 @@ export function EspaceBibliotheque() {
   function chargerFichiers() {
     appelerApi("/api/bibliotheque")
       .then((r: FichierBiblio[]) => setFichiers(r))
-      .catch(() => setFichiers([]));
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statusCode === 401) {
+          setSansCompte(true);
+        }
+        setFichiers([]);
+      });
   }
 
   const fichiersAffiches = useMemo(() => {
@@ -112,6 +122,10 @@ export function EspaceBibliotheque() {
     } catch (e) {
       window.alert(messageErreur(e));
     }
+  }
+
+  if (sansCompte) {
+    return <CTACompteRequis texte="Crée un compte pour avoir ta propre bibliothèque de documents." />;
   }
 
   return (

@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Search, Download, Trophy, Check } from "lucide-react";
 import { listerPlugins, telechargerPlugin, type Plugin } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { CTACompteRequis } from "./CTACompteRequis";
 
 // Lot 5 (chantier programme étudiant) -- interface de recherche/téléchar-
 // gement des plugins (espaces de classe exportés en bloc, voir Partie 1 du
@@ -113,6 +114,11 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [telecharge, setTelecharge] = useState(false);
+  // Télécharger un plugin crée une copie dans "ton espace" -- lié à un
+  // compte. La liste/recherche reste publique, seul ce clic est gaté
+  // (refonte "Mon espace = l'app", même détection 401 que les autres
+  // sections).
+  const [sansCompte, setSansCompte] = useState(false);
 
   async function telecharger() {
     setEnvoi(true);
@@ -122,7 +128,11 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
       setTelecharge(true);
       setConfirmation(false);
     } catch (e) {
-      setErreur(messageErreur(e));
+      if (e instanceof ErreurApi && e.statusCode === 401) {
+        setSansCompte(true);
+      } else {
+        setErreur(messageErreur(e));
+      }
     } finally {
       setEnvoi(false);
     }
@@ -143,7 +153,11 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
         </div>
       </div>
 
-      {telecharge ? (
+      {sansCompte ? (
+        <div className="w-full flex-shrink-0 sm:w-auto">
+          <CTACompteRequis texte="Crée un compte pour télécharger ce plugin dans ton espace." />
+        </div>
+      ) : telecharge ? (
         <span className="flex flex-shrink-0 items-center gap-1.5 text-sm text-dj-succes">
           <Check size={14} /> Téléchargé
         </span>

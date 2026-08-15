@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { BookOpen, RefreshCw } from "lucide-react";
 import { listerProgrammes, listerAuditsProgramme, type Programme, type AuditMatiere } from "@/lib/api";
-import { messageErreur } from "@/lib/erreurs";
+import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { CTACompteRequis } from "./CTACompteRequis";
 
 // Onglet "Audits" (2026-08-12, chantier "connexion IA <-> structure
 // programme"). Nouvelle section DÉDIÉE, volontairement séparée de "Mes
@@ -20,12 +21,24 @@ import { Skeleton } from "./Skeleton";
 export function EspaceAudits() {
   const [programmes, setProgrammes] = useState<Programme[] | null>(null);
   const [programmeOuvert, setProgrammeOuvert] = useState<Programme | null>(null);
+  // Refonte "Mon espace = l'app" : section auparavant inatteignable sans
+  // compte, même détection 401 que les autres.
+  const [sansCompte, setSansCompte] = useState(false);
 
   useEffect(() => {
     listerProgrammes()
       .then(setProgrammes)
-      .catch(() => setProgrammes([]));
+      .catch((e) => {
+        if (e instanceof ErreurApi && e.statusCode === 401) {
+          setSansCompte(true);
+        }
+        setProgrammes([]);
+      });
   }, []);
+
+  if (sansCompte) {
+    return <CTACompteRequis texte="Crée un compte pour voir les audits de ton programme." />;
+  }
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">

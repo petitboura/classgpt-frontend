@@ -1,0 +1,349 @@
+"use client";
+
+import { useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  LogOut,
+  LogIn,
+  Briefcase,
+  Sparkles,
+  Library,
+  Brain,
+  BookOpen,
+  Puzzle,
+  ScanSearch,
+  MoreHorizontal,
+  Share2,
+  Star,
+  Compass,
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Logo } from "@/components/Logo";
+import { NoteAgent } from "@/components/NoteAgent";
+import { CommentairesAgent } from "@/components/CommentairesAgent";
+import { BoutonInstaller } from "@/components/BoutonInstaller";
+
+// Nav principale de l'app (refonte "Mon espace = l'app", 15/08/2026,
+// demande Bourama : "faut changer l'affichage même de mon espace, son
+// architecture elle-même ; c'est plus une page, c'est elle l'appli").
+// Remplace SidebarChatLite.tsx comme point d'entrée -- dérivée de ce même
+// fichier (rail collapse/expand, panneau plein écran mobile, transitions),
+// mais pointe vers de vraies routes (/bureau, /comportements, ...) au
+// lieu d'un onglet en state local dans EspaceClovis.tsx, et sans les
+// éléments propres au fil de conversation (historique, nouvelle
+// conversation), qui vivent désormais dans ChatFlottant.tsx.
+//
+// Tous les onglets restent visibles pour tout le monde, connecté ou non
+// (même principe que l'ancienne sidebar, 09/08 : "tout est visible") --
+// SAUF que la navigation elle-même n'est plus interceptée pour un
+// visiteur sans compte (contrairement à l'ancien clicMonEspace) : chaque
+// section gère désormais elle-même son propre CTA "Crée un compte" en
+// cas de 401 (voir CTACompteRequis.tsx), pour que l'invité "atterrisse
+// sur Mon espace comme un compte connecté, avec limitations" (demande
+// explicite Bourama).
+
+const AGENT_ID = "clovis";
+
+type OngletId = "bureau" | "comportements" | "bibliotheque" | "memoire" | "programme" | "plugins" | "audits";
+
+const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof Briefcase }[] = [
+  { id: "bureau", href: "/bureau", label: "Bureau", Icone: Briefcase },
+  { id: "comportements", href: "/comportements", label: "Mes comportements", Icone: Sparkles },
+  { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
+  { id: "memoire", href: "/memoire", label: "Ma mémoire", Icone: Brain },
+  { id: "programme", href: "/programme", label: "Mon programme", Icone: BookOpen },
+  { id: "plugins", href: "/plugins", label: "Plugins", Icone: Puzzle },
+  { id: "audits", href: "/audits", label: "Audits", Icone: ScanSearch },
+];
+
+function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.ReactNode }) {
+  return (
+    <span
+      className={`overflow-hidden whitespace-nowrap text-sm transition-[max-width,opacity] duration-300 ease-out ${
+        ouverte ? "max-w-[180px] opacity-100" : "max-w-0 opacity-0"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function AppSidebar({
+  connecte,
+  onOuvrirCatalogue,
+}: {
+  connecte: boolean;
+  // "Pourquoi Clovis ?" -- géré au niveau du layout (AppShell.tsx), pas
+  // ici, pour pouvoir s'ouvrir aussi automatiquement à la première
+  // visite (même logique que l'ancien app/page.tsx, 14/08).
+  onOuvrirCatalogue: () => void;
+}) {
+  const pathname = usePathname();
+  const [ouverte, setOuverte] = useState(false);
+  const [actionsDeplie, setActionsDeplie] = useState(false);
+  const [avisDeplie, setAvisDeplie] = useState(false);
+  const [copie, setCopie] = useState(false);
+  const asideRef = useRef<HTMLDivElement>(null);
+
+  function basculerActions() {
+    setActionsDeplie((v) => !v);
+    setOuverte(true);
+  }
+
+  async function partager() {
+    const url = window.location.origin;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "Clovis", url });
+      } catch {
+        // Annulé par la personne.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopie(true);
+      setTimeout(() => setCopie(false), 2000);
+    } catch {
+      window.prompt("Copie ce lien :", url);
+    }
+  }
+
+  async function seDeconnecter() {
+    if (!connecte) {
+      window.location.href = "/connexion";
+      return;
+    }
+    await supabase.auth.signOut();
+    window.location.href = "/connexion";
+  }
+
+  function LienOnglet({ onglet, mobile = false }: { onglet: (typeof ONGLETS)[number]; mobile?: boolean }) {
+    const actif = pathname === onglet.href;
+    return (
+      <Link
+        href={onglet.href}
+        onClick={() => mobile && setOuverte(false)}
+        className={`mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
+          actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+        } ${mobile ? "px-2" : ""}`}
+      >
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+          <onglet.Icone size={18} />
+        </span>
+        {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={ouverte}>{onglet.label}</LibelleRail>}
+      </Link>
+    );
+  }
+
+  return (
+    <>
+      {ouverte && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setOuverte(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <button
+        onClick={() => setOuverte((v) => !v)}
+        aria-label={ouverte ? "Replier le panneau" : "Déplier le panneau"}
+        className="fixed left-2 top-2 z-40 flex h-8 w-8 items-center justify-center rounded-md bg-black/35 text-white hover:bg-black/50 md:hidden"
+      >
+        {ouverte ? <ChevronsLeft size={16} /> : <ChevronsRight size={16} />}
+      </button>
+
+      <div
+        ref={asideRef}
+        className={`hidden flex-shrink-0 flex-col overflow-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
+          ouverte ? "md:w-72" : "md:w-14"
+        }`}
+      >
+        <button
+          onClick={() => setOuverte((v) => !v)}
+          aria-label={ouverte ? "Replier le panneau" : "Déplier le panneau"}
+          className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        >
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            {ouverte ? <ChevronsLeft size={18} /> : <ChevronsRight size={18} />}
+          </span>
+          <LibelleRail ouverte={ouverte}>Replier</LibelleRail>
+        </button>
+
+        <div className="my-2 h-px w-full bg-dj-bordure" />
+
+        {ONGLETS.map((o) => (
+          <LienOnglet key={o.id} onglet={o} />
+        ))}
+
+        {ouverte && (
+          <div className="mt-auto flex justify-center pt-2">
+            <BoutonInstaller />
+          </div>
+        )}
+
+        <div className={`rounded-xl ${ouverte ? "mt-2" : "mt-auto"}`}>
+          <button
+            onClick={basculerActions}
+            title="Actions"
+            className={`flex w-full items-center gap-2 rounded-xl transition-colors ${
+              actionsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+            }`}
+          >
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+              <MoreHorizontal size={18} />
+            </span>
+            <LibelleRail ouverte={ouverte}>Actions</LibelleRail>
+          </button>
+          {ouverte && (
+            <div
+              className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                actionsDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="flex flex-col gap-2 px-2 pb-2">
+                  <button
+                    onClick={partager}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
+                  >
+                    <Share2 size={16} className="flex-shrink-0" />
+                    {copie ? "Copié !" : "Partager"}
+                  </button>
+
+                  <div className="rounded-lg">
+                    <button
+                      onClick={() => setAvisDeplie((v) => !v)}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                        avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte"
+                      }`}
+                    >
+                      <Star size={16} className="flex-shrink-0" />
+                      Avis sur cette IA
+                    </button>
+                    <div
+                      className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                        avisDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="flex flex-col gap-4 px-2 pb-2">
+                          <NoteAgent agentId={AGENT_ID} />
+                          <CommentairesAgent agentId={AGENT_ID} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={onOuvrirCatalogue}
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                  >
+                    <Compass size={16} className="flex-shrink-0" />
+                    Pourquoi Clovis ?
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={seDeconnecter}
+          className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        >
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            {connecte ? <LogOut size={18} /> : <LogIn size={18} />}
+          </span>
+          <LibelleRail ouverte={ouverte}>{connecte ? "Se déconnecter" : "Se connecter"}</LibelleRail>
+        </button>
+
+        <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <Logo taille={18} />
+          </span>
+          <LibelleRail ouverte={ouverte}>
+            <span className="font-display font-bold tracking-tight">Clovis</span>
+          </LibelleRail>
+        </div>
+      </div>
+
+      {/* Panneau plein écran mobile, même logique que desktop. */}
+      {ouverte && (
+        <div className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto overflow-x-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 md:hidden">
+          <div className="mt-8">
+            {ONGLETS.map((o) => (
+              <LienOnglet key={o.id} onglet={o} mobile />
+            ))}
+          </div>
+
+          <div className="mt-2 flex justify-center">
+            <BoutonInstaller />
+          </div>
+
+          <div className="mt-2 rounded-xl px-2">
+            <button
+              onClick={() => setActionsDeplie((v) => !v)}
+              className={`flex w-full items-center gap-2 py-2 text-sm transition-colors ${
+                actionsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
+              }`}
+            >
+              <MoreHorizontal size={18} />
+              Actions
+            </button>
+            {actionsDeplie && (
+              <div className="flex flex-col gap-2 pb-2">
+                <button
+                  onClick={partager}
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <Share2 size={16} />
+                  {copie ? "Copié !" : "Partager"}
+                </button>
+                <button
+                  onClick={() => setAvisDeplie((v) => !v)}
+                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                    avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
+                  }`}
+                >
+                  <Star size={16} />
+                  Avis sur cette IA
+                </button>
+                {avisDeplie && (
+                  <div className="flex flex-col gap-4 px-2 pb-2">
+                    <NoteAgent agentId={AGENT_ID} />
+                    <CommentairesAgent agentId={AGENT_ID} />
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    onOuvrirCatalogue();
+                    setOuverte(false);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <Compass size={16} />
+                  Pourquoi Clovis ?
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={seDeconnecter}
+            className="mt-auto flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          >
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+              {connecte ? <LogOut size={18} /> : <LogIn size={18} />}
+            </span>
+            <span className="text-sm">{connecte ? "Se déconnecter" : "Se connecter"}</span>
+          </button>
+        </div>
+      )}
+    </>
+  );
+}

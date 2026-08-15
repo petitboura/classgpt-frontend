@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { appelerApi } from "@/lib/api";
+import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { ChatIA } from "@/components/chat/ChatIA";
 import { MessageAffiche, nettoyerMessageHistorique } from "@/components/chat/BulleMessage";
@@ -94,6 +94,20 @@ export default function PageAccueilChat() {
   const [nbMessages, setNbMessages] = useState(0);
   const [compteRequis, setCompteRequis] = useState(false);
   const [catalogueOuvert, setCatalogueOuvert] = useState(false);
+  // Outils autorisés pour l'agent + historique des conversations (14/08,
+  // demande Bourama : "ils doivent faire partie de l'interface, point,
+  // ils ne doivent plus se charger") -- chargés ICI, en même temps que
+  // le détail de l'agent, PENDANT l'écran de chargement plein écran
+  // (etat === "chargement" plus bas), au lieu d'être fetchés séparément
+  // après coup par BarreDeSaisie.tsx / SidebarChatLite.tsx. Résultat :
+  // au moment où l'interface apparaît, ces données sont déjà là -- plus
+  // de bouton "Utilitaires", de slots d'outils récents ou de bloc
+  // "Historique" qui apparaissent après coup.
+  const [outilsActifsAgent, setOutilsActifsAgent] = useState<{
+    outils: string[];
+    actions_locales: string[];
+  } | null>(null);
+  const [historique, setHistorique] = useState<FilConversation[]>([]);
   useHauteurVisuelle();
 
   // Catalogue "Pourquoi Clovis ?" (14/08, demande Bourama : "que s'affiche
@@ -117,8 +131,23 @@ export default function PageAccueilChat() {
 
       try {
         const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
+
+        // Outils autorisés et historique récupérés EN PARALLÈLE du reste
+        // (pas en série après le rendu) -- chacun avec son propre repli
+        // silencieux en cas d'échec, pour ne jamais bloquer l'affichage
+        // du chat entier à cause de l'un des deux (ex. historique qui
+        // échoue pour un visiteur non connecté).
+        const [outils, fils] = await Promise.all([
+          lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] })),
+          appelerApi(`/api/historique/${AGENT_INVITE_ID}/conversations`).catch(
+            () => [] as FilConversation[]
+          ),
+        ]);
+
         if (!annule) {
           setAgent(detail);
+          setOutilsActifsAgent(outils);
+          setHistorique(fils as FilConversation[]);
           setEtat("pret");
         }
       } catch (e) {
@@ -212,6 +241,7 @@ export default function PageAccueilChat() {
         connecte={connecte}
         aDesMessages={nbMessages > 0}
         conversationActiveId={cle}
+        historique={historique}
         onNouvelleConversation={nouvelleConversation}
         onSelectionnerConversation={selectionnerConversation}
         sectionMesComportements={agent.section_mes_comportements}
@@ -241,6 +271,7 @@ export default function PageAccueilChat() {
           onMessagesChange={setNbMessages}
           modelesDisponibles={agent.modeles_disponibles}
           modeleChoisi={agent.modele_choisi}
+          outilsActifsAgent={outilsActifsAgent}
           // Désactivé (13/08/2026, demande Bourama) -- le bouton "Sans
           // enseignant" ne s'affiche plus dans la barre de Clovis, mais le
           // réglage agent.bouton_sans_enseignant et tout le code du bouton

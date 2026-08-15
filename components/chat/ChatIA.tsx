@@ -36,6 +36,7 @@ export function ChatIA({
   boutonSansEnseignant = false,
   avantEnvoi,
   iconePersonnalisee,
+  outilsActifsAgent = null,
 }: {
   agentId: string;
   nomAgent: string;
@@ -74,6 +75,14 @@ export function ChatIA({
   // réel -- déjà géré via nomAgent -- ni son icône réelle, remplacée ici
   // par le logo Clovis).
   iconePersonnalisee?: React.ReactNode;
+  // Outils autorisés pour cet agent (14/08, demande Bourama) -- chargés
+  // par le parent (page.tsx) EN MÊME TEMPS que le détail de l'agent,
+  // pendant l'écran de chargement plein écran, et simplement transmis
+  // ici jusqu'à BarreDeSaisie. `null` tant que le chargement initial
+  // n'est pas terminé -- mais dans ce cas ChatIA elle-même n'est pas
+  // encore montée (page.tsx n'affiche le chat qu'une fois etat==="pret"),
+  // donc en pratique cette prop est toujours déjà résolue ici.
+  outilsActifsAgent?: { outils: string[]; actions_locales: string[] } | null;
 }) {
   const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
   const [messages, setMessages] = useState<MessageAffiche[]>(messagesInitiaux);
@@ -594,6 +603,7 @@ export function ChatIA({
             modeleSelectionne={modeleSelectionne}
             onModeleChange={setModeleSelectionne}
             boutonSansEnseignant={boutonSansEnseignant}
+            outilsActifsAgent={outilsActifsAgent}
           />
         </div>
       </div>
@@ -697,6 +707,7 @@ export function ChatIA({
           modeleSelectionne={modeleSelectionne}
           onModeleChange={setModeleSelectionne}
           boutonSansEnseignant={boutonSansEnseignant}
+          outilsActifsAgent={outilsActifsAgent}
         />
       </div>
 

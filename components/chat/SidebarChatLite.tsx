@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   ChevronsLeft,
@@ -9,7 +9,7 @@ import {
   History,
   LogOut,
   LogIn,
-  Users,
+  User,
   Sparkles,
   MoreHorizontal,
   Share2,
@@ -17,7 +17,6 @@ import {
   Compass,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { appelerApi } from "@/lib/api";
 import { Logo } from "@/components/Logo";
 import { MesComportements } from "@/components/MesComportements";
 import { NoteAgent } from "@/components/NoteAgent";
@@ -88,6 +87,7 @@ export function SidebarChatLite({
   connecte,
   aDesMessages,
   conversationActiveId,
+  historique,
   onNouvelleConversation,
   onSelectionnerConversation,
   sectionMesComportements,
@@ -98,6 +98,13 @@ export function SidebarChatLite({
   connecte: boolean;
   aDesMessages: boolean;
   conversationActiveId: string | null;
+  // Historique des conversations (14/08, demande Bourama) -- fourni par
+  // le parent (page.tsx), chargé pendant l'écran de chargement plein
+  // écran initial, en même temps que le détail de l'agent. Ce composant
+  // ne le fetch plus lui-même après son montage : plus de bloc
+  // "Historique" qui apparaît après coup, il est déjà là dès le premier
+  // rendu de la sidebar.
+  historique: FilConversation[];
   onNouvelleConversation: () => void;
   onSelectionnerConversation: (fil: FilConversation) => void;
   sectionMesComportements?: boolean;
@@ -111,20 +118,12 @@ export function SidebarChatLite({
   // "Mon espace" est toujours visible, connecté ou non (voir
   // commentaire d'en-tête, 09-10/08) : plus de rôle à tester.
   const [ouverte, setOuverte] = useState(false);
-  const [fils, setFils] = useState<FilConversation[] | null>(null);
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
   const [comportementsDeplie, setComportementsDeplie] = useState(false);
   const [actionsDeplie, setActionsDeplie] = useState(false);
   const [avisDeplie, setAvisDeplie] = useState(false);
   const [copie, setCopie] = useState(false);
   const asideRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!agentId) return;
-    appelerApi(`/api/historique/${agentId}/conversations`)
-      .then((r: FilConversation[]) => setFils(r))
-      .catch(() => setFils([]));
-  }, [agentId]);
 
   // Bascule exclusive pour les volets repliables du rail (même correctif
   // que djiguigne-frontend, 28/07) : un seul volet ouvert à la fois.
@@ -221,6 +220,17 @@ export function SidebarChatLite({
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
 
+        <Link
+          href="/mon-espace"
+          onClick={clicMonEspace}
+          className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        >
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+            <User size={18} />
+          </span>
+          <LibelleRail ouverte={ouverte}>Mon espace</LibelleRail>
+        </Link>
+
         {aDesMessages && (
           <button
             onClick={onNouvelleConversation}
@@ -233,18 +243,7 @@ export function SidebarChatLite({
           </button>
         )}
 
-        <Link
-          href="/mon-espace"
-          onClick={clicMonEspace}
-          className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-        >
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            <Users size={18} />
-          </span>
-          <LibelleRail ouverte={ouverte}>Mon espace</LibelleRail>
-        </Link>
-
-        {fils && fils.length > 0 && (
+        {historique.length > 0 && (
           <div className="mt-2 rounded-xl">
             <button
               onClick={() => basculerVoletRail("historique")}
@@ -266,7 +265,7 @@ export function SidebarChatLite({
               >
                 <div className="overflow-hidden">
                   <div className="flex flex-col px-1 pb-1">
-                    {fils.map((fil) => {
+                    {historique.map((fil) => {
                       const estActive = fil.conversation_id === conversationActiveId;
                       return (
                         <button
@@ -412,13 +411,27 @@ export function SidebarChatLite({
       {/* Panneau plein écran mobile, même logique que desktop. */}
       {ouverte && (
         <div className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto overflow-x-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 md:hidden">
+          <Link
+            href="/mon-espace"
+            onClick={(e) => {
+              clicMonEspace(e);
+              if (connecte) setOuverte(false);
+            }}
+            className="mt-8 flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          >
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+              <User size={18} />
+            </span>
+            <span className="text-sm">Mon espace</span>
+          </Link>
+
           {aDesMessages && (
             <button
               onClick={() => {
                 onNouvelleConversation();
                 setOuverte(false);
               }}
-              className="mt-8 flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              className="mt-2 flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
             >
               <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
                 <MessageSquarePlus size={18} />
@@ -427,30 +440,14 @@ export function SidebarChatLite({
             </button>
           )}
 
-          <Link
-            href="/mon-espace"
-            onClick={(e) => {
-              clicMonEspace(e);
-              if (connecte) setOuverte(false);
-            }}
-            className={`flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
-              aDesMessages ? "mt-2" : "mt-8"
-            }`}
-          >
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <Users size={18} />
-            </span>
-            <span className="text-sm">Mon espace</span>
-          </Link>
-
-          {fils && fils.length > 0 && (
+          {historique.length > 0 && (
             <div className="mt-2 flex-1 overflow-y-auto rounded-xl">
               <div className="flex items-center gap-2 border-b border-dj-bordure px-2 py-2 text-dj-texte-muet">
                 <History size={16} />
                 <span className="text-sm">Historique</span>
               </div>
               <div className="flex flex-col px-1 pb-1">
-                {fils.map((fil) => {
+                {historique.map((fil) => {
                   const estActive = fil.conversation_id === conversationActiveId;
                   return (
                     <button

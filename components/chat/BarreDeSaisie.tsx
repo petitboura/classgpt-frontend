@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX } from "lucide-react";
-import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
+import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage } from "@/lib/api";
 import { OngletOutil, OUTILS_DISPONIBLES, ONGLETS_OUTILS, APPLIS_DISPONIBLES } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
 import { LecteurMedia } from "./LecteurMedia";
@@ -199,6 +199,7 @@ export function BarreDeSaisie({
   modeleSelectionne = null,
   onModeleChange,
   boutonSansEnseignant = false,
+  outilsActifsAgent = null,
 }: {
   onEnvoyer: (
     texte: string,
@@ -230,6 +231,13 @@ export function BarreDeSaisie({
   // sans utiliser le contenu d'aucun enseignant même si des matières
   // sont débloquées. Absent pour tous les autres agents.
   boutonSansEnseignant?: boolean;
+  // Outils autorisés pour cet agent (14/08, demande Bourama) -- fourni
+  // par le parent (ChatIA -> page.tsx), chargé pendant l'écran de
+  // chargement plein écran initial. Ce composant ne va plus le chercher
+  // lui-même après son montage : plus de bouton "Utilitaires" ou de
+  // slots d'outils récents qui apparaissent après coup, ils sont déjà
+  // là dès le premier rendu de la barre.
+  outilsActifsAgent?: { outils: string[]; actions_locales: string[] } | null;
 }) {
   const [texte, setTexte] = useState("");
   const [longueur, setLongueur] = useState<LongueurReponse>("moyenne");
@@ -273,28 +281,6 @@ export function BarreDeSaisie({
   // chargé -> AUCUN bouton d'outil backend affiché (fail closed) plutôt
   // que de risquer d'afficher un bouton pour un outil désactivé le temps
   // du chargement.
-  const [outilsActifsAgent, setOutilsActifsAgent] = useState<{
-    outils: string[];
-    actions_locales: string[];
-  } | null>(null);
-  useEffect(() => {
-    if (!agentId) {
-      setOutilsActifsAgent({ outils: [], actions_locales: [] });
-      return;
-    }
-    let annule = false;
-    lireOutilsChatAgent(agentId)
-      .then((reponse) => {
-        if (!annule) setOutilsActifsAgent(reponse);
-      })
-      .catch(() => {
-        if (!annule) setOutilsActifsAgent({ outils: [], actions_locales: [] });
-      });
-    return () => {
-      annule = true;
-    };
-  }, [agentId]);
-
   function outilAutorisePourAgent(outil: { nom: string }): boolean {
     if (!outilsActifsAgent) return false;
     if (outil.nom.startsWith("ui_")) return outilsActifsAgent.actions_locales.includes(outil.nom);

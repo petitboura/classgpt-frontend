@@ -42,8 +42,12 @@ import {
   PanelsTopLeft,
   SlidersHorizontal,
   Library,
+  Wrench,
 } from "lucide-react";
 import { IconeNotion } from "@/components/icons/IconeNotion";
+import { useEffect, useState } from "react";
+import * as IconesLucide from "lucide-react";
+import { lireRegistreOutils } from "@/lib/api";
 
 // Extrait de components/chat/BarreDeSaisie.tsx le 01/08 (Bourama : "est-ce
 // que ça varie en fonction de quel outil est ajouté ou enlevé" --
@@ -63,6 +67,82 @@ import { IconeNotion } from "@/components/icons/IconeNotion";
 // - "utilitaires" -> Utilitaires -- tout le reste, y compris les 4
 //   anciennes icônes autonomes (préfixe "ui_", voir plus bas)
 export type OngletOutil = "generer" | "rechercher" | "action_app" | "utilitaires";
+
+export type OutilAffichage = { nom: string; label: string; Icone: typeof Search; onglet: OngletOutil; appli?: string };
+
+// Résolution icône (2026-08-15) -- le backend (core/registre_outils.py:
+// REGISTRE_AFFICHAGE_OUTILS) envoie un nom d'export lucide-react en
+// chaîne (ex. "FileText"). "notion-logo" est le seul cas spécial (pas un
+// export lucide-react, voir IconeNotion.tsx). Wrench en tout dernier
+// repli si jamais le backend référence un nom introuvable dans la
+// version de lucide-react installée ici (désynchronisation possible,
+// mais rare -- vérifié à la main lors de l'ajout d'un outil).
+function resoudreIcone(nomIcone: string): typeof Search {
+  if (nomIcone === "notion-logo") return IconeNotion;
+  const composant = (IconesLucide as unknown as Record<string, typeof Search>)[nomIcone];
+  return composant ?? Wrench;
+}
+
+type OutilBrut = { nom: string; label: string; icone: string; onglet: OngletOutil; appli?: string };
+
+let promesseRegistre: Promise<OutilAffichage[]> | null = null;
+
+async function chargerRegistreOutilsAvecRepli(): Promise<OutilAffichage[]> {
+  const NB_TENTATIVES = 3;
+  for (let tentative = 0; tentative < NB_TENTATIVES; tentative++) {
+    try {
+      const reponse = (await lireRegistreOutils()) as { outils: OutilBrut[] };
+      return reponse.outils.map((o) => ({
+        nom: o.nom,
+        label: o.label,
+        Icone: resoudreIcone(o.icone),
+        onglet: o.onglet,
+        appli: o.appli,
+      }));
+    } catch {
+      if (tentative < NB_TENTATIVES - 1) {
+        await new Promise((resoudre) => setTimeout(resoudre, 400 * (tentative + 1)));
+      }
+    }
+  }
+  // Secours (2026-08-15) : si le backend reste injoignable après 3
+  // tentatives au chargement du chat, on retombe sur cette liste figée
+  // ci-dessous plutôt que de casser le menu Outils -- un outil ajouté
+  // depuis ce figeage manquerait juste d'icône/libellé ce jour-là, rien
+  // d'autre ne casse. Voir OUTILS_DISPONIBLES plus bas dans ce fichier.
+  return OUTILS_DISPONIBLES;
+}
+
+/**
+ * Source vivante des outils (nom, label, icône, onglet, appli), chargée
+ * une seule fois depuis le backend (core/registre_outils.py) et partagée
+ * entre tous les composants qui l'appellent (BarreDeSaisie.tsx,
+ * OutilResultatBulle.tsx) -- `promesseRegistre` ci-dessus est un cache
+ * au niveau du module, pas par composant : un seul appel réseau pour
+ * toute la session, quel que soit le nombre de composants qui utilisent
+ * ce hook. Ajouter un outil = une seule ligne dans le registre backend,
+ * plus rien à toucher ici (c'est tout le sens de ce hook).
+ */
+export function useOutilsRegistre(): { outils: OutilAffichage[]; charge: boolean } {
+  const [outils, setOutils] = useState<OutilAffichage[]>(OUTILS_DISPONIBLES);
+  const [charge, setCharge] = useState(false);
+
+  useEffect(() => {
+    let actif = true;
+    if (!promesseRegistre) promesseRegistre = chargerRegistreOutilsAvecRepli();
+    promesseRegistre.then((liste) => {
+      if (actif) {
+        setOutils(liste);
+        setCharge(true);
+      }
+    });
+    return () => {
+      actif = false;
+    };
+  }, []);
+
+  return { outils, charge };
+}
 
 export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Search; onglet: OngletOutil; appli?: string }[] = [
   { nom: "generer_document", label: "Générer un PDF/texte", Icone: FileText, onglet: "generer" },

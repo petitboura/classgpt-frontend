@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Wrench, Link2 } from "lucide-react";
-import { OUTILS_DISPONIBLES } from "@/lib/outils";
+import { useOutilsRegistre } from "@/lib/outils";
 import { SourcesBulle } from "./SourcesBulle";
 
 // Affiche, pour CHAQUE outil utilisé, ce qu'il a concrètement exécuté /
@@ -23,10 +23,12 @@ import { SourcesBulle } from "./SourcesBulle";
 // affiché en premier/en haut) : ici c'est le VRAI contenu brut renvoyé
 // par l'outil, pas ce que le modèle en a compris ou raconté.
 //
-// Icône reprise de OUTILS_DISPONIBLES (déjà utilisée pour le bouton
-// Outils) -- repli générique (Wrench) pour tout outil absent de cette
-// liste (Notion, Wolfram, ou n'importe quel outil futur) : jamais de
-// liste figée à maintenir.
+// Icône reprise du registre vivant chargé depuis le backend (2026-08-15,
+// voir lib/outils.ts:useOutilsRegistre -- avant : liste statique
+// OUTILS_DISPONIBLES, incomplète pour ~40 outils internes qui tombaient
+// donc sur ce repli générique) -- repli Wrench conservé pour tout outil
+// malgré tout absent du registre (cas réseau en échec ET liste de
+// secours elle-même incomplète, très rare).
 //
 // Fermé par défaut (26/07, retour Bourama : "il s'affiche
 // automatiquement" n'était pas voulu) + glissement fluide à
@@ -40,8 +42,8 @@ import { SourcesBulle } from "./SourcesBulle";
 // d'où vient une réponse. Bouton dédié, son propre état ouvert/fermé,
 // visible directement à côté du résultat de l'outil plutôt que niché
 // dedans.
-function iconePourOutil(nomOutil: string) {
-  return OUTILS_DISPONIBLES.find((o) => o.nom === nomOutil)?.Icone ?? Wrench;
+function iconePourOutil(outils: ReturnType<typeof useOutilsRegistre>["outils"], nomOutil: string) {
+  return outils.find((o) => o.nom === nomOutil)?.Icone ?? Wrench;
 }
 
 export function OutilResultatBulle({
@@ -49,6 +51,7 @@ export function OutilResultatBulle({
 }: {
   resultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { titre: string; url: string }[] }[];
 }) {
+  const { outils } = useOutilsRegistre();
   const [ouverts, setOuverts] = useState<Record<number, boolean>>({});
   const [sourcesOuvertes, setSourcesOuvertes] = useState<Record<number, boolean>>({});
 
@@ -57,7 +60,7 @@ export function OutilResultatBulle({
   return (
     <div className="my-1.5 flex max-w-[85%] flex-col gap-1">
       {resultats.map((r, index) => {
-        const Icone = iconePourOutil(r.nomOutil);
+        const Icone = iconePourOutil(outils, r.nomOutil);
         const ouvert = !!ouverts[index];
         const aDesSources = !!r.sources && r.sources.length > 0;
         const sourcesOuvert = !!sourcesOuvertes[index];

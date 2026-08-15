@@ -383,11 +383,13 @@ export async function extraireFormuleImage(fichier: File) {
 }
 
 /**
- * Statut de connexion OAuth à un service externe (ex. "github") via le
- * moteur générique -- voir connexions/oauth_generique.py côté backend.
+ * Registre d'affichage des outils (nom, label, icône, onglet, appli) --
+ * voir api/outils_registre.py côté backend, source unique pour éviter
+ * d'avoir à toucher ce dépôt à chaque nouvel outil (2026-08-15, demande
+ * Bourama). Pas d'authentification requise (accessible avant connexion).
  */
 export async function lireRegistreOutils() {
-  return appelerApi(`/api/registre-outils`);
+  return appelerApi(`/api/outils/registre`);
 }
 
 export async function lireDroitsAgent(agentId: string) {
@@ -427,6 +429,10 @@ export async function lireOutilsChatAgent(agentId: string) {
   }>;
 }
 
+/**
+ * Statut de connexion OAuth à un service externe (ex. "github") via le
+ * moteur générique -- voir connexions/oauth_generique.py côté backend.
+ */
 export async function statutConnexion(service: string) {
   const resultat = await appelerApi(`/api/connexions/${service}/statut`);
   return resultat as { connecte: boolean };

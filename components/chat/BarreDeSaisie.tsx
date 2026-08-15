@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX } from "lucide-react";
-import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage } from "@/lib/api";
-import { OngletOutil, OUTILS_DISPONIBLES, ONGLETS_OUTILS, APPLIS_DISPONIBLES } from "@/lib/outils";
+import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
+import { OngletOutil, ONGLETS_OUTILS, APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
 import { LecteurMedia } from "./LecteurMedia";
 import { CanvasDessin } from "./CanvasDessin";
@@ -291,7 +291,13 @@ export function BarreDeSaisie({
   // suite de ce composant (menus + slots, desktop et mobile) doit
   // utiliser CES listes filtrées, jamais OUTILS_DISPONIBLES /
   // APPLIS_DISPONIBLES brutes.
-  const outilsPourAgent = OUTILS_DISPONIBLES.filter((o) => outilAutorisePourAgent(o));
+  // outilsDisponibles (2026-08-15) : registre vivant chargé depuis le
+  // backend (voir lib/outils.ts:useOutilsRegistre) -- remplace l'ancienne
+  // liste statique OUTILS_DISPONIBLES pour cette source de filtrage,
+  // afin qu'un nouvel outil ajouté côté backend apparaisse ici sans rien
+  // toucher dans ce dépôt.
+  const { outils: outilsDisponibles } = useOutilsRegistre();
+  const outilsPourAgent = outilsDisponibles.filter((o) => outilAutorisePourAgent(o));
   // Une appli (ex. GitHub) est autorisée si au moins une de ses actions
   // (ex. explorer_depot_github) fait partie des outils autorisés.
   const applisPourAgent = APPLIS_DISPONIBLES.filter((a) => outilsPourAgent.some((o) => o.appli === a.nom));
@@ -1531,7 +1537,7 @@ export function BarreDeSaisie({
               ? outilsRecents.filter((n) => outilsPourAgent.some((o) => o.nom === n))
               : outilsSlotsFixes.map((o) => o.nom)
             ).map((nom) => {
-              const entree = OUTILS_DISPONIBLES.find((o) => o.nom === nom);
+              const entree = outilsDisponibles.find((o) => o.nom === nom);
               if (!entree) return null;
               const actif = estOutilActif(nom);
               return (
@@ -2417,7 +2423,7 @@ export function BarreDeSaisie({
               });
               if (recentValide) {
                 if (recentValide.type === "outil") {
-                  const outil = OUTILS_DISPONIBLES.find((o) => o.nom === recentValide.nom);
+                  const outil = outilsDisponibles.find((o) => o.nom === recentValide.nom);
                   if (outil) candidat = { genre: "outil", ...outil };
                 } else {
                   const appli = APPLIS_DISPONIBLES.find((a) => a.nom === recentValide.nom);

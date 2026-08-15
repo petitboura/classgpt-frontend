@@ -21,12 +21,12 @@ import { Skeleton } from "./Skeleton";
 // api/contenu_dynamique_matiere.py).
 const AGENT_ID = "clovis";
 
-// Bureau masqué temporairement (14/08, demande Bourama : "la section va
-// revenir, donc fait en sorte qu'on ne le voit tout simplement pas") --
-// onglet + contenu (EspaceInviter/EspaceEntrerCode/EspaceEquipe/
-// EspaceDiffuser) volontairement gardés intacts ci-dessous, juste
-// exclus du rendu via ce flag. Repasser à true pour le faire revenir.
-const AFFICHER_BUREAU = false;
+// Bureau réactivé (14/08) : c'est précisément la fonctionnalité annoncée
+// comme "va revenir" dans le commentaire ci-dessous -- demande explicite
+// de Bourama dans cette conversation, avec le nouveau système de codes de
+// partage (MesCodes/EspaceEntrerCode) à la place de l'ancien contenu
+// matière (EspaceInviter/EspaceEquipe/EspaceDiffuser, plus jamais monté).
+const AFFICHER_BUREAU = true;
 
 /**
  * Espace utilisateur réduit de Clovis (partie 4 du brief, refonte du

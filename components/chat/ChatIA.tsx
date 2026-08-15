@@ -567,17 +567,18 @@ export function ChatIA({
         <div className="w-full max-w-xl animate-dj-fade-up">
           {titreAccueil ? (
             <div className="mb-8 flex flex-col items-center text-center">
-              <span className="relative mb-4 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-dj-surface-haute">
-                {iconePersonnalisee ? (
-                  iconePersonnalisee
-                ) : iconeUrl ? (
-                  <Image src={iconeUrl} alt="" fill className="object-cover" sizes="56px" />
-                ) : (
-                  <IconeGenerique className="h-7 w-7 text-dj-accent-1" />
-                )}
-              </span>
-              <h1 className="font-display text-3xl font-bold tracking-[-0.01em] text-dj-texte sm:text-4xl">{titreAccueil}</h1>
-              {sousTitreAccueil && <p className="mt-2 text-base text-dj-texte-muet">{sousTitreAccueil}</p>}
+              <div className="flex items-center gap-3">
+                <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden">
+                  {iconePersonnalisee ? (
+                    iconePersonnalisee
+                  ) : iconeUrl ? (
+                    <Image src={iconeUrl} alt="" fill className="object-cover" sizes="36px" />
+                  ) : (
+                    <IconeGenerique className="h-7 w-7 text-dj-accent-1" />
+                  )}
+                </span>
+                <h1 className="font-display text-3xl font-bold tracking-[-0.01em] text-dj-texte sm:text-4xl">{titreAccueil}</h1>
+              </div>
             </div>
           ) : (
             <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>

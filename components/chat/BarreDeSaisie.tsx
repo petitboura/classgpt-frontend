@@ -1421,7 +1421,7 @@ export function BarreDeSaisie({
 
       {/* Rectangle à coins arrondis (plus une pilule ovale complète), tous
           les éléments alignés en bas -- voir section 3.3. */}
-      <div className="relative hidden rounded-3xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 focus-within:border-dj-bordure-forte md:block">
+      <div className="relative hidden rounded-3xl bg-dj-surface-haute px-4 py-3 shadow-[0_1px_12px_rgba(0,0,0,0.08)] focus-within:shadow-[0_1px_16px_rgba(0,0,0,0.14)] md:block">
         {/* Aperçu formules (2026-07-27) -- affiché seulement si le
             brouillon contient au moins un "$", pour ne pas dupliquer
             inutilement un simple message texte sans maths. Placé
@@ -2243,7 +2243,7 @@ export function BarreDeSaisie({
           )}
         </div>
       )}
-      <div className="flex items-end gap-1 rounded-3xl border border-dj-bordure bg-dj-surface-haute px-2 py-1 focus-within:border-dj-bordure-forte md:hidden">
+      <div className="flex items-end gap-1 rounded-3xl bg-dj-surface-haute px-2 py-1 shadow-[0_1px_12px_rgba(0,0,0,0.08)] focus-within:shadow-[0_1px_16px_rgba(0,0,0,0.14)] md:hidden">
         <div className="relative flex-shrink-0">
           <button
             ref={boutonPlusRef}

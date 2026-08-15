@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { ArrowLeft, Briefcase, Sparkles, Library, Brain, BookOpen, Puzzle, ScanSearch } from "lucide-react";
 import { useState } from "react";
-import { EspaceInviter } from "./EspaceInviter";
 import { EspaceEntrerCode } from "./EspaceEntrerCode";
-import { EspaceEquipe } from "./EspaceEquipe";
-import { EspaceDiffuser } from "./EspaceDiffuser";
+import { MesCodes } from "./MesCodes";
 import { EspaceBibliotheque } from "./EspaceBibliotheque";
 import { MesComportements } from "./MesComportements";
 import { MaMemoire } from "./MaMemoire";
 import { EspaceProgramme } from "./EspaceProgramme";
+import { ProgrammesRecus } from "./ProgrammesRecus";
 import { EspacePlugins } from "./EspacePlugins";
 import { EspaceAudits } from "./EspaceAudits";
 import { Skeleton } from "./Skeleton";
@@ -37,8 +36,10 @@ const AFFICHER_BUREAU = false;
  * Onglets, TOUS visibles pour TOUT LE MONDE (plus de rôle, plus de flag
  * section_mes_comportements à vérifier -- décision explicite Bourama
  * "bureau activé toujours et mes comportements toujours dans Clovis") :
- * - "Bureau" : écrire une matière (génère un code), entrer un code,
- *   voir qui a entré mes codes, diffuser des documents ciblés.
+ * - "Bureau" : gérer mes codes de partage (comportement/programme/
+ *   bibliothèque/texte, voir MesCodes.tsx) et entrer un code reçu d'un
+ *   autre utilisateur (14/08/2026, remplace l'ancien système "un code =
+ *   une matière", jamais lu par le chat -- voir core/codes_partage.py).
  * - "Mes comportements" : consignes perso pour l'IA de la personne
  *   connectée.
  * - "Bibliothèque" et "Ma mémoire" : personnels à chaque utilisateur.
@@ -90,10 +91,8 @@ export function EspaceClovis() {
 
       {AFFICHER_BUREAU && onglet === "bureau" && (
         <div className="flex flex-col gap-4">
-          <EspaceInviter />
+          <MesCodes />
           <EspaceEntrerCode />
-          <EspaceEquipe />
-          <EspaceDiffuser />
         </div>
       )}
 
@@ -107,7 +106,12 @@ export function EspaceClovis() {
 
       {onglet === "memoire" && <MaMemoire />}
 
-      {onglet === "programme" && <EspaceProgramme />}
+      {onglet === "programme" && (
+        <>
+          <ProgrammesRecus />
+          <EspaceProgramme />
+        </>
+      )}
 
       {onglet === "plugins" && <EspacePlugins />}
 

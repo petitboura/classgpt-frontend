@@ -6,6 +6,7 @@ import { lireMesComportements, ajouterComportement, modifierComportement, suppri
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
+import { ComportementsRecus } from "@/components/ComportementsRecus";
 import { Skeleton } from "./Skeleton";
 
 // Section "Mes comportements" (06/08/2026, demande Bourama : "on peut en
@@ -239,6 +240,8 @@ export function MesComportements({ agentId }: { agentId: string }) {
       </div>
 
       {erreur && <p className="text-xs text-[#F87171]">{erreur}</p>}
+
+      <ComportementsRecus />
 
       {panneau && (
         <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6">

@@ -597,6 +597,91 @@ export async function mettreAJourMonProfil(nomAffiche: string) {
   });
 }
 
+// --- Codes de partage (14/08/2026, remplace le système matière ci-dessus,
+// qui n'était de toute façon jamais lu par le chat -- voir
+// core/codes_partage.py côté backend) --------------------------------------
+//
+// Un code peut porter, chacun optionnel et combinable : un comportement,
+// un programme (référence vers un des miens), un partage de bibliothèque
+// (copie automatique à chaque ajout), un texte libre. Vivant : modifier
+// le code met à jour ce que voient tous ses receveurs, pas besoin d'un
+// nouveau code.
+
+export type CodePartage = {
+  id: string;
+  code: string;
+  nom: string | null;
+  comportement_texte: string | null;
+  comportement_description: string | null;
+  programme_id: string | null;
+  partage_bibliotheque: boolean;
+  texte_libre: string | null;
+  actif: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CodePartagePayload = {
+  nom?: string | null;
+  comportement_texte?: string | null;
+  programme_id?: string | null;
+  partage_bibliotheque?: boolean;
+  texte_libre?: string | null;
+};
+
+export async function listerMesCodes() {
+  return appelerApi("/api/codes") as Promise<CodePartage[]>;
+}
+
+export async function creerCode(payload: CodePartagePayload) {
+  return appelerApi("/api/codes", { method: "POST", body: JSON.stringify(payload) }) as Promise<CodePartage>;
+}
+
+export async function modifierCode(codeId: string, payload: CodePartagePayload) {
+  return appelerApi(`/api/codes/${codeId}`, { method: "PATCH", body: JSON.stringify(payload) }) as Promise<CodePartage>;
+}
+
+export async function activerCode(codeId: string, actif: boolean) {
+  return appelerApi(`/api/codes/${codeId}/actif`, { method: "POST", body: JSON.stringify({ actif }) }) as Promise<CodePartage>;
+}
+
+export async function supprimerCode(codeId: string) {
+  return appelerApi(`/api/codes/${codeId}`, { method: "DELETE" });
+}
+
+export type RattachementCode = {
+  rattachement_id: string;
+  code_id: string;
+  code: string;
+  nom_code: string | null;
+  proprietaire_id: string;
+  proprietaire_nom: string;
+  a_comportement: boolean;
+  comportement_texte: string | null;
+  a_programme: boolean;
+  programme_id: string | null;
+  programme_nom: string | null;
+  partage_bibliotheque: boolean;
+  texte_libre: string | null;
+};
+
+/** Ce que J'AI reçu en entrant des codes d'autres utilisateurs. */
+export async function listerMesRattachementsCodes() {
+  return appelerApi("/api/rattachements-codes") as Promise<RattachementCode[]>;
+}
+
+/** Entre un code à 6 caractères -- reçoit tout ce que ce code porte. */
+export async function entrerCodePartage(code: string) {
+  return appelerApi("/api/rattachements-codes", {
+    method: "POST",
+    body: JSON.stringify({ code }),
+  }) as Promise<{ id: string; code_id: string }>;
+}
+
+export async function retirerRattachementCode(rattachementId: string) {
+  return appelerApi(`/api/rattachements-codes/${rattachementId}`, { method: "DELETE" });
+}
+
 export type ContenuMatiere = {
   id: string;
   matiere: string;

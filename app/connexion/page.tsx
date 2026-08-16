@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { connecter } from "@/lib/authFallback";
 import { Logo } from "@/components/Logo";
@@ -11,8 +11,37 @@ import { ChampTelephone } from "@/components/ChampTelephone";
 
 type MethodeConnexion = "email" | "telephone";
 
+/**
+ * Ajouté pour l'écran de consentement OAuth (app/oauth/consent), qui a
+ * besoin de renvoyer l'utilisateur non connecté ici puis de le ramener
+ * exactement où il était (avec son authorization_id) une fois connecté.
+ *
+ * Anti-redirection-ouverte : on n'accepte QUE un chemin interne
+ * (commence par "/", jamais par "//" ni par un schéma "http(s)://" --
+ * "//evil.com" est une URL absolue valide en JS malgré les apparences).
+ * Toute valeur qui ne respecte pas ça retombe sur "/".
+ */
+function cheminRetourSur(valeur: string | null): string {
+  if (!valeur) return "/";
+  if (!valeur.startsWith("/") || valeur.startsWith("//")) return "/";
+  return valeur;
+}
+
+// useSearchParams() oblige Next.js à traiter la page en rendu client --
+// doit être isolé dans un composant séparé, enveloppé de <Suspense>,
+// sinon `next build` échoue ("should be wrapped in a suspense boundary").
 export default function PageConnexion() {
+  return (
+    <Suspense fallback={null}>
+      <FormulaireConnexion />
+    </Suspense>
+  );
+}
+
+function FormulaireConnexion() {
   const router = useRouter();
+  const params = useSearchParams();
+  const retour = cheminRetourSur(params.get("retour"));
   const [methode, setMethode] = useState<MethodeConnexion>("email");
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
@@ -40,7 +69,7 @@ export default function PageConnexion() {
       return;
     }
 
-    router.push("/");
+    router.push(retour);
   }
 
   return (

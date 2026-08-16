@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ChatFlottant } from "@/components/chat/ChatFlottant";
 import { CatalogueClovis } from "@/components/CatalogueClovis";
+import { ContexteChat, type EtatChat } from "@/lib/contexteChat";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
 // Monte UNE SEULE FOIS, au niveau du layout (voir app/(app)/layout.tsx) :
@@ -18,6 +19,10 @@ import { CatalogueClovis } from "@/components/CatalogueClovis";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [connecte, setConnecte] = useState(false);
   const [catalogueOuvert, setCatalogueOuvert] = useState(false);
+  // Remonté ici depuis ChatFlottant.tsx (16/08/2026) pour pouvoir être
+  // ouvert depuis d'autres écrans -- voir lib/contexteChat.tsx et le
+  // bouton "Ouvrir le chat" de l'écran d'accueil.
+  const [etatChat, setEtatChat] = useState<EtatChat>("fermee");
 
   useEffect(() => {
     let annule = false;
@@ -36,11 +41,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="flex h-dvh">
-      <AppSidebar connecte={connecte} onOuvrirCatalogue={() => setCatalogueOuvert(true)} />
-      <main className="flex-1 overflow-y-auto">{children}</main>
-      <ChatFlottant connecte={connecte} />
-      {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
-    </div>
+    <ContexteChat.Provider value={{ etat: etatChat, setEtat: setEtatChat }}>
+      <div className="flex h-dvh">
+        <AppSidebar connecte={connecte} onOuvrirCatalogue={() => setCatalogueOuvert(true)} />
+        <main className="flex-1 overflow-y-auto">{children}</main>
+        <ChatFlottant connecte={connecte} etat={etatChat} setEtat={setEtatChat} />
+        {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
+      </div>
+    </ContexteChat.Provider>
   );
 }

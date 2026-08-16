@@ -8,6 +8,7 @@ import {
   ChevronsRight,
   LogOut,
   LogIn,
+  Home,
   Briefcase,
   Sparkles,
   Library,
@@ -47,9 +48,9 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 
 const AGENT_ID = "clovis";
 
-type OngletId = "bureau" | "comportements" | "bibliotheque" | "memoire" | "programme" | "plugins" | "audits";
+export type OngletId = "bureau" | "comportements" | "bibliotheque" | "memoire" | "programme" | "plugins" | "audits";
 
-const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof Briefcase }[] = [
+export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof Briefcase }[] = [
   { id: "bureau", href: "/bureau", label: "Bureau", Icone: Briefcase },
   { id: "comportements", href: "/comportements", label: "Mes comportements", Icone: Sparkles },
   { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
@@ -121,7 +122,13 @@ export function AppSidebar({
     window.location.href = "/connexion";
   }
 
-  function LienOnglet({ onglet, mobile = false }: { onglet: (typeof ONGLETS)[number]; mobile?: boolean }) {
+  function LienOnglet({
+    onglet,
+    mobile = false,
+  }: {
+    onglet: { href: string; label: string; Icone: typeof Briefcase };
+    mobile?: boolean;
+  }) {
     const actif = pathname === onglet.href;
     return (
       <Link
@@ -175,6 +182,8 @@ export function AppSidebar({
         </button>
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
+
+        <LienOnglet onglet={{ href: "/", label: "Accueil", Icone: Home }} />
 
         {ONGLETS.map((o) => (
           <LienOnglet key={o.id} onglet={o} />
@@ -276,6 +285,7 @@ export function AppSidebar({
       {ouverte && (
         <div className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto overflow-x-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 md:hidden">
           <div className="mt-8">
+            <LienOnglet onglet={{ href: "/", label: "Accueil", Icone: Home }} mobile />
             {ONGLETS.map((o) => (
               <LienOnglet key={o.id} onglet={o} mobile />
             ))}

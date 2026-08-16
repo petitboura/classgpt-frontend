@@ -10,6 +10,7 @@ import { MessageAffiche, nettoyerMessageHistorique } from "./BulleMessage";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
+import type { EtatChat } from "@/lib/contexteChat";
 
 // Chat flottant global (refonte "Mon espace = l'app", 15/08/2026, demande
 // Bourama : "il faut un bouton pour ouvrir le chat en plein écran"). Avant
@@ -26,8 +27,6 @@ import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 //   sur mobile, faute de place).
 // - "plein_ecran" : overlay plein écran, même logique de hauteur visuelle
 //   que l'ancien app/page.tsx (clavier mobile, voir useHauteurVisuelle).
-
-type EtatChat = "fermee" | "mini" | "plein_ecran";
 
 type AgentDetail = {
   id: string;
@@ -53,8 +52,15 @@ const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
 const TITRE_ACCUEIL_CLOVIS = "Clovis";
 const SOUS_TITRE_ACCUEIL_CLOVIS = "L'IA qui t'aide dans tes études.";
 
-export function ChatFlottant({ connecte }: { connecte: boolean }) {
-  const [etat, setEtat] = useState<EtatChat>("fermee");
+export function ChatFlottant({
+  connecte,
+  etat,
+  setEtat,
+}: {
+  connecte: boolean;
+  etat: EtatChat;
+  setEtat: (etat: EtatChat) => void;
+}) {
   const [chargement, setChargement] = useState<"chargement" | "pret" | "erreur">("chargement");
   const [erreur, setErreur] = useState<string | null>(null);
   const [agent, setAgent] = useState<AgentDetail | null>(null);

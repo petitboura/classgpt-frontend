@@ -45,6 +45,14 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 // cas de 401 (voir CTACompteRequis.tsx), pour que l'invité "atterrisse
 // sur Mon espace comme un compte connecté, avec limitations" (demande
 // explicite Bourama).
+//
+// Animations d'icônes au survol (16/08, demande Bourama : "d'autres
+// bougent même, d'autres se penchent sur le côté, comme sur claude.ai")
+// -- volontairement PAS un scale-110 uniforme partout. Chaque icône a un
+// mouvement qui lui correspond : les chevrons glissent dans leur sens,
+// les icônes de nav alternent bascule gauche/droite/rebond/agrandissement
+// selon leur position, la boussole "Pourquoi Clovis ?" tourne comme une
+// vraie aiguille, etc.
 
 const AGENT_ID = "clovis";
 
@@ -58,6 +66,21 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
   { id: "programme", href: "/programme", label: "Mon programme", Icone: BookOpen },
   { id: "plugins", href: "/plugins", label: "Plugins", Icone: Puzzle },
   { id: "audits", href: "/audits", label: "Audits", Icone: ScanSearch },
+];
+
+// Rotation des mouvements pour les icônes de nav (Accueil + les 7
+// onglets) -- volontairement variés pour ne pas retomber sur un effet
+// uniforme. Même assignation utilisée en desktop et mobile (calculée par
+// index) pour que chaque section garde toujours le même mouvement.
+const MOUVEMENTS_NAV = [
+  "group-hover:-rotate-12", // Accueil : légère bascule
+  "group-hover:scale-110", // Bureau
+  "group-hover:rotate-12", // Mes comportements : bascule opposée
+  "group-hover:-translate-y-0.5 group-hover:scale-105", // Bibliothèque : petit rebond
+  "group-hover:-rotate-12", // Ma mémoire
+  "group-hover:scale-110", // Mon programme
+  "group-hover:rotate-12", // Plugins
+  "group-hover:-translate-y-0.5 group-hover:scale-105", // Audits : petit rebond
 ];
 
 function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.ReactNode }) {
@@ -124,9 +147,11 @@ export function AppSidebar({
 
   function LienOnglet({
     onglet,
+    mouvement,
     mobile = false,
   }: {
     onglet: { href: string; label: string; Icone: typeof Briefcase };
+    mouvement: string;
     mobile?: boolean;
   }) {
     const actif = pathname === onglet.href;
@@ -139,12 +164,14 @@ export function AppSidebar({
         } ${mobile ? "px-2" : ""}`}
       >
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <onglet.Icone size={18} className="transition-transform group-hover:scale-110" />
+          <onglet.Icone size={18} className={`transition-transform duration-200 ${mouvement}`} />
         </span>
         {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={ouverte}>{onglet.label}</LibelleRail>}
       </Link>
     );
   }
+
+  const navComplete = [{ href: "/", label: "Accueil", Icone: Home }, ...ONGLETS];
 
   return (
     <>
@@ -162,9 +189,9 @@ export function AppSidebar({
         className="group fixed left-2 top-2 z-40 flex h-8 w-8 items-center justify-center rounded-md bg-black/35 text-white hover:bg-black/50 md:hidden"
       >
         {ouverte ? (
-          <ChevronsLeft size={16} className="transition-transform group-hover:scale-110" />
+          <ChevronsLeft size={16} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
         ) : (
-          <ChevronsRight size={16} className="transition-transform group-hover:scale-110" />
+          <ChevronsRight size={16} className="transition-transform duration-200 group-hover:translate-x-0.5" />
         )}
       </button>
 
@@ -181,9 +208,9 @@ export function AppSidebar({
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
             {ouverte ? (
-              <ChevronsLeft size={18} className="transition-transform group-hover:scale-110" />
+              <ChevronsLeft size={18} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
             ) : (
-              <ChevronsRight size={18} className="transition-transform group-hover:scale-110" />
+              <ChevronsRight size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
             )}
           </span>
           <LibelleRail ouverte={ouverte}>Replier</LibelleRail>
@@ -191,10 +218,8 @@ export function AppSidebar({
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
 
-        <LienOnglet onglet={{ href: "/", label: "Accueil", Icone: Home }} />
-
-        {ONGLETS.map((o) => (
-          <LienOnglet key={o.id} onglet={o} />
+        {navComplete.map((o, i) => (
+          <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENTS_NAV[i % MOUVEMENTS_NAV.length]} />
         ))}
 
         {ouverte && (
@@ -212,7 +237,7 @@ export function AppSidebar({
             }`}
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <MoreHorizontal size={18} className="transition-transform group-hover:scale-110" />
+              <MoreHorizontal size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
             </span>
             <LibelleRail ouverte={ouverte}>Actions</LibelleRail>
           </button>
@@ -228,7 +253,7 @@ export function AppSidebar({
                     onClick={partager}
                     className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
                   >
-                    <Share2 size={16} className="flex-shrink-0 transition-transform group-hover:scale-110" />
+                    <Share2 size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:-rotate-12" />
                     {copie ? "Copié !" : "Partager"}
                   </button>
 
@@ -239,7 +264,7 @@ export function AppSidebar({
                         avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte"
                       }`}
                     >
-                      <Star size={16} className="flex-shrink-0 transition-transform group-hover:scale-110" />
+                      <Star size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
                       Avis sur cette IA
                     </button>
                     <div
@@ -260,7 +285,7 @@ export function AppSidebar({
                     onClick={onOuvrirCatalogue}
                     className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
-                    <Compass size={16} className="flex-shrink-0 transition-transform group-hover:scale-110" />
+                    <Compass size={16} className="flex-shrink-0 transition-transform duration-300 group-hover:rotate-45" />
                     Pourquoi Clovis ?
                   </button>
                 </div>
@@ -275,9 +300,9 @@ export function AppSidebar({
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
             {connecte ? (
-              <LogOut size={18} className="transition-transform group-hover:scale-110" />
+              <LogOut size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
             ) : (
-              <LogIn size={18} className="transition-transform group-hover:scale-110" />
+              <LogIn size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
             )}
           </span>
           <LibelleRail ouverte={ouverte}>{connecte ? "Se déconnecter" : "Se connecter"}</LibelleRail>
@@ -297,9 +322,8 @@ export function AppSidebar({
       {ouverte && (
         <div className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto overflow-x-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 md:hidden">
           <div className="mt-8">
-            <LienOnglet onglet={{ href: "/", label: "Accueil", Icone: Home }} mobile />
-            {ONGLETS.map((o) => (
-              <LienOnglet key={o.id} onglet={o} mobile />
+            {navComplete.map((o, i) => (
+              <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENTS_NAV[i % MOUVEMENTS_NAV.length]} mobile />
             ))}
           </div>
 
@@ -314,7 +338,7 @@ export function AppSidebar({
                 actionsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
               }`}
             >
-              <MoreHorizontal size={18} className="transition-transform group-hover:scale-110" />
+              <MoreHorizontal size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5" />
               Actions
             </button>
             {actionsDeplie && (
@@ -323,7 +347,7 @@ export function AppSidebar({
                   onClick={partager}
                   className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                 >
-                  <Share2 size={16} className="transition-transform group-hover:scale-110" />
+                  <Share2 size={16} className="transition-transform duration-200 group-hover:-rotate-12" />
                   {copie ? "Copié !" : "Partager"}
                 </button>
                 <button
@@ -332,7 +356,7 @@ export function AppSidebar({
                     avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
                   }`}
                 >
-                  <Star size={16} className="transition-transform group-hover:scale-110" />
+                  <Star size={16} className="transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
                   Avis sur cette IA
                 </button>
                 {avisDeplie && (
@@ -348,7 +372,7 @@ export function AppSidebar({
                   }}
                   className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                 >
-                  <Compass size={16} className="transition-transform group-hover:scale-110" />
+                  <Compass size={16} className="transition-transform duration-300 group-hover:rotate-45" />
                   Pourquoi Clovis ?
                 </button>
               </div>
@@ -361,9 +385,9 @@ export function AppSidebar({
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
               {connecte ? (
-                <LogOut size={18} className="transition-transform group-hover:scale-110" />
+                <LogOut size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
               ) : (
-                <LogIn size={18} className="transition-transform group-hover:scale-110" />
+                <LogIn size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
               )}
             </span>
             <span className="text-sm">{connecte ? "Se déconnecter" : "Se connecter"}</span>

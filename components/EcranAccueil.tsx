@@ -29,6 +29,19 @@ type ActiviteItem = {
   href: string;
 };
 
+// Mouvements variés au survol des cartes de raccourcis (16/08, demande
+// Bourama : pas un scale-110 uniforme -- même esprit que MOUVEMENTS_NAV
+// dans AppSidebar.tsx, ici alterné sur les 7 cartes du tableau de bord.
+const MOUVEMENTS_CARTE = [
+  "group-hover:scale-110",
+  "group-hover:-rotate-6",
+  "group-hover:rotate-6",
+  "group-hover:-translate-y-1",
+  "group-hover:rotate-6",
+  "group-hover:-rotate-6",
+  "group-hover:scale-110",
+];
+
 export function EcranAccueil() {
   const ouvrirChat = useOuvrirChat();
   const [activite, setActivite] = useState<ActiviteItem[] | null>(null);
@@ -144,7 +157,7 @@ export function EcranAccueil() {
           onClick={ouvrirChat}
           className="group flex items-center gap-2 rounded-xl bg-dj-gradient px-4 py-2.5 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5"
         >
-          <MessageCircle size={18} className="transition-transform group-hover:scale-110" />
+          <MessageCircle size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
           Ouvrir le chat
         </button>
       </div>
@@ -155,13 +168,16 @@ export function EcranAccueil() {
           Mon espace
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {ONGLETS.map((o) => (
+          {ONGLETS.map((o, i) => (
             <Link
               key={o.id}
               href={o.href}
               className="group flex flex-col items-start gap-2 rounded-xl border border-dj-bordure bg-dj-surface p-4 transition-colors hover:bg-dj-surface-haute"
             >
-              <o.Icone size={20} className="text-dj-accent-1 transition-transform group-hover:scale-110" />
+              <o.Icone
+                size={20}
+                className={`text-dj-accent-1 transition-transform duration-200 ${MOUVEMENTS_CARTE[i % MOUVEMENTS_CARTE.length]}`}
+              />
               <span className="text-sm font-semibold text-dj-texte">{o.label}</span>
             </Link>
           ))}

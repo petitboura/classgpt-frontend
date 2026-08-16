@@ -159,7 +159,7 @@ export function ChatFlottant({
         aria-label="Ouvrir le chat"
         className="group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-dj-gradient text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5"
       >
-        <MessageCircle size={24} className="transition-transform group-hover:scale-110" />
+        <MessageCircle size={24} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
       </button>
     );
   }
@@ -192,7 +192,7 @@ export function ChatFlottant({
               title="Nouvelle conversation"
               className="group flex h-8 w-8 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
             >
-              <MessageSquarePlus size={16} className="transition-transform group-hover:scale-110" />
+              <MessageSquarePlus size={16} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
             </button>
           )}
           {!pleinEcran && historique.length > 0 && (
@@ -204,7 +204,7 @@ export function ChatFlottant({
                   historiqueOuvert ? "bg-dj-surface-haute text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
                 }`}
               >
-                <History size={16} className="transition-transform group-hover:scale-110" />
+                <History size={16} className="transition-transform duration-300 group-hover:rotate-45" />
               </button>
               {historiqueOuvert && (
                 <div className="absolute right-0 top-9 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
@@ -227,9 +227,9 @@ export function ChatFlottant({
             className="group flex h-8 w-8 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
             {pleinEcran ? (
-              <Minimize2 size={16} className="transition-transform group-hover:scale-110" />
+              <Minimize2 size={16} className="transition-transform duration-200 group-hover:scale-90" />
             ) : (
-              <Maximize2 size={16} className="transition-transform group-hover:scale-110" />
+              <Maximize2 size={16} className="transition-transform duration-200 group-hover:scale-110" />
             )}
           </button>
           <button
@@ -237,7 +237,7 @@ export function ChatFlottant({
             title="Fermer"
             className="group flex h-8 w-8 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
-            <X size={16} className="transition-transform group-hover:scale-110" />
+            <X size={16} className="transition-transform duration-200 group-hover:rotate-90" />
           </button>
         </div>
       </div>

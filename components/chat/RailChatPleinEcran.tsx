@@ -65,9 +65,9 @@ export function RailChatPleinEcran({
       >
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
           {ouverte ? (
-            <ChevronsLeft size={18} className="transition-transform group-hover:scale-110" />
+            <ChevronsLeft size={18} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
           ) : (
-            <ChevronsRight size={18} className="transition-transform group-hover:scale-110" />
+            <ChevronsRight size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
           )}
         </span>
         <LibelleRail ouverte={ouverte}>Replier</LibelleRail>
@@ -81,7 +81,7 @@ export function RailChatPleinEcran({
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            <MessageSquarePlus size={18} className="transition-transform group-hover:scale-110" />
+            <MessageSquarePlus size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
           </span>
           <LibelleRail ouverte={ouverte}>Nouvelle conversation</LibelleRail>
         </button>

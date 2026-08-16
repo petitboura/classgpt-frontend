@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Plus, X, Check, Maximize2 } from "lucide-react";
+import { Trash2, Plus, X, Check, Maximize2, Sparkles, ChevronRight } from "lucide-react";
 import { lireMesComportements, ajouterComportement, modifierComportement, supprimerComportement, type Comportement } from "@/lib/api";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
-import { CompteRequisModal } from "@/components/CompteRequisModal";
+import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ComportementsRecus } from "@/components/ComportementsRecus";
 import { Skeleton } from "./Skeleton";
 
@@ -14,10 +14,17 @@ import { Skeleton } from "./Skeleton";
 // écrites par l'étudiant, chacune ajoutée EN PLUS du system_prompt déjà
 // résolu (généraliste, matière d'un enseignant, ou "Sans enseignant") --
 // jamais un remplacement, voir core/main.py::_construire_system_prompt.
-// Affichage piloté par agents.section_mes_comportements (Clovis
-// uniquement pour l'instant), gaté par le parent (SidebarChat.tsx et/ou
-// /dashboard/espace) -- ce composant est partagé entre les deux, jamais
-// dupliqué.
+//
+// Refonte visuelle (16/08/2026, demande Bourama : la section "doit être
+// plus sérieuse") : ce composant vivait à l'origine dans l'ancienne
+// sidebar de chat (SidebarChat.tsx, aujourd'hui disparue) et avait gardé
+// son style panneau compact (texte minuscule, simple point coloré par
+// ligne) même après être devenu une vraie page à part entière
+// (app/(app)/comportements/page.tsx, refonte "Mon espace = l'app" du
+// 15/08). Aligné ici sur le même langage visuel que les autres sections
+// (voir EspaceBibliotheque.tsx) : cartes bordées, texte en taille
+// normale, formulaire d'ajout en encart, CTA compte partagé
+// (CTACompteRequis) au lieu d'une version dupliquée sur mesure.
 //
 // Ouvert aux visiteurs sans compte depuis le 09/08 (la barre latérale
 // entière l'est désormais, décision Bourama : "tout est visible, la
@@ -34,7 +41,9 @@ import { Skeleton } from "./Skeleton";
 // élément précis dans un espace dédié plein écran (grand champ de
 // texte, Enregistrer, Supprimer), plus de mini-édition compactée sur
 // place. L'ajout d'un nouveau comportement, lui, reste le petit champ
-// rapide en bas de liste (confirmé par Bourama).
+// rapide en bas de liste (confirmé par Bourama) -- ces deux décisions
+// UX ne sont pas remises en cause par cette refonte, seule
+// l'habillage visuel change.
 
 export function MesComportements({ agentId }: { agentId: string }) {
   const [liste, setListe] = useState<Comportement[] | undefined>(undefined);
@@ -55,7 +64,6 @@ export function MesComportements({ agentId }: { agentId: string }) {
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
   const [erreurOuvert, setErreurOuvert] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
-  const [modaleCompteOuverte, setModaleCompteOuverte] = useState(false);
 
   function charger() {
     lireMesComportements(agentId)
@@ -165,81 +173,77 @@ export function MesComportements({ agentId }: { agentId: string }) {
   }
 
   if (sansCompte) {
-    return (
-      <div className="flex animate-dj-fade-in-rapide flex-col gap-2 px-3 pb-3">
-        <p className="text-xs text-dj-texte-muet">
-          Crée un compte pour ajouter tes propres consignes perso à cette IA.
-        </p>
-        <button
-          onClick={() => setModaleCompteOuverte(true)}
-          className="self-start rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5"
-        >
-          Créer un compte
-        </button>
-        {modaleCompteOuverte && (
-          <CompteRequisModal
-            texte="Crée un compte pour personnaliser cette IA."
-            onFerme={() => setModaleCompteOuverte(false)}
-          />
-        )}
-      </div>
-    );
+    return <CTACompteRequis texte="Crée un compte pour ajouter tes propres consignes perso à cette IA." />;
   }
 
   if (liste === undefined) {
     return (
-      <div className="flex flex-col gap-2 px-3 pb-3">
-        <Skeleton className="h-8 rounded-lg" />
-        <Skeleton className="h-8 rounded-lg" style={{ animationDelay: "100ms" }} />
+      <div className="flex flex-col gap-2" aria-hidden>
+        <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
+        <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
       </div>
     );
   }
 
   return (
-    <div className="flex animate-dj-fade-in-rapide flex-col gap-2 px-3 pb-3">
-      <p className="text-xs text-dj-texte-muet">
+    <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
+      <p className="text-sm text-dj-texte-muet">
         Tes consignes perso pour cette IA, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter
         plusieurs -- clique sur l&apos;une d&apos;elles pour l&apos;ouvrir en grand et la modifier tranquillement.
       </p>
 
-      {liste.map((c) => (
-        <button
-          key={c.id}
-          onClick={() => ouvrirEdition(c)}
-          title="Ouvrir et modifier"
-          className="flex items-start gap-2 rounded-lg border border-dj-bordure/60 px-2 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
-        >
-          <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-dj-gradient" />
-          <span className="min-w-0 flex-1 line-clamp-2 text-xs leading-relaxed text-dj-texte">{c.description}</span>
-        </button>
-      ))}
-
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-col gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-4 sm:flex-row sm:items-center">
         <input
           value={nouveauTexte}
           onChange={(e) => setNouveauTexte(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && ajouter()}
           placeholder="Ex : réponds-moi toujours en langage simple"
-          className="min-w-0 flex-1 rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-xs text-dj-texte outline-none focus:border-dj-accent-1"
+          className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
         />
-        <button
-          onClick={ajouter}
-          disabled={ajoutEnCours || !nouveauTexte.trim()}
-          title="Ajouter"
-          className="flex-shrink-0 rounded-lg bg-dj-gradient p-2 text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
-        >
-          <Plus size={14} />
-        </button>
-        <button
-          onClick={ouvrirCreation}
-          title="Écrire en plein écran"
-          className="flex-shrink-0 rounded-lg border border-dj-bordure p-2 text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
-        >
-          <Maximize2 size={14} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={ouvrirCreation}
+            className="flex flex-shrink-0 items-center gap-2 rounded-full border border-dj-bordure px-4 py-2 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
+          >
+            <Maximize2 size={14} />
+            Plein écran
+          </button>
+          <button
+            onClick={ajouter}
+            disabled={ajoutEnCours || !nouveauTexte.trim()}
+            className="flex flex-shrink-0 items-center gap-1.5 self-end rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] shadow-[0_2px_14px_rgba(217,99,31,0.25)] transition-transform hover:-translate-y-0.5 disabled:opacity-50 sm:self-auto"
+          >
+            <Plus size={14} />
+            {ajoutEnCours ? "Ajout…" : "Ajouter"}
+          </button>
+        </div>
       </div>
 
-      {erreur && <p className="text-xs text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+
+      {liste.length === 0 && <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>}
+
+      {liste.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {liste.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => ouvrirEdition(c)}
+              title="Ouvrir et modifier"
+              className="group flex items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+            >
+              <Sparkles size={16} className="flex-shrink-0 text-dj-accent-1" />
+              <span className="min-w-0 flex-1 line-clamp-2 text-sm leading-relaxed text-dj-texte">
+                {c.description}
+              </span>
+              <ChevronRight
+                size={16}
+                className="flex-shrink-0 text-dj-texte-muet opacity-0 transition-opacity group-hover:opacity-100"
+              />
+            </button>
+          ))}
+        </div>
+      )}
 
       <ComportementsRecus />
 

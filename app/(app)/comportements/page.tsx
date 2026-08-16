@@ -8,9 +8,7 @@ const AGENT_ID = "clovis";
 export default function PageComportements() {
   return (
     <SectionPage title="Mes comportements">
-      <div className="max-w-md">
-        <MesComportements agentId={AGENT_ID} />
-      </div>
+      <MesComportements agentId={AGENT_ID} />
     </SectionPage>
   );
 }

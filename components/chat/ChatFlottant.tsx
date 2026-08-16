@@ -5,6 +5,7 @@ import { MessageCircle, X, Maximize2, Minimize2, MessageSquarePlus, History } fr
 import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { ChatIA } from "./ChatIA";
+import { RailChatPleinEcran } from "./RailChatPleinEcran";
 import { MessageAffiche, nettoyerMessageHistorique } from "./BulleMessage";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
@@ -168,16 +169,18 @@ export function ChatFlottant({ connecte }: { connecte: boolean }) {
       }
       style={pleinEcran ? { height: "var(--vh-visuelle, 100dvh)" } : undefined}
     >
-      {/* En-tête compact -- remplace le rail complet de l'ancienne
-          SidebarChatLite (historique/nouvelle conversation), le reste
-          (partager, avis, pourquoi Clovis) vit désormais dans la nav
-          principale de l'app (voir AppSidebar.tsx). */}
+      {/* En-tête compact. En mode mini : nouvelle conversation +
+          historique en dropdown, faute de place pour un vrai rail. En
+          mode plein écran, ces deux-là vivent dans RailChatPleinEcran
+          juste en dessous -- pas de doublon ici. Partager / Avis /
+          Pourquoi Clovis vivent dans la nav principale de l'app (voir
+          AppSidebar.tsx), jamais dupliqués dans le chat. */}
       <div className="flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 py-2.5">
         <Logo taille={20} />
         <span className="font-display text-sm font-bold text-dj-texte">Clovis</span>
 
         <div className="ml-auto flex items-center gap-1">
-          {nbMessages > 0 && (
+          {!pleinEcran && nbMessages > 0 && (
             <button
               onClick={nouvelleConversation}
               title="Nouvelle conversation"
@@ -186,7 +189,7 @@ export function ChatFlottant({ connecte }: { connecte: boolean }) {
               <MessageSquarePlus size={16} />
             </button>
           )}
-          {historique.length > 0 && (
+          {!pleinEcran && historique.length > 0 && (
             <div className="relative">
               <button
                 onClick={() => setHistoriqueOuvert((v) => !v)}
@@ -229,43 +232,55 @@ export function ChatFlottant({ connecte }: { connecte: boolean }) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1">
-        {chargement === "chargement" && (
-          <div className="flex h-full items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-dj-bordure border-t-dj-accent-1" />
-          </div>
-        )}
-
-        {chargement === "erreur" && (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
-            <p className="text-sm text-dj-texte">{erreur ?? "Une erreur est survenue."}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="rounded-lg bg-dj-gradient px-4 py-2 text-sm font-bold text-[#1A0D02]"
-            >
-              Réessayer
-            </button>
-          </div>
-        )}
-
-        {chargement === "pret" && agent && (
-          <ChatIA
-            key={cle}
-            agentId={agent.id}
-            nomAgent="Clovis"
-            titreAccueil={TITRE_ACCUEIL_CLOVIS}
-            sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
-            iconePersonnalisee={<Logo taille={40} />}
-            conversationId={cle}
-            messagesInitiaux={messagesInitiaux}
-            onMessagesChange={setNbMessages}
-            modelesDisponibles={agent.modeles_disponibles}
-            modeleChoisi={agent.modele_choisi}
-            outilsActifsAgent={outilsActifsAgent}
-            boutonSansEnseignant={false}
-            avantEnvoi={verifierLimiteInvite}
+      <div className="flex min-h-0 flex-1">
+        {pleinEcran && (
+          <RailChatPleinEcran
+            aDesMessages={nbMessages > 0}
+            conversationActiveId={cle}
+            historique={historique}
+            onNouvelleConversation={nouvelleConversation}
+            onSelectionnerConversation={selectionnerConversation}
           />
         )}
+
+        <div className="min-h-0 flex-1">
+          {chargement === "chargement" && (
+            <div className="flex h-full items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-dj-bordure border-t-dj-accent-1" />
+            </div>
+          )}
+
+          {chargement === "erreur" && (
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
+              <p className="text-sm text-dj-texte">{erreur ?? "Une erreur est survenue."}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="rounded-lg bg-dj-gradient px-4 py-2 text-sm font-bold text-[#1A0D02]"
+              >
+                Réessayer
+              </button>
+            </div>
+          )}
+
+          {chargement === "pret" && agent && (
+            <ChatIA
+              key={cle}
+              agentId={agent.id}
+              nomAgent="Clovis"
+              titreAccueil={TITRE_ACCUEIL_CLOVIS}
+              sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
+              iconePersonnalisee={<Logo taille={40} />}
+              conversationId={cle}
+              messagesInitiaux={messagesInitiaux}
+              onMessagesChange={setNbMessages}
+              modelesDisponibles={agent.modeles_disponibles}
+              modeleChoisi={agent.modele_choisi}
+              outilsActifsAgent={outilsActifsAgent}
+              boutonSansEnseignant={false}
+              avantEnvoi={verifierLimiteInvite}
+            />
+          )}
+        </div>
       </div>
 
       {compteRequis && (

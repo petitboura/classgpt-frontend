@@ -142,9 +142,9 @@ export function EcranAccueil() {
         </div>
         <button
           onClick={ouvrirChat}
-          className="flex items-center gap-2 rounded-xl bg-dj-gradient px-4 py-2.5 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5"
+          className="group flex items-center gap-2 rounded-xl bg-dj-gradient px-4 py-2.5 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5"
         >
-          <MessageCircle size={18} />
+          <MessageCircle size={18} className="transition-transform group-hover:scale-110" />
           Ouvrir le chat
         </button>
       </div>
@@ -159,9 +159,9 @@ export function EcranAccueil() {
             <Link
               key={o.id}
               href={o.href}
-              className="flex flex-col items-start gap-2 rounded-xl border border-dj-bordure bg-dj-surface p-4 transition-colors hover:bg-dj-surface-haute"
+              className="group flex flex-col items-start gap-2 rounded-xl border border-dj-bordure bg-dj-surface p-4 transition-colors hover:bg-dj-surface-haute"
             >
-              <o.Icone size={20} className="text-dj-accent-1" />
+              <o.Icone size={20} className="text-dj-accent-1 transition-transform group-hover:scale-110" />
               <span className="text-sm font-semibold text-dj-texte">{o.label}</span>
             </Link>
           ))}
@@ -193,9 +193,9 @@ export function EcranAccueil() {
                 <button
                   key={item.id}
                   onClick={ouvrirChat}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-dj-surface"
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-dj-surface"
                 >
-                  <item.Icone size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                  <item.Icone size={16} className="flex-shrink-0 text-dj-texte-muet transition-transform group-hover:scale-110" />
                   <span className="min-w-0 flex-1 truncate text-sm text-dj-texte">{item.label}</span>
                   <span className="flex-shrink-0 text-xs text-dj-texte-muet">{dateRelative(item.date)}</span>
                 </button>
@@ -203,9 +203,9 @@ export function EcranAccueil() {
                 <Link
                   key={item.id}
                   href={item.href}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-dj-surface"
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-dj-surface"
                 >
-                  <item.Icone size={16} className="flex-shrink-0 text-dj-texte-muet" />
+                  <item.Icone size={16} className="flex-shrink-0 text-dj-texte-muet transition-transform group-hover:scale-110" />
                   <span className="min-w-0 flex-1 truncate text-sm text-dj-texte">{item.label}</span>
                   <span className="flex-shrink-0 text-xs text-dj-texte-muet">{dateRelative(item.date)}</span>
                 </Link>

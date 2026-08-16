@@ -134,12 +134,12 @@ export function AppSidebar({
       <Link
         href={onglet.href}
         onClick={() => mobile && setOuverte(false)}
-        className={`mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
+        className={`group mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         } ${mobile ? "px-2" : ""}`}
       >
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          <onglet.Icone size={18} />
+          <onglet.Icone size={18} className="transition-transform group-hover:scale-110" />
         </span>
         {mobile ? <span className="text-sm">{onglet.label}</span> : <LibelleRail ouverte={ouverte}>{onglet.label}</LibelleRail>}
       </Link>
@@ -159,9 +159,13 @@ export function AppSidebar({
       <button
         onClick={() => setOuverte((v) => !v)}
         aria-label={ouverte ? "Replier le panneau" : "Déplier le panneau"}
-        className="fixed left-2 top-2 z-40 flex h-8 w-8 items-center justify-center rounded-md bg-black/35 text-white hover:bg-black/50 md:hidden"
+        className="group fixed left-2 top-2 z-40 flex h-8 w-8 items-center justify-center rounded-md bg-black/35 text-white hover:bg-black/50 md:hidden"
       >
-        {ouverte ? <ChevronsLeft size={16} /> : <ChevronsRight size={16} />}
+        {ouverte ? (
+          <ChevronsLeft size={16} className="transition-transform group-hover:scale-110" />
+        ) : (
+          <ChevronsRight size={16} className="transition-transform group-hover:scale-110" />
+        )}
       </button>
 
       <div
@@ -173,10 +177,14 @@ export function AppSidebar({
         <button
           onClick={() => setOuverte((v) => !v)}
           aria-label={ouverte ? "Replier le panneau" : "Déplier le panneau"}
-          className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            {ouverte ? <ChevronsLeft size={18} /> : <ChevronsRight size={18} />}
+            {ouverte ? (
+              <ChevronsLeft size={18} className="transition-transform group-hover:scale-110" />
+            ) : (
+              <ChevronsRight size={18} className="transition-transform group-hover:scale-110" />
+            )}
           </span>
           <LibelleRail ouverte={ouverte}>Replier</LibelleRail>
         </button>
@@ -199,12 +207,12 @@ export function AppSidebar({
           <button
             onClick={basculerActions}
             title="Actions"
-            className={`flex w-full items-center gap-2 rounded-xl transition-colors ${
+            className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${
               actionsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
             }`}
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              <MoreHorizontal size={18} />
+              <MoreHorizontal size={18} className="transition-transform group-hover:scale-110" />
             </span>
             <LibelleRail ouverte={ouverte}>Actions</LibelleRail>
           </button>
@@ -218,20 +226,20 @@ export function AppSidebar({
                 <div className="flex flex-col gap-2 px-2 pb-2">
                   <button
                     onClick={partager}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
+                    className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
                   >
-                    <Share2 size={16} className="flex-shrink-0" />
+                    <Share2 size={16} className="flex-shrink-0 transition-transform group-hover:scale-110" />
                     {copie ? "Copié !" : "Partager"}
                   </button>
 
                   <div className="rounded-lg">
                     <button
                       onClick={() => setAvisDeplie((v) => !v)}
-                      className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                      className={`group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
                         avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte"
                       }`}
                     >
-                      <Star size={16} className="flex-shrink-0" />
+                      <Star size={16} className="flex-shrink-0 transition-transform group-hover:scale-110" />
                       Avis sur cette IA
                     </button>
                     <div
@@ -250,9 +258,9 @@ export function AppSidebar({
 
                   <button
                     onClick={onOuvrirCatalogue}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                    className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
-                    <Compass size={16} className="flex-shrink-0" />
+                    <Compass size={16} className="flex-shrink-0 transition-transform group-hover:scale-110" />
                     Pourquoi Clovis ?
                   </button>
                 </div>
@@ -263,10 +271,14 @@ export function AppSidebar({
 
         <button
           onClick={seDeconnecter}
-          className="mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          className="group mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            {connecte ? <LogOut size={18} /> : <LogIn size={18} />}
+            {connecte ? (
+              <LogOut size={18} className="transition-transform group-hover:scale-110" />
+            ) : (
+              <LogIn size={18} className="transition-transform group-hover:scale-110" />
+            )}
           </span>
           <LibelleRail ouverte={ouverte}>{connecte ? "Se déconnecter" : "Se connecter"}</LibelleRail>
         </button>
@@ -298,29 +310,29 @@ export function AppSidebar({
           <div className="mt-2 rounded-xl px-2">
             <button
               onClick={() => setActionsDeplie((v) => !v)}
-              className={`flex w-full items-center gap-2 py-2 text-sm transition-colors ${
+              className={`group flex w-full items-center gap-2 py-2 text-sm transition-colors ${
                 actionsDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
               }`}
             >
-              <MoreHorizontal size={18} />
+              <MoreHorizontal size={18} className="transition-transform group-hover:scale-110" />
               Actions
             </button>
             {actionsDeplie && (
               <div className="flex flex-col gap-2 pb-2">
                 <button
                   onClick={partager}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                  className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                 >
-                  <Share2 size={16} />
+                  <Share2 size={16} className="transition-transform group-hover:scale-110" />
                   {copie ? "Copié !" : "Partager"}
                 </button>
                 <button
                   onClick={() => setAvisDeplie((v) => !v)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                  className={`group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
                     avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
                   }`}
                 >
-                  <Star size={16} />
+                  <Star size={16} className="transition-transform group-hover:scale-110" />
                   Avis sur cette IA
                 </button>
                 {avisDeplie && (
@@ -334,9 +346,9 @@ export function AppSidebar({
                     onOuvrirCatalogue();
                     setOuverte(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                  className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                 >
-                  <Compass size={16} />
+                  <Compass size={16} className="transition-transform group-hover:scale-110" />
                   Pourquoi Clovis ?
                 </button>
               </div>
@@ -345,10 +357,14 @@ export function AppSidebar({
 
           <button
             onClick={seDeconnecter}
-            className="mt-auto flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            className="group mt-auto flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-              {connecte ? <LogOut size={18} /> : <LogIn size={18} />}
+              {connecte ? (
+                <LogOut size={18} className="transition-transform group-hover:scale-110" />
+              ) : (
+                <LogIn size={18} className="transition-transform group-hover:scale-110" />
+              )}
             </span>
             <span className="text-sm">{connecte ? "Se déconnecter" : "Se connecter"}</span>
           </button>

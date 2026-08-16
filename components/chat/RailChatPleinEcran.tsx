@@ -61,10 +61,14 @@ export function RailChatPleinEcran({
       <button
         onClick={() => setOuverte((v) => !v)}
         aria-label={ouverte ? "Replier" : "Déplier"}
-        className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+        className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
       >
         <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-          {ouverte ? <ChevronsLeft size={18} /> : <ChevronsRight size={18} />}
+          {ouverte ? (
+            <ChevronsLeft size={18} className="transition-transform group-hover:scale-110" />
+          ) : (
+            <ChevronsRight size={18} className="transition-transform group-hover:scale-110" />
+          )}
         </span>
         <LibelleRail ouverte={ouverte}>Replier</LibelleRail>
       </button>
@@ -74,10 +78,10 @@ export function RailChatPleinEcran({
       {aDesMessages && (
         <button
           onClick={onNouvelleConversation}
-          className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+          className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            <MessageSquarePlus size={18} />
+            <MessageSquarePlus size={18} className="transition-transform group-hover:scale-110" />
           </span>
           <LibelleRail ouverte={ouverte}>Nouvelle conversation</LibelleRail>
         </button>

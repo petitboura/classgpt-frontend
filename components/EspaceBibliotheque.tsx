@@ -11,6 +11,7 @@ import {
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
+import { VisionneuseBibliotheque } from "./VisionneuseBibliotheque";
 
 // Onglet "Bibliothèque" de Mon espace, porté de
 // djiguigne-frontend/app/dashboard/espace/page.tsx (même logique,
@@ -62,6 +63,9 @@ export function EspaceBibliotheque() {
   // auparavant inatteignable sans compte, même détection que
   // MesComportements.tsx : 401 -> CTA plutôt qu'une liste vide.
   const [sansCompte, setSansCompte] = useState(false);
+  // Fenêtre de prévisualisation (17/08, Bourama : "rien pour ouvrir
+  // chaque type dans l'app") -- remplace l'ouverture en nouvel onglet.
+  const [fichierOuvert, setFichierOuvert] = useState<FichierBiblio | null>(null);
 
   useEffect(() => {
     chargerFichiers();
@@ -214,15 +218,13 @@ export function EspaceBibliotheque() {
                 key={f.id}
                 className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
               >
-                <a
-                  href={f.url_publique}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setFichierOuvert(f)}
                   className="flex min-w-0 items-center gap-2 text-sm text-dj-accent-1 hover:text-dj-accent-2"
                 >
                   <Icone size={14} className="flex-shrink-0" />
                   <span className="truncate">{f.description || f.nom_fichier}</span>
-                </a>
+                </button>
                 <button
                   onClick={() => supprimer(f.id, f.description || f.nom_fichier)}
                   className="flex-shrink-0 text-xs text-dj-texte-muet transition-colors hover:text-[#F87171]"
@@ -234,6 +236,8 @@ export function EspaceBibliotheque() {
           })}
         </div>
       )}
+
+      <VisionneuseBibliotheque fichier={fichierOuvert} onFermer={() => setFichierOuvert(null)} />
     </div>
   );
 }

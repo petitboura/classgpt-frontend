@@ -22,6 +22,7 @@ import { TableauMessage } from "./TableauMessage";
 import { FichierChip, extensionFichier } from "./FichierChip";
 import { FichierCode, extensionCode } from "./FichierCode";
 import { LecteurMedia, typeMedia } from "./LecteurMedia";
+import { NoteTexteChip, estNoteTexteBibliotheque } from "./NoteTexteChip";
 import { LinkPreview } from "./LinkPreview";
 import { RaisonnementBulle } from "./RaisonnementBulle";
 import { OutilResultatBulle } from "./OutilResultatBulle";
@@ -526,6 +527,9 @@ function BulleMessageInterne({
                 if (!href) return <>{children}</>;
                 const media = typeMedia(href);
                 if (media) return <LecteurMedia href={href} type={media} />;
+                if (estNoteTexteBibliotheque(href)) {
+                  return <NoteTexteChip href={href} nom={texteBrut(children) || href} />;
+                }
                 if (extensionCode(href)) {
                   return <FichierCode href={href} nom={texteBrut(children) || href} />;
                 }

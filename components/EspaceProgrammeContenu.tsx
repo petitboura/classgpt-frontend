@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, X, Check, Link as IconLien, FileText, Rocket } from "lucide-react";
+import { Plus, Trash2, X, Check, Link as IconLien, FileText, Rocket, ExternalLink } from "lucide-react";
 import {
   lireDocumentsChapitre,
   ajouterDocumentChapitre,
@@ -25,6 +25,7 @@ import { messageErreur } from "@/lib/erreurs";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { Skeleton } from "./Skeleton";
 import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
+import { LinkPreview } from "./chat/LinkPreview";
 
 // Lot 5 (chantier programme étudiant) -- au moment où ce fichier a été
 // écrit, components/EspaceProgramme.tsx (lot 4 : navigation
@@ -56,6 +57,12 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
   const [urlOuContenu, setUrlOuContenu] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  // 17/08 (Bourama : "rien pour ouvrir chaque type dans l'app") -- même
+  // besoin que EspaceBibliotheque.tsx/VisionneuseBibliotheque.tsx, mais
+  // ici le "document" n'est qu'un titre + un lien OU un texte tapé à la
+  // main (pas de vrai fichier, voir api/contenu_programme.py), donc pas
+  // besoin d'une visionneuse par type MIME -- juste lien vs texte brut.
+  const [documentOuvert, setDocumentOuvert] = useState<DocumentChapitre | null>(null);
 
   useEffect(() => {
     setDocuments(null);
@@ -146,20 +153,12 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <Icone size={14} className="flex-shrink-0 text-dj-accent-1" />
-                  {estLien ? (
-                    <a
-                      href={d.url_ou_contenu}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="truncate text-sm text-dj-accent-1 hover:text-dj-accent-2"
-                    >
-                      {d.titre}
-                    </a>
-                  ) : (
-                    <span className="truncate text-sm text-dj-texte" title={d.url_ou_contenu}>
-                      {d.titre}
-                    </span>
-                  )}
+                  <button
+                    onClick={() => setDocumentOuvert(d)}
+                    className={`truncate text-left text-sm ${estLien ? "text-dj-accent-1 hover:text-dj-accent-2" : "text-dj-texte hover:text-dj-accent-1"}`}
+                  >
+                    {d.titre}
+                  </button>
                 </div>
                 <div className="flex flex-shrink-0 items-center gap-2">
                   <AjouterAClassementBouton cibleType="document" cibleId={d.id} />
@@ -173,6 +172,41 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {documentOuvert && (
+        <div
+          className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6"
+          onClick={() => setDocumentOuvert(null)}
+        >
+          <div className="flex items-center justify-between pb-4">
+            <span className="truncate text-sm text-dj-texte-muet">{documentOuvert.titre}</span>
+            <button
+              onClick={() => setDocumentOuvert(null)}
+              className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface"
+            >
+              <X size={14} /> Fermer
+            </button>
+          </div>
+
+          <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col overflow-auto" onClick={(e) => e.stopPropagation()}>
+            {URL_REGEX.test(documentOuvert.url_ou_contenu) ? (
+              <div className="flex flex-col gap-3 py-2">
+                <LinkPreview href={documentOuvert.url_ou_contenu} texteLien={documentOuvert.titre} />
+                <button
+                  onClick={() => window.open(documentOuvert.url_ou_contenu, "_blank", "noopener,noreferrer")}
+                  className="flex w-fit items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+                >
+                  <ExternalLink size={13} /> Ouvrir le site
+                </button>
+              </div>
+            ) : (
+              <pre className="whitespace-pre-wrap break-words rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 font-sans text-sm text-dj-texte">
+                {documentOuvert.url_ou_contenu}
+              </pre>
+            )}
+          </div>
         </div>
       )}
     </div>

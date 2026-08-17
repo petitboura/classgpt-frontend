@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, X, Check, Link as IconLien, FileText, Rocket, ExternalLink } from "lucide-react";
+import { Plus, Trash2, X, Check, Link as IconLien, FileText, Rocket, ExternalLink, Paperclip } from "lucide-react";
 import {
   lireDocumentsChapitre,
   ajouterDocumentChapitre,
@@ -20,12 +20,15 @@ import {
   publierProgrammeCommePlugin,
   examensTransversesProgramme,
   type ExamenTransverse,
+  classerDocumentEmplacement,
+  ajouterFichierBibliothequePersonnelle,
 } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { Skeleton } from "./Skeleton";
 import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
 import { LinkPreview } from "./chat/LinkPreview";
+import { SectionDocumentsBibliotheque } from "./SectionDocumentsBibliotheque";
 
 // Lot 5 (chantier programme étudiant) -- au moment où ce fichier a été
 // écrit, components/EspaceProgramme.tsx (lot 4 : navigation
@@ -44,6 +47,7 @@ export function VueChapitreContenu({ chapitreId }: { chapitreId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <SectionDocuments chapitreId={chapitreId} />
+      <SectionDocumentsBibliotheque typeCible="chapitre" cibleId={chapitreId} titre="Documents (bibliothèque)" />
       <SectionExercices chapitreId={chapitreId} />
     </div>
   );
@@ -225,6 +229,33 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
   const [erreurOuvert, setErreurOuvert] = useState<string | null>(null);
 
+  // 17/08 (demande Bourama : "attacher un fichier au lieu de taper
+  // l'énoncé" -- "qui écrit un exercice à la main ?") : crée un
+  // exercice vide puis y classe directement le(s) fichier(s) choisis,
+  // sans passer par la zone de texte. Le texte et le fichier cohabitent
+  // (voir aussi les pièces jointes dans le panneau ci-dessous, pour un
+  // exercice déjà créé).
+  const [envoiFichierEnCours, setEnvoiFichierEnCours] = useState(false);
+
+  async function ajouterParFichier(fichiers: File[]) {
+    if (fichiers.length === 0) return;
+    setEnvoiFichierEnCours(true);
+    setErreur(null);
+    try {
+      const cree = await ajouterExerciceChapitre(chapitreId, nouvelEnonce.trim());
+      for (const fichier of fichiers) {
+        const ligne = await ajouterFichierBibliothequePersonnelle(fichier, "", "");
+        await classerDocumentEmplacement("exercice", cree.id, ligne.id);
+      }
+      setExercices((prec) => [...(prec || []), cree]);
+      setNouvelEnonce("");
+    } catch (e) {
+      setErreur(messageErreur(e));
+    } finally {
+      setEnvoiFichierEnCours(false);
+    }
+  }
+
   useEffect(() => {
     setExercices(null);
     charger();
@@ -319,7 +350,13 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
               className="flex items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
             >
               <button onClick={() => ouvrir(ex)} className="min-w-0 flex-1 truncate text-left text-sm text-dj-texte">
-                {ex.enonce}
+                {ex.enonce.trim() ? (
+                  ex.enonce
+                ) : (
+                  <span className="flex items-center gap-1.5 italic text-dj-texte-muet">
+                    <Paperclip size={12} /> Exercice sans texte (voir pièce jointe)
+                  </span>
+                )}
               </button>
               <AjouterAClassementBouton cibleType="exercice" cibleId={ex.id} />
             </div>
@@ -343,11 +380,30 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
         >
           <Plus size={16} />
         </button>
+        <label
+          title="Créer un exercice à partir d'une photo/PDF, sans taper de texte"
+          className="flex flex-shrink-0 cursor-pointer items-center rounded-cgpt-bouton border border-dj-bordure p-2.5 text-dj-texte transition-colors hover:border-dj-bordure-forte aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          aria-disabled={envoiFichierEnCours}
+        >
+          <Paperclip size={16} />
+          <input
+            type="file"
+            multiple
+            disabled={envoiFichierEnCours}
+            accept="application/pdf,image/jpeg,image/png,image/webp"
+            onChange={(e) => {
+              const fichiers = Array.from(e.target.files ?? []);
+              e.target.value = "";
+              ajouterParFichier(fichiers);
+            }}
+            className="hidden"
+          />
+        </label>
       </div>
       {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
 
       {panneau && (
-        <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col overflow-y-auto bg-dj-fond p-4 sm:p-6">
           <div className="flex items-center justify-between pb-4">
             <span className="text-sm text-dj-texte-muet">Modifier cet exercice</span>
             <button
@@ -365,6 +421,10 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
             onChange={(e) => setTexteOuvert(e.target.value)}
             className="mx-auto w-full max-w-2xl flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
           />
+
+          <div className="mx-auto w-full max-w-2xl pt-4">
+            <SectionDocumentsBibliotheque typeCible="exercice" cibleId={panneau.id} titre="Pièces jointes" />
+          </div>
 
           <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
             {erreurOuvert ? (
@@ -473,11 +533,14 @@ function SectionExamens({
     }
   }
 
+  const [panneau, setPanneau] = useState<Examen | null>(null);
+
   async function supprimer(id: string, titreExamen: string) {
     if (!window.confirm(`Supprimer « ${titreExamen} » ?`)) return;
     try {
       await supprimerExamen(id);
       setExamens((prec) => (prec || []).filter((e) => e.id !== id));
+      setPanneau((p) => (p?.id === id ? null : p));
     } catch (e) {
       window.alert(messageErreur(e));
     }
@@ -570,7 +633,12 @@ function SectionExamens({
               className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-dj-texte">{ex.titre}</p>
+                <button
+                  onClick={() => setPanneau(ex)}
+                  className="block w-full truncate text-left text-sm text-dj-texte hover:text-dj-accent-1"
+                >
+                  {ex.titre}
+                </button>
                 <p className="text-xs text-dj-texte-muet">
                   {TYPES_EXAMEN.find((t) => t.id === ex.type)?.label ?? ex.type} · {ex.chapitre_ids.length} chapitre(s)
                 </p>
@@ -586,6 +654,27 @@ function SectionExamens({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {panneau && (
+        <div
+          className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col overflow-y-auto bg-dj-fond p-4 sm:p-6"
+          onClick={() => setPanneau(null)}
+        >
+          <div className="flex items-center justify-between pb-4">
+            <span className="truncate text-sm text-dj-texte-muet">{panneau.titre}</span>
+            <button
+              onClick={() => setPanneau(null)}
+              className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface"
+            >
+              <X size={14} /> Fermer
+            </button>
+          </div>
+
+          <div className="mx-auto w-full max-w-2xl flex-1" onClick={(e) => e.stopPropagation()}>
+            <SectionDocumentsBibliotheque typeCible="examen" cibleId={panneau.id} titre="Sujet / pièces jointes" />
+          </div>
         </div>
       )}
     </div>

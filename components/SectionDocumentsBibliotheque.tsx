@@ -180,17 +180,18 @@ export function SectionDocumentsBibliotheque({
             return (
               <div
                 key={d.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+                onClick={() => setFichierOuvert(d)}
+                className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
               >
-                <button
-                  onClick={() => setFichierOuvert(d)}
-                  className="flex min-w-0 items-center gap-2 text-sm text-dj-accent-1 hover:text-dj-accent-2"
-                >
+                <span className="flex min-w-0 items-center gap-2 text-left text-sm text-dj-accent-1">
                   <Icone size={14} className="flex-shrink-0" />
                   <span className="truncate">{d.description || d.nom_fichier}</span>
-                </button>
+                </span>
                 <button
-                  onClick={() => retirer(d.id, d.description || d.nom_fichier)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    retirer(d.id, d.description || d.nom_fichier);
+                  }}
                   className="flex-shrink-0 text-xs text-dj-texte-muet transition-colors hover:text-[#F87171]"
                 >
                   Retirer

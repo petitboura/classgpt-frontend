@@ -153,18 +153,16 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
             return (
               <div
                 key={d.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+                onClick={() => setDocumentOuvert(d)}
+                className="flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <Icone size={14} className="flex-shrink-0 text-dj-accent-1" />
-                  <button
-                    onClick={() => setDocumentOuvert(d)}
-                    className={`truncate text-left text-sm ${estLien ? "text-dj-accent-1 hover:text-dj-accent-2" : "text-dj-texte hover:text-dj-accent-1"}`}
-                  >
+                  <span className={`truncate text-left text-sm ${estLien ? "text-dj-accent-1" : "text-dj-texte"}`}>
                     {d.titre}
-                  </button>
+                  </span>
                 </div>
-                <div className="flex flex-shrink-0 items-center gap-2">
+                <div className="flex flex-shrink-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <AjouterAClassementBouton cibleType="document" cibleId={d.id} />
                   <button
                     onClick={() => supprimer(d.id, d.titre)}
@@ -347,9 +345,10 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
           {exercices.map((ex) => (
             <div
               key={ex.id}
-              className="flex items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+              onClick={() => ouvrir(ex)}
+              className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
             >
-              <button onClick={() => ouvrir(ex)} className="min-w-0 flex-1 truncate text-left text-sm text-dj-texte">
+              <span className="min-w-0 flex-1 truncate text-left text-sm text-dj-texte">
                 {ex.enonce.trim() ? (
                   ex.enonce
                 ) : (
@@ -357,8 +356,10 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
                     <Paperclip size={12} /> Exercice sans texte (voir pièce jointe)
                   </span>
                 )}
-              </button>
-              <AjouterAClassementBouton cibleType="exercice" cibleId={ex.id} />
+              </span>
+              <div onClick={(e) => e.stopPropagation()}>
+                <AjouterAClassementBouton cibleType="exercice" cibleId={ex.id} />
+              </div>
             </div>
           ))}
         </div>
@@ -630,20 +631,16 @@ function SectionExamens({
           {examens.map((ex) => (
             <div
               key={ex.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+              onClick={() => setPanneau(ex)}
+              className="flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
             >
               <div className="min-w-0 flex-1">
-                <button
-                  onClick={() => setPanneau(ex)}
-                  className="block w-full truncate text-left text-sm text-dj-texte hover:text-dj-accent-1"
-                >
-                  {ex.titre}
-                </button>
+                <p className="truncate text-left text-sm text-dj-texte">{ex.titre}</p>
                 <p className="text-xs text-dj-texte-muet">
                   {TYPES_EXAMEN.find((t) => t.id === ex.type)?.label ?? ex.type} · {ex.chapitre_ids.length} chapitre(s)
                 </p>
               </div>
-              <div className="flex flex-shrink-0 items-center gap-2">
+              <div className="flex flex-shrink-0 items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <AjouterAClassementBouton cibleType="examen" cibleId={ex.id} />
                 <button
                   onClick={() => supprimer(ex.id, ex.titre)}

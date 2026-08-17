@@ -79,7 +79,11 @@ export function EspaceProgramme() {
       {vue.niveau === "chapitre" && (
         <div className="flex flex-col gap-3">
           <FilAriane
-            elements={[vue.programme.nom || vue.programme.niveau, vue.matiere.nom, vue.chapitre.nom]}
+            elements={[
+              { label: vue.programme.nom || vue.programme.niveau, onClick: () => setVue({ niveau: "matieres", programme: vue.programme }) },
+              { label: vue.matiere.nom, onClick: () => setVue({ niveau: "chapitres", programme: vue.programme, matiere: vue.matiere }) },
+              { label: vue.chapitre.nom },
+            ]}
             onRetour={() => setVue({ niveau: "chapitres", programme: vue.programme, matiere: vue.matiere })}
           />
           <VueChapitreContenu chapitreId={vue.chapitre.id} />
@@ -89,21 +93,39 @@ export function EspaceProgramme() {
   );
 }
 
-function FilAriane({ elements, onRetour }: { elements: string[]; onRetour: () => void }) {
+function FilAriane({
+  elements,
+  onRetour,
+}: {
+  elements: { label: string; onClick?: () => void }[];
+  onRetour: () => void;
+}) {
   return (
-    <div className="flex items-center gap-1.5 text-sm">
+    <div className="flex flex-wrap items-center gap-1.5 text-sm">
       <button
         onClick={onRetour}
         className="flex items-center gap-1 rounded-lg px-2 py-1 text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
       >
         <ArrowLeft size={14} />
       </button>
-      {elements.map((e, i) => (
-        <span key={i} className="flex items-center gap-1.5 text-dj-texte-muet">
-          {i > 0 && <ChevronRight size={12} />}
-          <span className={i === elements.length - 1 ? "font-semibold text-dj-texte" : ""}>{e}</span>
-        </span>
-      ))}
+      {elements.map((e, i) => {
+        const dernier = i === elements.length - 1;
+        return (
+          <span key={i} className="flex items-center gap-1.5">
+            {i > 0 && <ChevronRight size={12} className="text-dj-texte-muet" />}
+            {e.onClick && !dernier ? (
+              <button
+                onClick={e.onClick}
+                className="rounded-lg px-1 py-0.5 text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
+              >
+                {e.label}
+              </button>
+            ) : (
+              <span className={dernier ? "font-semibold text-dj-texte" : "text-dj-texte-muet"}>{e.label}</span>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -260,34 +282,35 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
             ) : (
               <div
                 key={p.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
+                onClick={() => onOuvrir(p)}
+                className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
               >
-                <button onClick={() => onOuvrir(p)} className="flex min-w-0 flex-1 flex-col items-start text-left">
+                <div className="flex min-w-0 flex-1 flex-col items-start text-left">
                   <span className="truncate text-sm font-semibold text-dj-texte">{p.nom || p.niveau}</span>
                   {p.nom && <span className="truncate text-xs text-dj-texte-muet">{p.niveau}</span>}
-                </button>
+                </div>
                 <div className="flex flex-shrink-0 items-center gap-1">
                   <button
-                    onClick={() => setEdition({ id: p.id, niveau: p.niveau, nom: p.nom || "" })}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEdition({ id: p.id, niveau: p.niveau, nom: p.nom || "" });
+                    }}
                     title="Modifier"
                     className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
                   >
                     <Pencil size={14} />
                   </button>
                   <button
-                    onClick={() => supprimer(p)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimer(p);
+                    }}
                     title="Supprimer"
                     className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[#F87171]/10 hover:text-[#F87171]"
                   >
                     <Trash2 size={14} />
                   </button>
-                  <button
-                    onClick={() => onOuvrir(p)}
-                    title="Ouvrir"
-                    className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
+                  <ChevronRight size={16} className="text-dj-texte-muet" />
                 </div>
               </div>
             )
@@ -423,7 +446,7 @@ function ListeMatieres({
 
   return (
     <div className="flex flex-col gap-3">
-      <FilAriane elements={[programme.nom || programme.niveau]} onRetour={onRetour} />
+      <FilAriane elements={[{ label: programme.nom || programme.niveau }]} onRetour={onRetour} />
 
       <SectionDocumentsBibliotheque typeCible="programme" cibleId={programme.id} titre="Documents du programme" />
 
@@ -470,13 +493,12 @@ function ListeMatieres({
             ) : (
               <div
                 key={m.id}
-                className="flex flex-col gap-1.5 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
+                onClick={() => onOuvrir(m)}
+                className="flex cursor-pointer flex-col gap-1.5 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <button onClick={() => onOuvrir(m)} className="min-w-0 flex-1 text-left text-sm font-semibold text-dj-texte">
-                    {m.nom}
-                  </button>
-                  <div className="flex flex-shrink-0 items-center gap-1">
+                  <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-dj-texte">{m.nom}</span>
+                  <div className="flex flex-shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     <AjouterAClassementBouton cibleType="matiere" cibleId={m.id} />
                     <button
                       onClick={() => setEdition({ id: m.id, nom: m.nom, limites: m.limites || "" })}
@@ -492,13 +514,7 @@ function ListeMatieres({
                     >
                       <Trash2 size={14} />
                     </button>
-                    <button
-                      onClick={() => onOuvrir(m)}
-                      title="Ouvrir"
-                      className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
+                    <ChevronRight size={16} className="text-dj-texte-muet" />
                   </div>
                 </div>
                 {m.limites && <p className="truncate text-xs text-dj-texte-muet">{m.limites}</p>}
@@ -706,7 +722,10 @@ function ListeChapitres({
 
   return (
     <div className="flex flex-col gap-3">
-      <FilAriane elements={[programme.nom || programme.niveau, matiere.nom]} onRetour={onRetour} />
+      <FilAriane
+        elements={[{ label: programme.nom || programme.niveau, onClick: onRetour }, { label: matiere.nom }]}
+        onRetour={onRetour}
+      />
 
       <SectionDocumentsBibliotheque typeCible="matiere" cibleId={matiere.id} titre="Documents de la matière" />
 
@@ -753,9 +772,13 @@ function ListeChapitres({
             ) : (
               <div
                 key={c.id}
-                className="flex items-start gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
+                onClick={() => onOuvrir(c)}
+                className="flex cursor-pointer items-start gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
               >
-                <div className="flex flex-shrink-0 flex-col items-center gap-0.5 pt-0.5">
+                <div
+                  className="flex flex-shrink-0 flex-col items-center gap-0.5 pt-0.5"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     onClick={() => deplacer(index, -1)}
                     disabled={index === 0 || reordonnancementEnCours}
@@ -773,11 +796,11 @@ function ListeChapitres({
                     <ArrowDown size={13} />
                   </button>
                 </div>
-                <button onClick={() => onOuvrir(c)} className="min-w-0 flex-1 text-left" title="Ouvrir ce chapitre">
+                <div className="min-w-0 flex-1 text-left">
                   <span className="block truncate text-sm font-semibold text-dj-texte">{c.nom}</span>
                   {c.limites && <p className="truncate text-xs text-dj-texte-muet">{c.limites}</p>}
-                </button>
-                <div className="flex flex-shrink-0 items-center gap-1">
+                </div>
+                <div className="flex flex-shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   <AjouterAClassementBouton cibleType="chapitre" cibleId={c.id} />
                   <button
                     onClick={() => setEdition({ id: c.id, nom: c.nom, limites: c.limites || "" })}

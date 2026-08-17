@@ -74,6 +74,12 @@ export function ChatFlottant({
     actions_locales: string[];
   } | null>(null);
   const [historique, setHistorique] = useState<FilConversation[]>([]);
+  // Fondu de fermeture (18/08/2026, demande Bourama : "le popup disparaît
+  // ... brut, j'aime pas"). La fermeture change etat vers "fermee", ce qui
+  // démonte immédiatement tout le panneau (voir le early return juste en
+  // dessous) -- sans ce délai, aucune animation de sortie n'est possible.
+  // On retarde donc le vrai changement d'état de la durée de l'animation.
+  const [enFermeture, setEnFermeture] = useState(false);
   useHauteurVisuelle();
 
   // Chargé dès le montage du layout (pas seulement à l'ouverture du
@@ -105,6 +111,14 @@ export function ChatFlottant({
       annule = true;
     };
   }, []);
+
+  function fermerAvecFondu() {
+    setEnFermeture(true);
+    window.setTimeout(() => {
+      setEtat("fermee");
+      setEnFermeture(false);
+    }, 200);
+  }
 
   function nouvelleConversation() {
     setCle(crypto.randomUUID());
@@ -169,7 +183,7 @@ export function ChatFlottant({
   return (
     <div
       className={
-        pleinEcran
+        (pleinEcran
           ? "fixed inset-0 z-[110] flex flex-col bg-dj-fond"
           : // Mini popup : centré au milieu de l'écran en desktop (demande
             // Bourama, 17/08/2026 -- "le popup se met à gauche, au coin, je
@@ -177,7 +191,14 @@ export function ChatFlottant({
             // mobile (faute de place, clavier virtuel). La bulle fermée,
             // elle, reste toujours en bas à droite (voir le bouton
             // ci-dessus) -- seule la fenêtre une fois ouverte est concernée.
-            "fixed bottom-5 right-5 z-40 flex h-[min(70dvh,600px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)] md:bottom-auto md:right-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2"
+            "fixed bottom-5 right-5 z-40 flex h-[min(70dvh,600px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)] md:bottom-auto md:right-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2") +
+        // Fondu d'ouverture (mount -- reprend l'animation standard des
+        // modals du projet, cgpt-entree-modal) et de fermeture (juste
+        // avant le démontage réel, voir fermerAvecFondu) -- demande
+        // Bourama 18/08/2026 : "le popup disparaît ... apparaît brut".
+        (enFermeture
+          ? " pointer-events-none scale-95 opacity-0 transition-all duration-200 ease-cgpt-doux"
+          : " animate-cgpt-entree-modal transition-all duration-200 ease-cgpt-doux")
       }
       style={pleinEcran ? { height: "var(--vh-visuelle, 100dvh)" } : undefined}
     >
@@ -239,7 +260,7 @@ export function ChatFlottant({
             )}
           </button>
           <button
-            onClick={() => setEtat("fermee")}
+            onClick={fermerAvecFondu}
             title="Fermer"
             className="group flex h-8 w-8 items-center justify-center rounded-lg text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
           >

@@ -29,6 +29,7 @@ import { CTACompteRequis } from "./CTACompteRequis";
 // séparés écrits pendant que ce fichier (lot 4) n'existait pas encore,
 // branchés ici a posteriori sans reprendre la navigation elle-même.
 import { VueChapitreContenu, VueProgrammeContenu } from "./EspaceProgrammeContenu";
+import { SectionDocumentsBibliotheque } from "./SectionDocumentsBibliotheque";
 import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
 
 // Onglet "Mon programme" (lot 4/5, chantier programme étudiant, brief
@@ -424,6 +425,8 @@ function ListeMatieres({
     <div className="flex flex-col gap-3">
       <FilAriane elements={[programme.nom || programme.niveau]} onRetour={onRetour} />
 
+      <SectionDocumentsBibliotheque typeCible="programme" cibleId={programme.id} titre="Documents du programme" />
+
       {matieres === null && (
         <div className="flex flex-col gap-2" aria-hidden>
           <Skeleton className="h-16 rounded-xl border border-dj-bordure" />
@@ -704,6 +707,8 @@ function ListeChapitres({
   return (
     <div className="flex flex-col gap-3">
       <FilAriane elements={[programme.nom || programme.niveau, matiere.nom]} onRetour={onRetour} />
+
+      <SectionDocumentsBibliotheque typeCible="matiere" cibleId={matiere.id} titre="Documents de la matière" />
 
       {chapitres === null && (
         <div className="flex flex-col gap-2" aria-hidden>

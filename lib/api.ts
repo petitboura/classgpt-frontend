@@ -237,6 +237,28 @@ export async function ajouterFichierBibliotheque(
   return reponse.json();
 }
 
+export type FichierBibliothequePersonnelle = {
+  id: string;
+  nom_fichier: string;
+  type_mime: string;
+  description: string | null;
+  url_publique: string;
+  created_at: string;
+};
+
+/**
+ * Liste la bibliothèque personnelle complète (17/08 -- extrait en
+ * fonction nommée pour être réutilisé par le sélecteur "Depuis ma
+ * bibliothèque" des sections Documents du programme, voir
+ * lib/emplacementsProgramme.ts). EspaceBibliotheque.tsx continue
+ * d'appeler appelerApi("/api/bibliotheque") directement, comportement
+ * inchangé -- même endpoint, juste une signature typée en plus ici.
+ */
+export async function listerBibliothequePersonnelle() {
+  const resultat = await appelerApi("/api/bibliotheque");
+  return resultat as FichierBibliothequePersonnelle[];
+}
+
 export type ResultatDiffusion = { diffuse_a: number; total_receveurs: number; echecs: string[] };
 // MonRole/lireMonRole/diffuserDocumentEtablissement/diffuserLien/
 // listerMesDiffusions retirés le 09/08 (demande Bourama : plus de rôle
@@ -928,6 +950,42 @@ export async function listerAuditsProgramme(programmeId: string) {
 // classements transversaux, et système de plugins. Contrat backend construit
 // en parallèle par les lots 2/3 (voir chantier-programme-etudiant.md) --
 // endpoints ci-dessous suivent ce contrat tel quel.
+
+// ---------------------------------------------------------------------------
+// Documents de la bibliothèque classés à un emplacement du programme
+// (programme/matière/chapitre/exercice/examen), 17/08 -- voir
+// api/emplacements_bibliotheque_programme.py côté backend (nouvelle
+// couche REST par-dessus core/bibliotheque_programme.py, jusqu'ici
+// réservé aux outils MCP). Distinct de DocumentChapitre plus bas
+// (ancien système titre+lien, laissé tel quel -- Bourama : "bibliothèque
+// et classement est un plus", pas un remplacement).
+
+export type TypeEmplacementProgramme = "programme" | "matiere" | "chapitre" | "exercice" | "examen";
+
+export type FichierEmplacementProgramme = {
+  id: string;
+  nom_fichier: string;
+  type_mime: string;
+  description: string | null;
+  url_publique: string;
+  created_at: string;
+};
+
+export async function listerDocumentsEmplacement(type: TypeEmplacementProgramme, cibleId: string) {
+  const resultat = await appelerApi(`/api/emplacements/${type}/${cibleId}/documents`);
+  return resultat as FichierEmplacementProgramme[];
+}
+
+export async function classerDocumentEmplacement(type: TypeEmplacementProgramme, cibleId: string, fichierId: string) {
+  return appelerApi(`/api/emplacements/${type}/${cibleId}/documents`, {
+    method: "POST",
+    body: JSON.stringify({ fichier_id: fichierId }),
+  });
+}
+
+export async function declasserDocumentEmplacement(type: TypeEmplacementProgramme, cibleId: string, fichierId: string) {
+  return appelerApi(`/api/emplacements/${type}/${cibleId}/documents/${fichierId}`, { method: "DELETE" });
+}
 
 export type DocumentChapitre = { id: string; titre: string; url_ou_contenu: string; created_at: string };
 

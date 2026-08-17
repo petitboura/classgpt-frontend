@@ -59,11 +59,15 @@ type Schema = {
   elements: Element[];
 };
 
-const COULEUR_TRAIT = "#E8934A";
-const COULEUR_TRAIT_2 = "#C1440E";
+const COULEUR_TRAIT = "#E3B341";
+const COULEUR_TRAIT_2 = "#B8860B";
 const COULEUR_TEXTE = "#EDE7E1";
-const COULEUR_GRILLE = "rgba(43,33,24,0.10)";
-const COULEUR_AXE = "rgba(43,33,24,0.4)";
+// CORRECTIF (17/08) -- grille/axe recalculés en clair : sur l'ancien fond
+// clair (#FBFAF8), rgba(43,33,24,...) (brun foncé, faible opacité) se
+// détachait légèrement ; sur le nouveau bg-dj-surface sombre (#1A1714),
+// cette même teinte foncée deviendrait quasi invisible (foncé sur foncé).
+const COULEUR_GRILLE = "rgba(245,240,230,0.10)";
+const COULEUR_AXE = "rgba(245,240,230,0.4)";
 
 export function SchemaGeometrique({ code }: { code: string }) {
   const conteneurRef = useRef<HTMLDivElement>(null);

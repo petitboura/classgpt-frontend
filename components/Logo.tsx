@@ -2,8 +2,11 @@ import { useId } from "react";
 
 // Logo = plume (12/08, remplace l'ancien chapeau de diplômé qui restait
 // codé en dur ici alors que public/clovis-logo.svg avait déjà été changé).
-// Même tracé "à main levée" que clovis-logo.svg, même dégradé resserré
-// vers les tons de l'ancien logo Djiguignè (plus sombre/saturé).
+// Même tracé "à main levée" que clovis-logo.svg.
+//
+// CORRECTIF (17/08) -- dégradé recoloré en doré (identité "Nuit d'étude"),
+// remplace l'ancien dégradé orange/brun (#C2661C/#8F3B00/#551A00) hérité
+// de la charte Djiguignè. Même tracé, seule la couleur change.
 //
 // Fix (14/08, bug remonté par Bourama : icône blanche/invisible sur
 // mobile) : l'id du <linearGradient> était fixe ("cgpt-grad"), or <Logo />
@@ -18,9 +21,9 @@ export function Logo({ taille = 40 }: { taille?: number }) {
     <svg width={taille} height={taille} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id={idGradient} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#C2661C" />
-          <stop offset="55%" stopColor="#8F3B00" />
-          <stop offset="100%" stopColor="#551A00" />
+          <stop offset="0%" stopColor="#F0C766" />
+          <stop offset="55%" stopColor="#D9A438" />
+          <stop offset="100%" stopColor="#8A6A1F" />
         </linearGradient>
       </defs>
       <path d="M45.5 7.5

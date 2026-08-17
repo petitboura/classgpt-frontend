@@ -23,7 +23,7 @@ math-field::part(menu-toggle) {
   display: none;
 }
 math-field {
-  --hue: 30; /* aligné sur dj-accent-1 (#E8934A, orange) pour le curseur/la sélection */
+  --hue: 42; /* aligné sur dj-accent-1 (#E3B341, doré) pour le curseur/la sélection -- 30=orange (ancienne charte), 42=doré (17/08) */
 }
 
 /* Thème highlight.js sur-mesure (voir components/chat/BlocCode.tsx) --
@@ -54,7 +54,7 @@ math-field {
 .hljs-number,
 .hljs-symbol,
 .hljs-built_in {
-  color: #f2a65a;
+  color: #f0c766; /* 17/08 : doré clair, ancien #f2a65a (orange) */
 }
 .hljs-title,
 .hljs-function,
@@ -80,26 +80,26 @@ math-field {
   font-weight: 700;
 }
 
-/* Étape D.1 (pivot social) : repris à l'identique de
-   djiguigne-frontend/app/globals.css — même thème, plateforme différente.
-   Variables CSS miroir de tailwind.config.ts, utiles hors classes
-   utilitaires (SVG inline, styles calculés).
-   Pivot thème clair (2026-08-09, demande Bourama) : alignement sur le fond
-   crème adopté par djiguigne-ai/djiguigne-frontend le 2026-08-08 — ce repo
-   était resté sur l'ancien thème sombre, désynchronisé du reste de la
-   marque. */
+/* Étape D.1 (pivot social) : à l'origine repris à l'identique de
+   djiguigne-frontend/app/globals.css. CORRECTIF (17/08) -- palette
+   remplacée par la direction "Nuit d'étude", propre à Clovis (voir
+   tailwind.config.ts) : ce bloc est un miroir manuel des couleurs qui y
+   sont définies, utile hors classes utilitaires (SVG inline, styles
+   calculés) -- toute future modification de palette doit être répercutée
+   ICI EN PLUS de tailwind.config.ts, les deux ne se synchronisent pas
+   automatiquement. */
 :root {
-  --dj-fond: #f4f3ee;
-  --dj-surface: #fbfaf8;
-  --dj-surface-haute: #ffffff;
-  --dj-bordure: rgba(43, 33, 24, 0.1);
-  --dj-bordure-forte: rgba(193, 68, 14, 0.35);
-  --dj-accent-1: #e8934a;
-  --dj-accent-2: #c1440e;
-  --dj-texte: #2b2118;
-  --dj-texte-muet: #6e5f4d;
-  --dj-succes: #16a34a;
-  --dj-inactif: #b0a79b;
+  --dj-fond: #0f0d0b;
+  --dj-surface: #1a1714;
+  --dj-surface-haute: #221e18;
+  --dj-bordure: rgba(245, 240, 230, 0.08);
+  --dj-bordure-forte: rgba(227, 179, 65, 0.35);
+  --dj-accent-1: #e3b341;
+  --dj-accent-2: #b8860b;
+  --dj-texte: #f5f0e6;
+  --dj-texte-muet: #9a9184;
+  --dj-succes: #34d399;
+  --dj-inactif: #4a453c;
 }
 
 * {

@@ -1,14 +1,18 @@
 import type { Config } from "tailwindcss";
 
-// Thème repris à l'identique de djiguigne-frontend (palette, typographie,
-// dégradés, animations dj-*) -- ne pas dévier de ces valeurs sans
-// décision explicite de Bourama, pour garder une cohérence visuelle avec
-// le reste de l'écosystème même si ce produit ne le montre jamais.
-//
-// Tokens "cgpt-*" (partie 5, traitement "à main levée") : propres à Class
-// GPT, n'existent pas dans djiguigne-frontend -- easings sur mesure
+// Tokens "cgpt-*" (partie 5, traitement "à main levée") : propres à
+// Clovis, n'existent pas dans djiguigne-frontend -- easings sur mesure
 // (jamais de ease-in-out générique) + rayons de bordure légèrement
 // irréguliers, cf. brief section 4b.
+// CORRECTIF (17/08) -- Bourama a demandé de sortir de la palette
+// crème/terracotta héritée de djiguigne-frontend (identifiée comme l'un
+// des trois looks "cliché IA" par défaut : fond crème proche de
+// #F4F1EA + accent terracotta proche de #D97757) au profit d'une
+// direction propre à Clovis, "Nuit d'étude" : fond quasi noir, accent
+// doré chaud, angles droits par défaut (arrondi réservé aux CTA).
+// Portée : CLOVIS UNIQUEMENT -- djiguigne-frontend et djiguigne-ai
+// gardent leur thème crème/terracotta d'origine, pas de décision prise
+// pour eux ici.
 const config: Config = {
   darkMode: "class",
   content: [
@@ -19,23 +23,23 @@ const config: Config = {
     extend: {
       colors: {
         dj: {
-          fond: "#F4F3EE",
-          surface: "#FBFAF8",
-          "surface-haute": "#FFFFFF",
-          bordure: "rgba(43,33,24,0.10)",
-          "bordure-forte": "rgba(193,68,14,0.35)",
-          "accent-1": "#E8934A",
-          "accent-2": "#C1440E",
-          texte: "#2B2118",
-          "texte-muet": "#6E5F4D",
-          succes: "#16A34A",
-          inactif: "#B0A79B",
+          fond: "#0F0D0B",
+          surface: "#1A1714",
+          "surface-haute": "#221E18",
+          bordure: "rgba(245,240,230,0.08)",
+          "bordure-forte": "rgba(227,179,65,0.35)",
+          "accent-1": "#E3B341",
+          "accent-2": "#B8860B",
+          texte: "#F5F0E6",
+          "texte-muet": "#9A9184",
+          succes: "#34D399",
+          inactif: "#4A453C",
         },
       },
       backgroundImage: {
-        "dj-gradient": "linear-gradient(135deg, #F2A65A 0%, #D9631F 55%, #8A2E0A 100%)",
+        "dj-gradient": "linear-gradient(135deg, #F0C766 0%, #D9A438 55%, #8A6A1F 100%)",
         "dj-hero-glow":
-          "radial-gradient(ellipse 120% 60% at 50% -10%, rgba(232,147,74,0.10), transparent 60%)",
+          "radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227,179,65,0.10), transparent 60%)",
         // Shimmer (09/08, demande Bourama : remplacer partout le texte figé
         // "Chargement..." et les blocs animate-pulse par un balayage
         // lumineux, comme Claude.ai/Vercel). Gris neutre (dj-inactif),
@@ -49,15 +53,20 @@ const config: Config = {
         //   - dj-shimmer-texte : pour un texte qui scintille sur place (ex.
         //     "{agent} réfléchit"), couleurs pleines, combiné à
         //     bg-clip-text/text-transparent côté composant.
-        "dj-shimmer": "linear-gradient(100deg, rgba(43,33,24,0.04) 20%, rgba(176,167,155,0.45) 50%, rgba(43,33,24,0.04) 80%)",
-        "dj-shimmer-texte": "linear-gradient(100deg, #6E5F4D 25%, #B0A79B 50%, #6E5F4D 75%)",
+        // CORRECTIF (17/08) -- valeurs recalculées pour fond sombre (le
+        // même principe "gris neutre, pas teinté accent" s'applique, mais
+        // les tons clairs de dj-inactif/dj-bordure d'origine étaient
+        // calibrés pour un fond clair et deviendraient invisibles ici.
+        "dj-shimmer": "linear-gradient(100deg, rgba(245,240,230,0.03) 20%, rgba(154,145,132,0.35) 50%, rgba(245,240,230,0.03) 80%)",
+        "dj-shimmer-texte": "linear-gradient(100deg, #9A9184 25%, #C7BFAE 50%, #9A9184 75%)",
       },
       fontFamily: {
-        display: ["var(--font-bricolage)", "sans-serif"],
-        sans: ["var(--font-inter)", "sans-serif"],
+        display: ["var(--font-space-grotesk)", "sans-serif"],
+        sans: ["var(--font-work-sans)", "sans-serif"],
         mono: ["var(--font-jetbrains-mono)", "monospace"],
         // Corps des réponses de l'IA uniquement (09/08, façon Claude) --
-        // voir commentaire dans app/layout.tsx.
+        // voir commentaire dans app/layout.tsx. Non concerné par le
+        // changement de palette/typo UI du 17/08.
         lecture: ["var(--font-lecture)", "Georgia", "serif"],
       },
       transitionTimingFunction: {

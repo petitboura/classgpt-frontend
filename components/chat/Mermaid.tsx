@@ -54,16 +54,16 @@ export function Mermaid({ definition }: { definition: string }) {
           // d'erreur réel du parseur.
           suppressErrorRendering: true,
           themeVariables: {
-            background: "#FBFAF8",
-            primaryColor: "#FFFFFF",
-            primaryTextColor: "#2B2118",
-            primaryBorderColor: "#E8934A",
-            lineColor: "#6E5F4D",
-            secondaryColor: "#FBFAF8",
-            tertiaryColor: "#F4F3EE",
-            textColor: "#2B2118",
+            background: "#1A1714",
+            primaryColor: "#221E18",
+            primaryTextColor: "#F5F0E6",
+            primaryBorderColor: "#E3B341",
+            lineColor: "#9A9184",
+            secondaryColor: "#1A1714",
+            tertiaryColor: "#0F0D0B",
+            textColor: "#F5F0E6",
           },
-          fontFamily: "var(--font-inter), sans-serif",
+          fontFamily: "var(--font-work-sans), sans-serif",
         });
         const { svg: svgRendu } = await mermaid.render(`mermaid-${++compteurMermaid}`, definition);
         if (!annule) {

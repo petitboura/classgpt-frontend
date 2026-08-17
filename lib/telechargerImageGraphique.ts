@@ -32,7 +32,7 @@ function dessinerLegende(
   const espaceSwatchTexte = 5;
   const espaceEntreItems = 16;
   const hauteurLigne = 20;
-  ctx.font = `${taillePolice}px Inter, sans-serif`;
+  ctx.font = `${taillePolice}px "Work Sans", sans-serif`; // 17/08 : ancien "Inter"
   ctx.textBaseline = "middle";
 
   // Regroupe les items en lignes qui tiennent dans largeurDisponible
@@ -56,7 +56,7 @@ function dessinerLegende(
     for (const item of ligne) {
       ctx.fillStyle = item.couleur;
       ctx.fillRect(x, y - tailleSwatch / 2, tailleSwatch, tailleSwatch);
-      ctx.fillStyle = "#6E5F4D";
+      ctx.fillStyle = "#9A9184";
       ctx.fillText(item.libelle, x + tailleSwatch + espaceSwatchTexte, y);
       x += tailleSwatch + espaceSwatchTexte + ctx.measureText(item.libelle).width + espaceEntreItems;
     }
@@ -131,7 +131,7 @@ export function telechargerImage(
     const ctx = canvas.getContext("2d");
     URL.revokeObjectURL(url);
     if (!ctx) return;
-    ctx.fillStyle = "#FBFAF8";
+    ctx.fillStyle = "#1A1714";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.scale(echelle, echelle);
     ctx.drawImage(img, 0, 0, width, height);

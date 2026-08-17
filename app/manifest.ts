@@ -9,10 +9,10 @@ import type { MetadataRoute } from "next";
 // package supplémentaire) -- couplé à public/sw.js +
 // ServiceWorkerRegistration.tsx pour l'installabilité.
 //
-// Icônes (icone-192.png, icone-512.png) générées à partir du logo
-// existant (public/clovis-logo.svg, plume), sur fond
-// #f4f3ee (couleur de fond actuelle de l'appli, thème clair) pour un
-// rendu carré cohérent une fois installée -- jamais de logo flottant
+// Icônes (icone-192.png, icone-512.png) régénérées le 17/08 (nouvelle
+// direction "Nuit d'étude") depuis public/clovis-logo.svg (plume,
+// dégradé doré), sur fond #0f0d0b (nouveau fond sombre de l'appli) pour
+// un rendu carré cohérent une fois installée -- jamais de logo flottant
 // sur fond transparent, qui rendrait mal selon le launcher.
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -23,8 +23,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#f4f3ee",
-    theme_color: "#f4f3ee",
+    background_color: "#0f0d0b",
+    theme_color: "#0f0d0b",
     icons: [
       { src: "/icone-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icone-512.png", sizes: "512x512", type: "image/png" },

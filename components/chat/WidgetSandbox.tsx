@@ -13,8 +13,8 @@ import { BlocExpansible } from "./BlocExpansible";
 export function construireDocumentWidget(code: string): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
     <style>
-      html,body{margin:0;padding:12px;background:#FBFAF8;color:#2B2118;
-        font-family:Inter,system-ui,sans-serif;}
+      html,body{margin:0;padding:12px;background:#1A1714;color:#F5F0E6;
+        font-family:'Work Sans',system-ui,sans-serif;}
       *{box-sizing:border-box;}
       /* Style par défaut pour tout champ/bouton généré sans CSS propre --
          sans ça, un input/button hérite du blanc par défaut du
@@ -24,26 +24,26 @@ export function construireDocumentWidget(code: string): string {
          écraser ces règles avec son propre <style>, ceci n'est qu'un
          filet de sécurité. */
       input, select, textarea{
-        background:#FFFFFF;color:#2B2118;border:1px solid rgba(43,33,24,0.14);
+        background:#221E18;color:#F5F0E6;border:1px solid rgba(245,240,230,0.14);
         border-radius:8px;padding:6px 10px;font:inherit;font-size:14px;
       }
       input:focus, select:focus, textarea:focus{
-        outline:none;border-color:#E8934A;
+        outline:none;border-color:#E3B341;
       }
       button{
-        background:linear-gradient(135deg,#F2A65A 0%,#D9631F 55%,#8A2E0A 100%);
+        background:linear-gradient(135deg,#F0C766 0%,#D9A438 55%,#8A6A1F 100%);
         color:#1A0D02;border:none;border-radius:8px;padding:7px 14px;
         font:inherit;font-size:14px;font-weight:600;cursor:pointer;
       }
       button:hover{filter:brightness(1.08);}
       button:active{filter:brightness(0.95);}
       table{border-collapse:collapse;}
-      td,th{border:1px solid rgba(43,33,24,0.14);padding:4px 8px;}
-      a{color:#E8934A;}
+      td,th{border:1px solid rgba(245,240,230,0.14);padding:4px 8px;}
+      a{color:#E3B341;}
       #dj-erreur-widget{
         display:none;margin-bottom:10px;padding:8px 10px;border-radius:8px;
         background:rgba(220,60,50,0.15);border:1px solid rgba(220,60,50,0.4);
-        color:#2B2118;font-size:12px;font-family:monospace;white-space:pre-wrap;
+        color:#F5F0E6;font-size:12px;font-family:monospace;white-space:pre-wrap;
       }
     </style>
     </head><body>

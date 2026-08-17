@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
+import { Space_Grotesk, Work_Sans, JetBrains_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 // KaTeX/MathLive (rendu de formules dans BulleMessage.tsx et
 // EditeurMathsRiche.tsx) : dans djiguigne-frontend ce CSS est scopé à la
@@ -11,9 +11,13 @@ import "mathlive/fonts.css";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ReveilBackend } from "@/components/ReveilBackend";
 
-// Polices identiques à la charte Djiguignè (brief section 4a), chargées en
-// local (next/font, zéro requête Google au runtime) — même mécanisme que
-// djiguigne-frontend/app/layout.tsx, dont ce fichier est dérivé.
+// CORRECTIF (17/08) -- Bourama a demandé de sortir de la charte
+// Djiguignè (jugée trop générique "IA" -- palette + paire de polices
+// Bricolage Grotesque/Inter, devenue elle-même un choix par défaut des
+// produits IA/SaaS actuels) au profit d'une identité propre à Clovis :
+// Space Grotesk (titres/UI) + Work Sans (texte courant). Portée CLOVIS
+// UNIQUEMENT -- djiguigne-frontend garde Bricolage Grotesque/Inter,
+// ce fichier n'est donc plus dérivé à l'identique de son homologue.
 //
 // Volontairement ABSENT ici : SessionSyncVitrine (synchronisation de
 // session avec djiguigne-ai.vercel.app). Clovis ne doit jamais
@@ -27,17 +31,17 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
-const bricolage = Bricolage_Grotesque({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-bricolage",
+  weight: ["500", "600", "700"],
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 
-const inter = Inter({
+const workSans = Work_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600"],
+  variable: "--font-work-sans",
   display: "swap",
 });
 
@@ -50,10 +54,10 @@ const jetbrainsMono = JetBrains_Mono({
 
 // Police serif éditoriale pour le corps des réponses de l'IA uniquement
 // (09/08, demande Bourama : "façon Claude" pour le texte des réponses --
-// pas pour les titres, qui restent en Bricolage Grotesque, juste
-// agrandis). Décision explicite : identité partagée avec
-// djiguigne-frontend, donc le même choix de police y est repris à
-// l'identique.
+// pas pour les titres, qui restent en display, juste agrandis). Non
+// concernée par le changement de palette/typo UI du 17/08 (Space
+// Grotesk/Work Sans) -- reste Source Serif 4, partagée avec
+// djiguigne-frontend pour ce seul élément.
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -86,7 +90,7 @@ export default function RacineLayout({
   return (
     <html
       lang="fr"
-      className={`${bricolage.variable} ${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
+      className={`${spaceGrotesk.variable} ${workSans.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
     >
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
         <ServiceWorkerRegistration />

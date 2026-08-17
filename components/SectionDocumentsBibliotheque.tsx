@@ -165,7 +165,7 @@ export function SectionDocumentsBibliotheque({
         </div>
       </div>
 
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {documents === null && (
         <div className="flex flex-col gap-2" aria-hidden>
@@ -192,7 +192,7 @@ export function SectionDocumentsBibliotheque({
                     e.stopPropagation();
                     retirer(d.id, d.description || d.nom_fichier);
                   }}
-                  className="flex-shrink-0 text-xs text-dj-texte-muet transition-colors hover:text-[#F87171]"
+                  className="flex-shrink-0 text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
                 >
                   Retirer
                 </button>
@@ -218,7 +218,7 @@ export function SectionDocumentsBibliotheque({
               </button>
             </div>
 
-            {erreurPicker && <p className="text-sm text-[#F87171]">{erreurPicker}</p>}
+            {erreurPicker && <p className="text-sm text-[var(--dj-erreur)]">{erreurPicker}</p>}
 
             {bibliotheque === null && (
               <div className="flex flex-col gap-2" aria-hidden>

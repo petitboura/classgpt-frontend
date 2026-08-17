@@ -115,7 +115,7 @@ export function MaMemoire() {
             <button
               onClick={toutOublier}
               disabled={enregistrement}
-              className="rounded-cgpt-bouton border border-[#F87171] px-5 py-2 text-sm text-[#F87171] transition-colors hover:bg-[#F87171]/10 disabled:opacity-50"
+              className="rounded-cgpt-bouton border border-[var(--dj-erreur)] px-5 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
             >
               Tout oublier
             </button>

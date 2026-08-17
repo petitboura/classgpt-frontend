@@ -436,7 +436,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
           </button>
         </div>
       )}
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {panneau && (
         <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col overflow-y-auto bg-dj-fond p-4 sm:p-6">

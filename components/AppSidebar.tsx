@@ -286,7 +286,7 @@ export function AppSidebar({
                       }`}
                     >
                       <Star size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
-                      Avis sur cette IA
+                      Avis sur Clovis
                     </button>
                     <div
                       className={`grid transition-[grid-template-rows] duration-300 ease-out ${
@@ -378,7 +378,7 @@ export function AppSidebar({
                   }`}
                 >
                   <Star size={16} className="transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
-                  Avis sur cette IA
+                  Avis sur Clovis
                 </button>
                 {avisDeplie && (
                   <div className="flex flex-col gap-4 px-2 pb-2">

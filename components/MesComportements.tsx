@@ -188,8 +188,8 @@ export function MesComportements({ agentId }: { agentId: string }) {
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
       <p className="text-sm text-dj-texte-muet">
-        Tes consignes perso pour cette IA, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter
-        plusieurs -- clique sur l&apos;une d&apos;elles pour l&apos;ouvrir en grand et la modifier tranquillement.
+        Tes consignes perso pour Clovis, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter
+        plusieurs, clique sur l&apos;une d&apos;elles pour l&apos;ouvrir en grand et la modifier tranquillement.
       </p>
 
       <div className="flex flex-col gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-4 sm:flex-row sm:items-center">

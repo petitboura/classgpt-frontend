@@ -123,7 +123,7 @@ export function PopupFeedback({
               onChange={(e) => setReponsePartagee(e.target.checked)}
               className="h-4 w-4 accent-dj-accent-1"
             />
-            Envoyer la réponse de l'IA
+            Envoyer la réponse de Clovis
           </label>
           <label className="flex items-center gap-2 text-sm text-dj-texte-muet">
             <input

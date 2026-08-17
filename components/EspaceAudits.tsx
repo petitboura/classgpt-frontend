@@ -43,8 +43,8 @@ export function EspaceAudits() {
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
       <p className="text-sm text-dj-texte-muet">
-        Chaque lundi, l&apos;IA relit tout le contenu réel de chacune de tes matières (chapitres, limites,
-        documents) et écrit ici un état des lieux -- limites et attentes à respecter. Texte réécrit
+        Chaque lundi, Clovis relit tout le contenu réel de chacune de tes matières (chapitres, limites,
+        documents) et écrit ici un état des lieux, limites et attentes à respecter. Texte réécrit
         automatiquement chaque semaine, tu ne peux pas le modifier directement.
       </p>
 
@@ -76,8 +76,8 @@ function ListeProgrammesAudits({
   if (programmes.length === 0) {
     return (
       <p className="rounded-xl border border-dj-bordure p-4 text-sm text-dj-texte-muet">
-        Aucun programme pour l&apos;instant -- crée-en un dans l&apos;onglet &laquo;&nbsp;Mon programme&nbsp;&raquo;
-        pour que l&apos;IA puisse commencer à l&apos;auditer.
+        Aucun programme pour l&apos;instant, crée-en un dans l&apos;onglet &laquo;&nbsp;Mon programme&nbsp;&raquo;
+        pour que Clovis puisse commencer à l&apos;auditer.
       </p>
     );
   }

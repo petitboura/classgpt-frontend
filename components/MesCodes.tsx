@@ -125,7 +125,7 @@ export function MesCodes() {
         <div>
           <h2 className="font-display text-base font-semibold text-dj-texte">Mes codes</h2>
           <p className="mt-1 text-xs text-dj-texte-muet">
-            Crée un code et partage-le : tous ceux qui l&apos;entrent reçoivent tout ce que tu y mets --
+            Crée un code et partage-le : tous ceux qui l&apos;entrent reçoivent tout ce que tu y mets,
             comportement, programme, bibliothèque, texte. Modifiable après coup, tout le monde voit la mise à jour.
           </p>
         </div>

@@ -81,7 +81,7 @@ export function EspaceDiffuser() {
     <section className="rounded-2xl border border-dj-bordure bg-dj-surface p-5">
       <h2 className="font-display text-base font-semibold text-dj-texte">Diffuser</h2>
       <p className="mt-1 text-xs text-dj-texte-muet">
-        Ajouté à la bibliothèque personnelle de chacun de ceux qui ont entré ce code précis -- privé à ce lien.
+        Ajouté à la bibliothèque personnelle de chacun de ceux qui ont entré ce code précis, privé à ce lien.
       </p>
 
       {chargementContenus && <Skeleton className="mt-4 h-10 rounded-xl border border-dj-bordure" />}

@@ -74,8 +74,8 @@ export function EspaceInviter() {
     <section className="rounded-2xl border border-dj-bordure bg-dj-surface p-5">
       <h2 className="font-display text-base font-semibold text-dj-texte">Écrire une matière</h2>
       <p className="mt-1 text-xs text-dj-texte-muet">
-        Choisis une matière et écris ce que l'IA doit savoir ou comment elle doit répondre. Un code se génère à
-        l'enregistrement -- partage-le, il débloque exactement ce texte pour celui qui l'entre.
+        Choisis une matière et écris ce que Clovis doit savoir ou comment il doit répondre. Un code se génère à
+        l'enregistrement, partage-le, il débloque exactement ce texte pour celui qui l'entre.
       </p>
 
       {chargement && <Skeleton className="mt-4 h-24 rounded-xl border border-dj-bordure" />}

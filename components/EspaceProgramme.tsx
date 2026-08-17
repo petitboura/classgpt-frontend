@@ -53,8 +53,8 @@ export function EspaceProgramme() {
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
       <p className="text-sm text-dj-texte-muet">
-        Organise ton programme par classe, matière et chapitre. C&apos;est ce cadre que l&apos;IA respecte quand
-        elle génère du contenu pour toi -- jamais hors programme, jamais hors niveau.
+        Organise ton programme par classe, matière et chapitre. C&apos;est ce cadre que Clovis respecte quand
+        il génère du contenu pour toi, jamais hors programme, jamais hors niveau.
       </p>
 
       {vue.niveau === "programmes" && <ListeProgrammes onOuvrir={(programme) => setVue({ niveau: "matieres", programme })} />}

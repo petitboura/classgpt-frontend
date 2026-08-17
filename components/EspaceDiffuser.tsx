@@ -137,7 +137,7 @@ export function EspaceDiffuser() {
               <input
                 value={descriptionFichier}
                 onChange={(e) => setDescriptionFichier(e.target.value)}
-                placeholder="Description (pour que l'IA sache le retrouver)"
+                placeholder="Description (pour que Clovis sache le retrouver)"
                 className="mt-2 w-full rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
               />
             </div>
@@ -154,7 +154,7 @@ export function EspaceDiffuser() {
               <input
                 value={descriptionLien}
                 onChange={(e) => setDescriptionLien(e.target.value)}
-                placeholder="Description (pour que l'IA sache le retrouver)"
+                placeholder="Description (pour que Clovis sache le retrouver)"
                 className="mt-2 w-full rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
               />
             </div>

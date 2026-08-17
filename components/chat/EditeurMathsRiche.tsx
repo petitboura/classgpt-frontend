@@ -129,7 +129,7 @@ export function EditeurMathsRiche({
   return (
     <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6">
       <div className="flex items-center justify-between pb-4">
-        <span className="text-sm text-dj-texte-muet">Éditeur maths live -- texte et formules, à part du clavier normal</span>
+        <span className="text-sm text-dj-texte-muet">Éditeur maths live, texte et formules, à part du clavier normal</span>
         <button
           onClick={onFermer}
           className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet hover:bg-dj-surface"

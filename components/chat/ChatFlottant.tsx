@@ -50,7 +50,7 @@ const AGENT_INVITE_ID = "clovis";
 const LIMITE_MESSAGES_INVITE = 5;
 const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
 const TITRE_ACCUEIL_CLOVIS = "Clovis";
-const SOUS_TITRE_ACCUEIL_CLOVIS = "L'IA qui t'aide dans tes études.";
+const SOUS_TITRE_ACCUEIL_CLOVIS = "Ton compagnon d'études, à tes côtés.";
 
 export function ChatFlottant({
   connecte,

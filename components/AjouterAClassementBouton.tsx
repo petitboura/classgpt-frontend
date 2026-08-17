@@ -122,7 +122,7 @@ export function AjouterAClassementBouton({
               onChange={(e) => setSelection(e.target.value)}
               className="rounded-lg border border-dj-bordure bg-dj-surface-haute px-2 py-1.5 text-dj-texte outline-none focus:border-dj-accent-1"
             >
-              <option value="">— Nouveau classement —</option>
+              <option value="">Nouveau classement</option>
               {classements.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label} ({TYPES_CLASSEMENT.find((t) => t.id === c.type)?.label ?? c.type})

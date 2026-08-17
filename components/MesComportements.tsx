@@ -173,7 +173,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
   }
 
   if (sansCompte) {
-    return <CTACompteRequis texte="Crée un compte pour ajouter tes propres consignes perso à cette IA." />;
+    return <CTACompteRequis texte="Crée un compte pour ajouter tes propres consignes perso à Clovis." />;
   }
 
   if (liste === undefined) {

@@ -101,7 +101,7 @@ export function CanvasDessin({ onValider, onFermer }: { onValider: (fichier: Fil
   return (
     <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6">
       <div className="flex items-center justify-between pb-3">
-        <span className="text-sm text-dj-texte-muet">Dessin -- géométrie, graphe, croquis</span>
+        <span className="text-sm text-dj-texte-muet">Dessin, géométrie, graphe, croquis</span>
         <button
           onClick={onFermer}
           aria-label="Fermer"

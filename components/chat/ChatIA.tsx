@@ -657,7 +657,7 @@ export function ChatIA({
                   ? () =>
                       message.id
                         ? setPopupFeedback({ type: "positif", messageId: message.id!, questionMessageId: messages[index - 1]?.id ?? null })
-                        : alert("Connecte-toi pour noter cette IA.")
+                        : alert("Connecte-toi pour noter Clovis.")
                   : undefined
               }
               onDislike={
@@ -665,7 +665,7 @@ export function ChatIA({
                   ? () =>
                       message.id
                         ? setPopupFeedback({ type: "negatif", messageId: message.id!, questionMessageId: messages[index - 1]?.id ?? null })
-                        : alert("Connecte-toi pour noter cette IA.")
+                        : alert("Connecte-toi pour noter Clovis.")
                   : undefined
               }
               onExpliquerSelection={message.role === "assistant" ? expliquerSelection : undefined}

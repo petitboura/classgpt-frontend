@@ -38,7 +38,7 @@ const FONCTIONNALITES: Fonctionnalite[] = [
     Icone: Brain,
     titre: "Une mémoire qui se construit seule",
     description:
-      "Clovis retient qui tu es et comment tu travailles au fil des conversations -- pas de questionnaire à remplir, et le résumé reste modifiable dans Mon espace.",
+      "Clovis retient qui tu es et comment tu travailles au fil des conversations, pas de questionnaire à remplir, et le résumé reste modifiable dans Mon espace.",
   },
   {
     Icone: Library,
@@ -50,7 +50,7 @@ const FONCTIONNALITES: Fonctionnalite[] = [
     Icone: Calculator,
     titre: "De vrais outils de maths",
     description:
-      "Calcul symbolique, éditeur de formules et de réactions chimiques, dessin de géométrie -- pas juste du texte qui décrit une réponse.",
+      "Calcul symbolique, éditeur de formules et de réactions chimiques, dessin de géométrie, pas juste du texte qui décrit une réponse.",
   },
   {
     Icone: BookOpen,
@@ -71,12 +71,12 @@ const FONCTIONNALITES: Fonctionnalite[] = [
   {
     Icone: ShieldCheck,
     titre: "Toujours disponible",
-    description: "Plusieurs modèles prennent le relais automatiquement en cas de souci, sans jamais couper la conversation.",
+    description: "Toujours prêt à prendre le relais automatiquement en cas de souci, sans jamais couper la conversation.",
   },
   {
     Icone: Smartphone,
     titre: "Une vraie application",
-    description: "S'installe sur téléphone ou ordinateur, avec notifications -- pas juste un site ouvert dans un onglet.",
+    description: "S'installe sur téléphone ou ordinateur, avec notifications, pas juste un site ouvert dans un onglet.",
   },
 ];
 

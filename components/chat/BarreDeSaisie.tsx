@@ -90,9 +90,9 @@ const NOMS_LANGAGE: Record<string, string> = {
 };
 
 function libellePieceJointe(langageDetecte: string | null, texteColle: string): string {
-  if (langageDetecte === "latex") return "Formule collée -- LaTeX";
-  if (langageDetecte) return `Code collé -- ${NOMS_LANGAGE[langageDetecte] || langageDetecte}`;
-  return `Texte collé -- ${texteColle.length.toLocaleString("fr-FR")} caractères`;
+  if (langageDetecte === "latex") return "Formule collée, LaTeX";
+  if (langageDetecte) return `Code collé, ${NOMS_LANGAGE[langageDetecte] || langageDetecte}`;
+  return `Texte collé, ${texteColle.length.toLocaleString("fr-FR")} caractères`;
 }
 
 function detecterLangageCode(texte: string): string | null {

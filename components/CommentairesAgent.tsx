@@ -110,7 +110,7 @@ export function CommentairesAgent({ agentId }: { agentId: string }) {
 
       {compteRequis && (
         <CompteRequisModal
-          texte="Crée un compte pour commenter cette IA."
+          texte="Crée un compte pour commenter Clovis."
           onFerme={() => setCompteRequis(false)}
         />
       )}

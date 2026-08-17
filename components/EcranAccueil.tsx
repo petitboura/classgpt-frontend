@@ -151,7 +151,7 @@ export function EcranAccueil() {
         <Logo taille={40} />
         <div>
           <h1 className="font-display text-2xl font-bold text-dj-texte">Bonjour</h1>
-          <p className="mt-1 text-sm text-dj-texte-muet">L&apos;IA qui t&apos;aide dans tes études.</p>
+          <p className="mt-1 text-sm text-dj-texte-muet">Ton compagnon d&apos;études, à tes côtés.</p>
         </div>
         <button
           onClick={ouvrirChat}
@@ -199,7 +199,7 @@ export function EcranAccueil() {
         )}
 
         {activite !== null && activite.length === 0 && (
-          <p className="text-sm text-dj-texte-muet">Rien pour l&apos;instant -- lance une conversation pour commencer.</p>
+          <p className="text-sm text-dj-texte-muet">Rien pour l&apos;instant, lance une conversation pour commencer.</p>
         )}
 
         {activite !== null && activite.length > 0 && (

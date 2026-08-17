@@ -410,7 +410,7 @@ function BulleMessageInterne({
         <IndicateurReflexion nomAgent={nomAgent ?? "Clovis"} />
       )}
       {!estUtilisateur && raisonnement && (
-        <RaisonnementBulle nomAgent={nomAgent ?? "L'agent"} texte={raisonnement} enCours={!!raisonnementEnCours} />
+        <RaisonnementBulle nomAgent={nomAgent ?? "Clovis"} texte={raisonnement} enCours={!!raisonnementEnCours} />
       )}
       <div
         className={
@@ -627,15 +627,12 @@ function BulleMessageInterne({
         <div className="my-1.5 flex w-fit items-start gap-2 rounded-lg border border-dj-accent-2/40 bg-dj-accent-2/10 px-3 py-2 text-[13px] text-dj-texte">
           <AlertTriangle size={16} className="mt-0.5 shrink-0 text-dj-accent-2" />
           <span>
-            <strong>Réponse générée par un modèle moins intelligent</strong> (forte demande sur le
-            modèle principal). La qualité peut être inférieure à la normale.
+            <strong>Réponse un peu plus lente à arriver</strong> (forte demande en ce moment). La
+            qualité peut être légèrement différente de d&apos;habitude.
           </span>
         </div>
       )}
 
-      {!estUtilisateur && message.modele && (
-        <div className="mt-1 text-[12px] text-dj-texte-muet">Répondu par {message.modele}</div>
-      )}
 
       {/* Heure : uniquement sous le message utilisateur (correction du
           2026-07-15 -- pas sous l'assistant, voir section 3.1). */}

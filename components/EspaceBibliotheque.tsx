@@ -135,8 +135,8 @@ export function EspaceBibliotheque() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-dj-texte-muet">
-        Les documents ajoutés ici sont personnels : toi seul y as accès, et n&apos;importe laquelle de tes IA peut
-        aller les consulter pendant une conversation.
+        Les documents ajoutés ici sont personnels : toi seul y as accès, et Clovis peut les consulter
+        pendant une conversation.
       </p>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-dj-bordure bg-dj-surface p-4">

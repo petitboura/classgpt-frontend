@@ -19,7 +19,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "Clovis",
     short_name: "Clovis",
-    description: "Ton assistant IA pour la classe.",
+    description: "Ton compagnon d'études pour la classe.",
     start_url: "/",
     scope: "/",
     display: "standalone",

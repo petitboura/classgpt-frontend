@@ -64,7 +64,7 @@ export function FichierCode({ href, nom }: { href: string; nom: string }) {
       onPremiereOuverture={charger}
       enfant={
         erreur ? (
-          <p className="px-1 py-4 text-center text-xs text-dj-texte-muet">Aperçu indisponible -- utilise Télécharger.</p>
+          <p className="px-1 py-4 text-center text-xs text-dj-texte-muet">Aperçu indisponible, utilise Télécharger.</p>
         ) : contenu !== null ? (
           <pre className="overflow-x-auto rounded-lg bg-[#100c09] px-4 py-3 font-mono text-[13px] leading-relaxed">
             <code className="hljs" dangerouslySetInnerHTML={{ __html: html }} />

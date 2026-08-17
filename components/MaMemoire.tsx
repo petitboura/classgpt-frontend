@@ -58,7 +58,7 @@ export function MaMemoire() {
   async function toutOublier() {
     if (
       !window.confirm(
-        "Effacer toute ta mémoire ? La plateforme oubliera tout ce qu'elle a retenu de tes échanges passés, pour tous les agents. Cette action est irréversible."
+        "Effacer toute ta mémoire ? Clovis oubliera tout ce qu'il a retenu de tes échanges passés. Cette action est irréversible."
       )
     )
       return;
@@ -82,9 +82,9 @@ export function MaMemoire() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-dj-texte-muet">
-        Résumé de ce que la plateforme retient de tes conversations passées, pour personnaliser
-        tes échanges avec n&apos;importe lequel de tes agents. Se met à jour automatiquement au
-        fil des discussions — tu peux aussi le corriger ou l&apos;effacer toi-même ici.
+        Résumé de ce que Clovis retient de tes conversations passées, pour personnaliser vos
+        échanges. Se met à jour automatiquement au fil des discussions, tu peux aussi le corriger
+        ou l&apos;effacer toi-même ici.
       </p>
 
       {chargement && (
@@ -101,7 +101,7 @@ export function MaMemoire() {
             value={resume}
             onChange={(e) => setResume(e.target.value)}
             rows={10}
-            placeholder="Rien d'enregistré pour l'instant — ça se remplit tout seul au fil de tes conversations."
+            placeholder="Rien d'enregistré pour l'instant, ça se remplit tout seul au fil de tes conversations."
             className="w-full resize-y rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
           />
           <div className="flex flex-wrap items-center gap-3">

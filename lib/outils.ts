@@ -68,7 +68,13 @@ import { lireRegistreOutils } from "@/lib/api";
 //   anciennes icônes autonomes (préfixe "ui_", voir plus bas)
 export type OngletOutil = "generer" | "rechercher" | "action_app" | "utilitaires";
 
-export type OutilAffichage = { nom: string; label: string; Icone: typeof Search; onglet: OngletOutil; appli?: string };
+// onglet optionnel (17/08, demande Bourama) : un outil peut n'appartenir
+// à AUCUN menu (ex. outils d'édition de programme, appelés par le modèle
+// en autonomie) tout en gardant son icône/label ici pour la bulle
+// "résultat d'outil" (OutilResultatBulle.tsx) -- absent/null plutôt
+// qu'une valeur "utilitaires" par défaut qui les rendrait cliquables à
+// tort.
+export type OutilAffichage = { nom: string; label: string; Icone: typeof Search; onglet?: OngletOutil | null; appli?: string };
 
 // Résolution icône (2026-08-15) -- le backend (core/registre_outils.py:
 // REGISTRE_AFFICHAGE_OUTILS) envoie un nom d'export lucide-react en
@@ -83,7 +89,7 @@ function resoudreIcone(nomIcone: string): typeof Search {
   return composant ?? Wrench;
 }
 
-type OutilBrut = { nom: string; label: string; icone: string; onglet: OngletOutil; appli?: string };
+type OutilBrut = { nom: string; label: string; icone: string; onglet?: OngletOutil | null; appli?: string };
 
 let promesseRegistre: Promise<OutilAffichage[]> | null = null;
 

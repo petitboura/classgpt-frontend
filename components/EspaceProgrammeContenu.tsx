@@ -388,17 +388,17 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
 
       <div className="flex items-center gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-3">
         <label
-          title="Créer un exercice à partir d'une photo/PDF"
+          title="Créer un exercice à partir d'un fichier"
           className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 py-2.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           aria-disabled={envoiFichierEnCours}
         >
           <Paperclip size={16} />
-          {envoiFichierEnCours ? "Envoi…" : "Ajouter une photo/PDF"}
+          {envoiFichierEnCours ? "Envoi…" : "Ajouter un fichier"}
           <input
             type="file"
             multiple
             disabled={envoiFichierEnCours}
-            accept="application/pdf,image/jpeg,image/png,image/webp"
+            accept="*/*"
             onChange={(e) => {
               const fichiers = Array.from(e.target.files ?? []);
               e.target.value = "";

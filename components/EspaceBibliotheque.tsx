@@ -154,7 +154,7 @@ export function EspaceBibliotheque() {
             <input
               type="file"
               multiple
-              accept="application/pdf,image/jpeg,image/png,image/webp,audio/mpeg,audio/wav,audio/ogg,video/mp4,video/webm,video/quicktime"
+              accept="*/*"
               onChange={(e) => setNouveauxFichiers(Array.from(e.target.files ?? []))}
               className="hidden"
             />

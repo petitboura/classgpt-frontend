@@ -153,7 +153,7 @@ export function SectionDocumentsBibliotheque({
               type="file"
               multiple
               disabled={envoiEnCours}
-              accept="application/pdf,image/jpeg,image/png,image/webp,audio/mpeg,audio/wav,audio/ogg,video/mp4,video/webm,video/quicktime"
+              accept="*/*"
               onChange={(e) => {
                 const fichiers = Array.from(e.target.files ?? []);
                 e.target.value = "";

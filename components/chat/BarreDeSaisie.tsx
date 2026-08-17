@@ -1356,6 +1356,29 @@ export function BarreDeSaisie({
                   <X size={12} />
                 </button>
               </div>
+            ) : fichier.type === "application/pdf" ? (
+              // 17/08 (Bourama : "regarde partout où on upload") -- avant,
+              // un PDF choisi ici tombait dans le cas générique juste en
+              // dessous (ouverture en nouvel onglet). Ici le blob est
+              // forcément local (le fichier choisi par l'utilisateur sur
+              // sa machine, pas encore envoyé) donc intrinsèquement sûr à
+              // afficher en iframe, contrairement à FichierChip où
+              // estOrigineDeConfiance protège contre un lien externe
+              // arbitraire -- cette vérification n'a pas lieu d'être ici.
+              <div className="relative w-full max-w-xs">
+                <iframe
+                  src={URL.createObjectURL(fichier)}
+                  className="h-64 w-full rounded-xl border border-dj-bordure"
+                  title={fichier.name}
+                />
+                <button
+                  onClick={() => choisirFichier(null)}
+                  aria-label="Retirer le fichier"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-fond text-dj-texte-muet hover:text-dj-texte"
+                >
+                  <X size={12} />
+                </button>
+              </div>
             ) : (
               <div className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-xs text-dj-texte-muet">
                 <button

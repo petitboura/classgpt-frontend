@@ -46,8 +46,8 @@ import { SectionDocumentsBibliotheque } from "./SectionDocumentsBibliotheque";
 export function VueChapitreContenu({ chapitreId }: { chapitreId: string }) {
   return (
     <div className="flex flex-col gap-6">
+      <SectionDocumentsBibliotheque typeCible="chapitre" cibleId={chapitreId} titre="Documents" />
       <SectionDocuments chapitreId={chapitreId} />
-      <SectionDocumentsBibliotheque typeCible="chapitre" cibleId={chapitreId} titre="Documents (bibliothèque)" />
       <SectionExercices chapitreId={chapitreId} />
     </div>
   );
@@ -67,6 +67,12 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
   // main (pas de vrai fichier, voir api/contenu_programme.py), donc pas
   // besoin d'une visionneuse par type MIME -- juste lien vs texte brut.
   const [documentOuvert, setDocumentOuvert] = useState<DocumentChapitre | null>(null);
+  // Demande Bourama 17/08 : ici, texte/lien tapé à la main doit rester
+  // discret par rapport à la bibliothèque (SectionDocumentsBibliotheque,
+  // juste au-dessus dans VueChapitreContenu) -- formulaire replié par
+  // défaut, ouvert via un simple lien texte plutôt qu'un gros bloc
+  // toujours visible.
+  const [formulaireOuvert, setFormulaireOuvert] = useState(false);
 
   useEffect(() => {
     setDocuments(null);
@@ -91,6 +97,7 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
       await ajouterDocumentChapitre(chapitreId, titre.trim(), urlOuContenu.trim());
       setTitre("");
       setUrlOuContenu("");
+      setFormulaireOuvert(false);
       charger();
     } catch (e) {
       setErreur(messageErreur(e));
@@ -111,30 +118,38 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold text-dj-texte">Documents du chapitre</h3>
-
-      <div className="flex flex-col gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-4 sm:flex-row sm:items-center">
-        <input
-          value={titre}
-          onChange={(e) => setTitre(e.target.value)}
-          placeholder="Titre du document"
-          className="rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte sm:w-48"
-        />
-        <input
-          value={urlOuContenu}
-          onChange={(e) => setUrlOuContenu(e.target.value)}
-          placeholder="Colle un lien, ou écris le contenu…"
-          className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
-        />
+      {!formulaireOuvert ? (
         <button
           type="button"
-          onClick={ajouter}
-          disabled={envoi || !titre.trim() || !urlOuContenu.trim()}
-          className="self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50 sm:self-auto"
+          onClick={() => setFormulaireOuvert(true)}
+          className="w-fit text-xs text-dj-texte-muet underline decoration-dotted transition-colors hover:text-dj-texte"
         >
-          {envoi ? "Envoi…" : "Ajouter"}
+          Ajouter un lien ou un texte à la main
         </button>
-      </div>
+      ) : (
+        <div className="flex flex-col gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-4 sm:flex-row sm:items-center">
+          <input
+            value={titre}
+            onChange={(e) => setTitre(e.target.value)}
+            placeholder="Titre du document"
+            className="rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte sm:w-48"
+          />
+          <input
+            value={urlOuContenu}
+            onChange={(e) => setUrlOuContenu(e.target.value)}
+            placeholder="Colle un lien, ou écris le contenu…"
+            className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+          />
+          <button
+            type="button"
+            onClick={ajouter}
+            disabled={envoi || !titre.trim() || !urlOuContenu.trim()}
+            className="self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50 sm:self-auto"
+          >
+            {envoi ? "Envoi…" : "Ajouter"}
+          </button>
+        </div>
+      )}
 
       {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
 

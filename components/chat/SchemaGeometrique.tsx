@@ -59,15 +59,17 @@ type Schema = {
   elements: Element[];
 };
 
-const COULEUR_TRAIT = "#E3B341";
-const COULEUR_TRAIT_2 = "#B8860B";
-const COULEUR_TEXTE = "#EDE7E1";
-// CORRECTIF (17/08) -- grille/axe recalculés en clair : sur l'ancien fond
-// clair (#FBFAF8), rgba(43,33,24,...) (brun foncé, faible opacité) se
-// détachait légèrement ; sur le nouveau bg-dj-surface sombre (#1A1714),
-// cette même teinte foncée deviendrait quasi invisible (foncé sur foncé).
-const COULEUR_GRILLE = "rgba(245,240,230,0.10)";
-const COULEUR_AXE = "rgba(245,240,230,0.4)";
+const COULEUR_TRAIT = "var(--dj-accent-1)";
+const COULEUR_TRAIT_2 = "var(--dj-accent-2)";
+// CORRECTIF (17/08, v2) -- toutes ces couleurs suivent désormais les
+// variables CSS double-thème. Avant (thème sombre unique), COULEUR_TEXTE
+// et COULEUR_GRILLE/AXE étaient calibrées en dur pour un fond TOUJOURS
+// sombre (bg-dj-surface). Depuis le passage au double thème,
+// bg-dj-surface devient blanc en thème clair -- un texte/grille clairs
+// codés en dur y seraient devenus quasi invisibles (clair sur clair).
+const COULEUR_TEXTE = "var(--dj-texte)";
+const COULEUR_GRILLE = "var(--dj-bordure)";
+const COULEUR_AXE = "var(--dj-texte-muet)";
 
 export function SchemaGeometrique({ code }: { code: string }) {
   const conteneurRef = useRef<HTMLDivElement>(null);
@@ -98,7 +100,7 @@ export function SchemaGeometrique({ code }: { code: string }) {
     if (erreur) {
       return (
         <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
-          <span className="text-[#f87171]">Schéma invalide :</span> format JSON non reconnu.
+          <span className="text-[var(--dj-erreur)]">Schéma invalide :</span> format JSON non reconnu.
         </div>
       );
     }
@@ -310,7 +312,7 @@ export function SchemaGeometrique({ code }: { code: string }) {
               <polygon
                 key={index}
                 points={coords}
-                fill={el.rempli ? "rgba(232,147,74,0.18)" : "none"}
+                fill={el.rempli ? "rgba(227,179,65,0.18)" : "none"}
                 stroke={COULEUR_TRAIT}
                 strokeWidth={2}
                 strokeLinejoin="round"

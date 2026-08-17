@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -315,6 +316,8 @@ export function AppSidebar({
           )}
         </div>
 
+        <ThemeToggle LibelleRail={LibelleRail} ouverte={ouverte} />
+
         <button
           onClick={seDeconnecter}
           className="group mt-2 flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -399,6 +402,8 @@ export function AppSidebar({
               </div>
             )}
           </div>
+
+          <ThemeToggle LibelleRail={LibelleRail} ouverte={ouverte} mobile />
 
           <button
             onClick={seDeconnecter}

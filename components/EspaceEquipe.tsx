@@ -55,7 +55,7 @@ export function EspaceEquipe() {
 
       {chargement && <Skeleton className="mt-4 h-14 rounded-xl border border-dj-bordure" />}
 
-      {erreur && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {!chargement && contenus.length === 0 && !erreur && (
         <p className="mt-3 animate-dj-fade-in-rapide text-sm text-dj-texte-muet">

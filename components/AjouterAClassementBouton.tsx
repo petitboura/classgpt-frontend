@@ -153,7 +153,7 @@ export function AjouterAClassementBouton({
             </div>
           )}
 
-          {erreur && <p className="text-[#F87171]">{erreur}</p>}
+          {erreur && <p className="text-[var(--dj-erreur)]">{erreur}</p>}
 
           <button
             type="button"

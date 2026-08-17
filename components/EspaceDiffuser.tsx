@@ -160,7 +160,7 @@ export function EspaceDiffuser() {
             </div>
           )}
 
-          {erreur && <p className="mt-2 animate-dj-fade-in-rapide text-sm text-[#F87171]">{erreur}</p>}
+          {erreur && <p className="mt-2 animate-dj-fade-in-rapide text-sm text-[var(--dj-erreur)]">{erreur}</p>}
           {resultat && (
             <p className="mt-2 animate-dj-fade-in-rapide text-sm text-dj-accent-1">
               Diffusé à {resultat.diffuse_a}/{resultat.total_receveurs} personnes.

@@ -54,7 +54,7 @@ math-field {
 .hljs-number,
 .hljs-symbol,
 .hljs-built_in {
-  color: #f0c766; /* 17/08 : doré clair, ancien #f2a65a (orange) */
+  color: var(--dj-code-accent); /* 17/08 : variable double-thème (clair/sombre), ancien #f2a65a fixe */
 }
 .hljs-title,
 .hljs-function,
@@ -68,10 +68,10 @@ math-field {
 .hljs-name,
 .hljs-selector-id,
 .hljs-selector-class {
-  color: #c9a9e0;
+  color: var(--dj-code-variable);
 }
 .hljs-deletion {
-  color: #f87171;
+  color: var(--dj-code-deletion);
 }
 .hljs-emphasis {
   font-style: italic;
@@ -80,15 +80,73 @@ math-field {
   font-weight: 700;
 }
 
-/* Étape D.1 (pivot social) : à l'origine repris à l'identique de
-   djiguigne-frontend/app/globals.css. CORRECTIF (17/08) -- palette
-   remplacée par la direction "Nuit d'étude", propre à Clovis (voir
-   tailwind.config.ts) : ce bloc est un miroir manuel des couleurs qui y
-   sont définies, utile hors classes utilitaires (SVG inline, styles
-   calculés) -- toute future modification de palette doit être répercutée
-   ICI EN PLUS de tailwind.config.ts, les deux ne se synchronisent pas
-   automatiquement. */
+/* CORRECTIF (17/08, v2) -- Bourama a demandé les deux thèmes (clair +
+   sombre), adaptatif au réglage système par défaut, avec un bouton pour
+   forcer manuellement (voir components/ThemeToggle.tsx et le script
+   anti-flash dans app/layout.tsx qui pose l'attribut data-theme AVANT le
+   premier rendu).
+   Logique : ces valeurs (:root) sont le thème CLAIR, valeurs par défaut.
+   Le bloc @media plus bas les remplace par le thème sombre UNIQUEMENT si
+   l'utilisateur n'a pas explicitement forcé le clair (data-theme="light")
+   -- donc : pas de préférence système + pas de choix manuel = clair par
+   défaut ; préférence système sombre + pas de choix manuel = sombre ;
+   choix manuel = toujours prioritaire sur le système, peu importe lequel.
+   Toute future modification de palette doit être répercutée ICI EN PLUS
+   de tailwind.config.ts (colors + backgroundImage, qui référencent ces
+   mêmes variables), les deux ne se synchronisent pas automatiquement. */
 :root {
+  --dj-fond: #f5f5f2;
+  --dj-surface: #ffffff;
+  --dj-surface-haute: #fbfaf8;
+  --dj-bordure: rgba(28, 26, 22, 0.08);
+  --dj-bordure-forte: rgba(184, 134, 11, 0.35);
+  --dj-accent-1: #b8860b;
+  --dj-accent-2: #8a6a1f;
+  --dj-texte: #1c1a16;
+  --dj-texte-muet: #6b675e;
+  --dj-succes: #15803d;
+  --dj-inactif: #b3afa3;
+  --dj-code-accent: #8a6a1f;
+  --dj-code-variable: #7c5ba6;
+  --dj-code-deletion: #dc2626;
+  --dj-logo-1: #d9a438;
+  --dj-logo-2: #b8860b;
+  --dj-logo-3: #6b5416;
+  --dj-gradient: linear-gradient(135deg, #e3b341 0%, #b8860b 55%, #6b5416 100%);
+  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(184, 134, 11, 0.1), transparent 60%);
+  --dj-shimmer: linear-gradient(100deg, rgba(28, 26, 22, 0.03) 20%, rgba(107, 103, 94, 0.35) 50%, rgba(28, 26, 22, 0.03) 80%);
+  --dj-shimmer-texte: linear-gradient(100deg, #6b675e 25%, #b3afa3 50%, #6b675e 75%);
+  --dj-erreur: #dc2626;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --dj-fond: #0f0d0b;
+    --dj-surface: #1a1714;
+    --dj-surface-haute: #221e18;
+    --dj-bordure: rgba(245, 240, 230, 0.08);
+    --dj-bordure-forte: rgba(227, 179, 65, 0.35);
+    --dj-accent-1: #e8bf60;
+    --dj-accent-2: #da9f0d;
+    --dj-texte: #f5f0e6;
+    --dj-texte-muet: #9a9184;
+    --dj-succes: #34d399;
+    --dj-inactif: #4a453c;
+    --dj-code-accent: #f0c766;
+    --dj-code-variable: #c9a9e0;
+    --dj-code-deletion: #f87171;
+    --dj-logo-1: #f0c766;
+    --dj-logo-2: #d9a438;
+    --dj-logo-3: #8a6a1f;
+    --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
+    --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227, 179, 65, 0.1), transparent 60%);
+    --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
+    --dj-shimmer-texte: linear-gradient(100deg, #9a9184 25%, #c7bfae 50%, #9a9184 75%);
+    --dj-erreur: #f87171;
+  }
+}
+
+[data-theme="dark"] {
   --dj-fond: #0f0d0b;
   --dj-surface: #1a1714;
   --dj-surface-haute: #221e18;
@@ -100,6 +158,17 @@ math-field {
   --dj-texte-muet: #9a9184;
   --dj-succes: #34d399;
   --dj-inactif: #4a453c;
+  --dj-code-accent: #f0c766;
+  --dj-code-variable: #c9a9e0;
+  --dj-code-deletion: #f87171;
+  --dj-logo-1: #f0c766;
+  --dj-logo-2: #d9a438;
+  --dj-logo-3: #8a6a1f;
+  --dj-gradient: linear-gradient(135deg, #f3d387 0%, #dfb256 55%, #a78026 100%);
+  --dj-hero-glow: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227, 179, 65, 0.1), transparent 60%);
+  --dj-shimmer: linear-gradient(100deg, rgba(245, 240, 230, 0.03) 20%, rgba(154, 145, 132, 0.35) 50%, rgba(245, 240, 230, 0.03) 80%);
+  --dj-shimmer-texte: linear-gradient(100deg, #9a9184 25%, #c7bfae 50%, #9a9184 75%);
+  --dj-erreur: #f87171;
 }
 
 * {

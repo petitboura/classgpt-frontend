@@ -219,7 +219,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
         </div>
       </div>
 
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {liste.length === 0 && <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>}
 
@@ -272,7 +272,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
 
           <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
             {erreurOuvert ? (
-              <p className="text-xs text-[#F87171]">{erreurOuvert}</p>
+              <p className="text-xs text-[var(--dj-erreur)]">{erreurOuvert}</p>
             ) : (
               <span className="hidden sm:block" />
             )}
@@ -281,7 +281,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
                 <button
                   onClick={supprimer}
                   disabled={enregistrementEnCours || suppressionEnCours}
-                  className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[#F87171] transition-colors hover:bg-[#F87171]/10 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
                 >
                   <Trash2 size={14} /> Supprimer
                 </button>

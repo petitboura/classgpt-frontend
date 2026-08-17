@@ -40,7 +40,7 @@ export function CarteMessage({ code }: { code: string }) {
     if (erreur) {
       return (
         <div className="my-3 flex h-20 items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 text-xs text-dj-texte-muet">
-          <span className="text-[#f87171]">Carte invalide :</span> format JSON non reconnu.
+          <span className="text-[var(--dj-erreur)]">Carte invalide :</span> format JSON non reconnu.
         </div>
       );
     }

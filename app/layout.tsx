@@ -90,8 +90,31 @@ export default function RacineLayout({
   return (
     <html
       lang="fr"
+      // suppressHydrationWarning : le script ci-dessous modifie l'attribut
+      // data-theme de <html> AVANT l'hydratation React (lecture directe du
+      // DOM, hors du cycle React) -- sans ça, React comparerait le HTML
+      // envoyé par le serveur (sans data-theme) à celui du navigateur
+      // (avec data-theme posé par le script) et log un avertissement
+      // d'hydratation à chaque chargement, alors que c'est volontaire.
+      suppressHydrationWarning
       className={`${spaceGrotesk.variable} ${workSans.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
     >
+      <head>
+        {/* Script anti-flash (17/08, thème clair/sombre) : doit s'exécuter
+            de façon SYNCHRONE avant le premier rendu de <body>, sinon
+            l'utilisateur voit une fraction de seconde du thème par défaut
+            (clair, valeurs de base de :root) avant que React ne se monte
+            et applique le bon thème -- particulièrement visible en sombre
+            (flash blanc). Lecture directe de localStorage + matchMedia,
+            volontairement hors de React (trop tôt dans le cycle de vie
+            pour qu'un hook s'en charge). Doit rester IDENTIQUE à la
+            logique de lib/useTheme.ts (clé de stockage, valeurs). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("clovis-theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t;}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-dj-fond font-sans text-dj-texte antialiased">
         <ServiceWorkerRegistration />
         <ReveilBackend />

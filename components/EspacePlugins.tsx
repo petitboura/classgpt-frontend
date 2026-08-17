@@ -82,7 +82,7 @@ export function EspacePlugins() {
         chère.
       </p>
 
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {chargement && (
         <div className="flex flex-col gap-2 transition-opacity duration-200" aria-hidden>
@@ -149,7 +149,7 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
           <p className="text-xs text-dj-texte-muet">
             {plugin.niveau} · {plugin.telechargements_count} téléchargement(s) · {plugin.gratuit ? "Gratuit" : "Payant"}
           </p>
-          {erreur && <p className="mt-1 text-xs text-[#F87171]">{erreur}</p>}
+          {erreur && <p className="mt-1 text-xs text-[var(--dj-erreur)]">{erreur}</p>}
         </div>
       </div>
 

@@ -31,7 +31,7 @@ import { telechargerImage } from "@/lib/telechargerImageGraphique";
 // convention pour que le modèle la respecte -- ce composant ne fait que
 // le rendu, il ne peut pas deviner un format non respecté (dans ce cas :
 // message d'erreur discret, jamais de JSON brut affiché).
-const COULEURS = ["#E3B341", "#B8860B", "#F0C766", "#8A6A1F", "#9A9184"];
+const COULEURS = ["var(--dj-accent-1)", "var(--dj-accent-2)", "var(--dj-code-accent)", "var(--dj-logo-3)", "var(--dj-texte-muet)"];
 
 type Chart = {
   type: "line" | "bar" | "pie";
@@ -76,7 +76,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
     if (erreur) {
       return (
         <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
-          <span className="text-[#f87171]">Graphique invalide :</span> format JSON non reconnu.
+          <span className="text-[var(--dj-erreur)]">Graphique invalide :</span> format JSON non reconnu.
         </div>
       );
     }
@@ -120,7 +120,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
   if (chart.type === "pie" && !pieValide) {
     return (
       <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
-        <span className="text-[#f87171]">Graphique invalide :</span> un camembert attend des paires{" "}
+        <span className="text-[var(--dj-erreur)]">Graphique invalide :</span> un camembert attend des paires{" "}
         <code className="text-dj-texte">{"{ name, value }"}</code> avec des valeurs numériques.
       </div>
     );
@@ -138,7 +138,7 @@ export function GraphiqueDonnees({ code }: { code: string }) {
   if (!TYPES_SUPPORTES.includes(chart.type as (typeof TYPES_SUPPORTES)[number])) {
     return (
       <div className="my-3 rounded-xl border border-dj-bordure bg-dj-surface p-4 text-xs text-dj-texte-muet">
-        <span className="text-[#f87171]">Graphique invalide :</span> type "{String(chart.type)}" non pris en charge
+        <span className="text-[var(--dj-erreur)]">Graphique invalide :</span> type "{String(chart.type)}" non pris en charge
         (attendu : line, bar ou pie).
       </div>
     );
@@ -211,15 +211,15 @@ export function GraphiqueDonnees({ code }: { code: string }) {
                   <Cell key={index} fill={COULEURS[index % COULEURS.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={{ background: "#221E18", border: "1px solid rgba(245,240,230,0.12)" }} />
+              <Tooltip contentStyle={{ background: "var(--dj-surface-haute)", border: "1px solid var(--dj-bordure)" }} />
               <Legend />
             </PieChart>
           ) : chart.type === "bar" ? (
             <BarChart data={chart.data}>
-              <CartesianGrid stroke="rgba(245,240,230,0.08)" />
-              <XAxis dataKey={cleAxeX} stroke="#9A9184" fontSize={12} />
-              <YAxis stroke="#9A9184" fontSize={12} />
-              <Tooltip contentStyle={{ background: "#221E18", border: "1px solid rgba(245,240,230,0.12)" }} />
+              <CartesianGrid stroke="var(--dj-bordure)" />
+              <XAxis dataKey={cleAxeX} stroke="var(--dj-texte-muet)" fontSize={12} />
+              <YAxis stroke="var(--dj-texte-muet)" fontSize={12} />
+              <Tooltip contentStyle={{ background: "var(--dj-surface-haute)", border: "1px solid var(--dj-bordure)" }} />
               <Legend />
               {clesSeries.map((cle, index) => (
                 <Bar key={cle} dataKey={cle} fill={COULEURS[index % COULEURS.length]} radius={[4, 4, 0, 0]} />
@@ -227,10 +227,10 @@ export function GraphiqueDonnees({ code }: { code: string }) {
             </BarChart>
           ) : (
             <LineChart data={chart.data}>
-              <CartesianGrid stroke="rgba(245,240,230,0.08)" />
-              <XAxis dataKey={cleAxeX} stroke="#9A9184" fontSize={12} />
-              <YAxis stroke="#9A9184" fontSize={12} />
-              <Tooltip contentStyle={{ background: "#221E18", border: "1px solid rgba(245,240,230,0.12)" }} />
+              <CartesianGrid stroke="var(--dj-bordure)" />
+              <XAxis dataKey={cleAxeX} stroke="var(--dj-texte-muet)" fontSize={12} />
+              <YAxis stroke="var(--dj-texte-muet)" fontSize={12} />
+              <Tooltip contentStyle={{ background: "var(--dj-surface-haute)", border: "1px solid var(--dj-bordure)" }} />
               <Legend />
               {clesSeries.map((cle, index) => (
                 <Line

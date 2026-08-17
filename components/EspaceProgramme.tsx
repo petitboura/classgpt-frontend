@@ -306,7 +306,7 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
                       supprimer(p);
                     }}
                     title="Supprimer"
-                    className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[#F87171]/10 hover:text-[#F87171]"
+                    className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[var(--dj-erreur)]/10 hover:text-[var(--dj-erreur)]"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -333,7 +333,7 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
             placeholder="Nom (optionnel)"
             className="rounded-lg border border-dj-bordure bg-dj-fond px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
           />
-          {erreur && <p className="text-xs text-[#F87171]">{erreur}</p>}
+          {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => {
@@ -510,7 +510,7 @@ function ListeMatieres({
                     <button
                       onClick={() => supprimer(m)}
                       title="Supprimer"
-                      className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[#F87171]/10 hover:text-[#F87171]"
+                      className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[var(--dj-erreur)]/10 hover:text-[var(--dj-erreur)]"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -534,7 +534,7 @@ function ListeMatieres({
             className="rounded-lg border border-dj-bordure bg-dj-fond px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
           />
           <ChampLimites valeur={limitesNouvelles} onChange={setLimitesNouvelles} />
-          {erreur && <p className="text-xs text-[#F87171]">{erreur}</p>}
+          {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => {
@@ -812,7 +812,7 @@ function ListeChapitres({
                   <button
                     onClick={() => supprimer(c)}
                     title="Supprimer"
-                    className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[#F87171]/10 hover:text-[#F87171]"
+                    className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[var(--dj-erreur)]/10 hover:text-[var(--dj-erreur)]"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -833,7 +833,7 @@ function ListeChapitres({
             className="rounded-lg border border-dj-bordure bg-dj-fond px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
           />
           <ChampLimites valeur={limitesNouvelles} onChange={setLimitesNouvelles} />
-          {erreur && <p className="text-xs text-[#F87171]">{erreur}</p>}
+          {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => {

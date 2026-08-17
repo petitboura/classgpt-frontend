@@ -14,6 +14,11 @@ import { useId } from "react";
 // écran d'accueil par ex.) -- deux <svg> avec le même id de gradient dans
 // le DOM casse le rendu sur certains navigateurs mobiles (Safari iOS
 // notamment). useId() donne un id unique à chaque instance.
+// CORRECTIF (17/08, v2) -- dégradé piloté par variables CSS
+// (--dj-logo-1/2/3, définies dans globals.css) plutôt que des couleurs
+// figées, pour suivre automatiquement le thème clair/sombre actif sans
+// logique JS ni risque de décalage d'hydratation (le <style> sur <stop>
+// supporte var(), contrairement à l'attribut stop-color en XML pur).
 export function Logo({ taille = 40 }: { taille?: number }) {
   const id = useId();
   const idGradient = `cgpt-grad-${id}`;
@@ -21,9 +26,9 @@ export function Logo({ taille = 40 }: { taille?: number }) {
     <svg width={taille} height={taille} viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id={idGradient} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#F0C766" />
-          <stop offset="55%" stopColor="#D9A438" />
-          <stop offset="100%" stopColor="#8A6A1F" />
+          <stop offset="0%" style={{ stopColor: "var(--dj-logo-1)" }} />
+          <stop offset="55%" style={{ stopColor: "var(--dj-logo-2)" }} />
+          <stop offset="100%" style={{ stopColor: "var(--dj-logo-3)" }} />
         </linearGradient>
       </defs>
       <path d="M45.5 7.5

@@ -123,7 +123,7 @@ function AuditsDuProgramme({ programme, onRetour }: { programme: Programme; onRe
         ← {programme.niveau}
       </button>
 
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {audits === null ? (
         <div className="flex flex-col gap-2">

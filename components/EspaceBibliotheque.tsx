@@ -171,9 +171,9 @@ export function EspaceBibliotheque() {
       </div>
 
       {erreursEnvoi.length > 0 && (
-        <div className="flex flex-col gap-1 rounded-xl border border-[#F87171]/40 bg-[#F87171]/5 px-4 py-3">
+        <div className="flex flex-col gap-1 rounded-xl border border-[var(--dj-erreur)]/40 bg-[var(--dj-erreur)]/5 px-4 py-3">
           {erreursEnvoi.map((e) => (
-            <p key={e.nom} className="text-sm text-[#F87171]">
+            <p key={e.nom} className="text-sm text-[var(--dj-erreur)]">
               {e.nom} : {e.erreur}
             </p>
           ))}
@@ -227,7 +227,7 @@ export function EspaceBibliotheque() {
                 </button>
                 <button
                   onClick={() => supprimer(f.id, f.description || f.nom_fichier)}
-                  className="flex-shrink-0 text-xs text-dj-texte-muet transition-colors hover:text-[#F87171]"
+                  className="flex-shrink-0 text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
                 >
                   Supprimer
                 </button>

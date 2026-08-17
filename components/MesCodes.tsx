@@ -138,7 +138,7 @@ export function MesCodes() {
         </button>
       </div>
 
-      {erreur && <p className="mt-3 text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="mt-3 text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       <div className="mt-4 space-y-2">
         {codes.length === 0 && (
@@ -186,7 +186,7 @@ export function MesCodes() {
                     <button
                       onClick={() => supprimer(c.id)}
                       title="Supprimer ce code"
-                      className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:text-[#F87171]"
+                      className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
                     >
                       <Trash2 size={14} />
                     </button>

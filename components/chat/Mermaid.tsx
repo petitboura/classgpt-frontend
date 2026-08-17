@@ -25,12 +25,32 @@ export function Mermaid({ definition }: { definition: string }) {
   const [svg, setSvg] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [sourceAffichee, setSourceAffichee] = useState(false);
+  // Incrémenté à chaque changement de thème (voir lib/useTheme.ts) pour
+  // forcer un nouveau rendu avec les couleurs résolues du nouveau thème --
+  // simplement changer les variables CSS ne suffit pas ici (voir plus bas
+  // pourquoi mermaid a besoin de vraies valeurs, pas de var(...)).
+  const [signalTheme, setSignalTheme] = useState(0);
+
+  useEffect(() => {
+    const surChangementTheme = () => setSignalTheme((n) => n + 1);
+    window.addEventListener("clovis-theme-change", surChangementTheme);
+    return () => window.removeEventListener("clovis-theme-change", surChangementTheme);
+  }, []);
 
   useEffect(() => {
     let annule = false;
     const delai = setTimeout(async () => {
       try {
         const mermaid = (await import("mermaid")).default;
+        // Couleurs RÉSOLUES (pas var(--dj-...)) : le thème "base" de
+        // mermaid calcule en interne (via khroma) des couleurs dérivées
+        // -- hover, bordures de cluster, etc. -- à partir de celles fournies
+        // ici. khroma attend une vraie couleur (hex/rgb) et ne sait pas
+        // parser une référence var(), donc lui passer directement les
+        // variables CSS casserait ce calcul. getComputedStyle donne la
+        // valeur déjà résolue par le navigateur pour le thème actif.
+        const racine = getComputedStyle(document.documentElement);
+        const v = (nom: string) => racine.getPropertyValue(nom).trim();
         mermaid.initialize({
           startOnLoad: false,
           theme: "base",
@@ -54,14 +74,14 @@ export function Mermaid({ definition }: { definition: string }) {
           // d'erreur réel du parseur.
           suppressErrorRendering: true,
           themeVariables: {
-            background: "#1A1714",
-            primaryColor: "#221E18",
-            primaryTextColor: "#F5F0E6",
-            primaryBorderColor: "#E3B341",
-            lineColor: "#9A9184",
-            secondaryColor: "#1A1714",
-            tertiaryColor: "#0F0D0B",
-            textColor: "#F5F0E6",
+            background: v("--dj-surface"),
+            primaryColor: v("--dj-surface-haute"),
+            primaryTextColor: v("--dj-texte"),
+            primaryBorderColor: v("--dj-accent-1"),
+            lineColor: v("--dj-texte-muet"),
+            secondaryColor: v("--dj-surface"),
+            tertiaryColor: v("--dj-fond"),
+            textColor: v("--dj-texte"),
           },
           fontFamily: "var(--font-work-sans), sans-serif",
         });
@@ -89,7 +109,7 @@ export function Mermaid({ definition }: { definition: string }) {
       annule = true;
       clearTimeout(delai);
     };
-  }, [definition]);
+  }, [definition, signalTheme]);
 
   return (
     <div className="my-3 overflow-x-auto rounded-xl border border-dj-bordure bg-dj-surface p-4">
@@ -101,7 +121,7 @@ export function Mermaid({ definition }: { definition: string }) {
       ) : erreur ? (
         <div className="space-y-2">
           <p className="text-xs text-dj-texte-muet">
-            <span className="text-[#f87171]">Erreur de rendu du diagramme :</span> {erreur}
+            <span className="text-[var(--dj-code-deletion)]">Erreur de rendu du diagramme :</span> {erreur}
           </p>
           <button
             onClick={() => setSourceAffichee((v) => !v)}
@@ -110,7 +130,7 @@ export function Mermaid({ definition }: { definition: string }) {
             {sourceAffichee ? "Masquer" : "Voir"} le code source
           </button>
           {sourceAffichee && (
-            <pre className="overflow-x-auto rounded-lg bg-[#100c09] px-3 py-2 font-mono text-[12px] text-dj-texte-muet">
+            <pre className="overflow-x-auto rounded-lg bg-[var(--dj-fond)] px-3 py-2 font-mono text-[12px] text-dj-texte-muet">
               {definition}
             </pre>
           )}

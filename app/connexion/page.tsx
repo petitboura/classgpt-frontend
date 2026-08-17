@@ -132,7 +132,7 @@ function FormulaireConnexion() {
 
             <ChampMotDePasse id="mot-de-passe" value={motDePasse} onChange={setMotDePasse} />
 
-            {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+            {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
             <Bouton type="submit" disabled={enCours} className="w-full">
               {enCours ? "Connexion…" : "Se connecter"}

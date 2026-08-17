@@ -151,7 +151,7 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
         </div>
       )}
 
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {documents === null && (
         <div className="flex flex-col gap-2" aria-hidden>
@@ -181,7 +181,7 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
                   <AjouterAClassementBouton cibleType="document" cibleId={d.id} />
                   <button
                     onClick={() => supprimer(d.id, d.titre)}
-                    className="text-xs text-dj-texte-muet transition-colors hover:text-[#F87171]"
+                    className="text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
                   >
                     Supprimer
                   </button>
@@ -464,7 +464,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
 
           <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
             {erreurOuvert ? (
-              <p className="text-xs text-[#F87171]">{erreurOuvert}</p>
+              <p className="text-xs text-[var(--dj-erreur)]">{erreurOuvert}</p>
             ) : (
               <span className="hidden sm:block" />
             )}
@@ -472,7 +472,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
               <button
                 onClick={supprimer}
                 disabled={enregistrementEnCours || suppressionEnCours}
-                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[#F87171] transition-colors hover:bg-[#F87171]/10 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
               >
                 <Trash2 size={14} /> Supprimer
               </button>
@@ -643,7 +643,7 @@ function SectionExamens({
             </div>
           </div>
 
-          {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+          {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
           <button
             onClick={creer}
@@ -679,7 +679,7 @@ function SectionExamens({
                 <AjouterAClassementBouton cibleType="examen" cibleId={ex.id} />
                 <button
                   onClick={() => supprimer(ex.id, ex.titre)}
-                  className="text-xs text-dj-texte-muet transition-colors hover:text-[#F87171]"
+                  className="text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
                 >
                   Supprimer
                 </button>
@@ -822,7 +822,7 @@ function SectionPublierPlugin({ programmeId }: { programmeId: string }) {
           Publier comme plugin
         </button>
       )}
-      {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
     </div>
   );
 }

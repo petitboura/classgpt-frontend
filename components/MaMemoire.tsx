@@ -121,7 +121,7 @@ export function MaMemoire() {
             </button>
             {message && <span className="text-sm text-dj-texte-muet">{message}</span>}
           </div>
-          {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+          {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
         </div>
       )}
     </div>

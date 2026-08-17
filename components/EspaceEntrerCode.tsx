@@ -111,7 +111,7 @@ export function EspaceEntrerCode() {
       </div>
 
       {messageOk && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-dj-accent-1">{messageOk}</p>}
-      {erreur && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {chargement && <Skeleton className="mt-4 h-14 rounded-xl border border-dj-bordure" />}
 
@@ -136,7 +136,7 @@ export function EspaceEntrerCode() {
               <button
                 onClick={() => retirer(r.rattachement_id)}
                 title="Retirer ce code"
-                className="flex-shrink-0 rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:text-[#F87171]"
+                className="flex-shrink-0 rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
               >
                 <X size={14} />
               </button>

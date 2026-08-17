@@ -178,7 +178,7 @@ export default function PageInscription() {
               autoComplete="new-password"
             />
 
-            {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
+            {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
             <Bouton type="submit" disabled={enCours} className="w-full">
               {enCours ? "Création…" : "Créer mon compte"}

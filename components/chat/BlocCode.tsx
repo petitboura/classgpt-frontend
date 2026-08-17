@@ -130,7 +130,7 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
   }
 
   return (
-    <div className="dj-bloc-code group/code relative my-3 animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-[#100c09]">
+    <div className="dj-bloc-code group/code relative my-3 animate-dj-fade-in overflow-hidden rounded-xl border border-dj-bordure bg-[var(--dj-fond)]">
       <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-1.5">
         <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
           {langage || "texte"}

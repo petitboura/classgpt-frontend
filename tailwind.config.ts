@@ -13,6 +13,17 @@ import type { Config } from "tailwindcss";
 // Portée : CLOVIS UNIQUEMENT -- djiguigne-frontend et djiguigne-ai
 // gardent leur thème crème/terracotta d'origine, pas de décision prise
 // pour eux ici.
+// CORRECTIF (17/08, v2) -- Bourama a demandé les deux thèmes (clair +
+// sombre), adaptatif au système par défaut + bouton pour forcer
+// manuellement (voir app/globals.css pour la définition des deux jeux de
+// valeurs, et components/ThemeToggle.tsx pour le bouton). Toutes les
+// couleurs/dégradés dj-* référencent désormais des variables CSS
+// (var(--dj-...)) plutôt que des valeurs figées, pour que les classes
+// Tailwind (bg-dj-fond, text-dj-texte...) changent de couleur au runtime
+// quand le thème change -- une valeur hex figée ici serait gravée dans le
+// CSS généré au build et ne pourrait jamais varier. Remarque : le champ
+// darkMode: "class" plus bas n'est PAS utilisé pour ce système (pas de
+// classes `dark:` dans les composants) -- gardé tel quel, sans effet.
 const config: Config = {
   darkMode: "class",
   content: [
@@ -23,23 +34,22 @@ const config: Config = {
     extend: {
       colors: {
         dj: {
-          fond: "#0F0D0B",
-          surface: "#1A1714",
-          "surface-haute": "#221E18",
-          bordure: "rgba(245,240,230,0.08)",
-          "bordure-forte": "rgba(227,179,65,0.35)",
-          "accent-1": "#E8BF60",
-          "accent-2": "#DA9F0D",
-          texte: "#F5F0E6",
-          "texte-muet": "#9A9184",
-          succes: "#34D399",
-          inactif: "#4A453C",
+          fond: "var(--dj-fond)",
+          surface: "var(--dj-surface)",
+          "surface-haute": "var(--dj-surface-haute)",
+          bordure: "var(--dj-bordure)",
+          "bordure-forte": "var(--dj-bordure-forte)",
+          "accent-1": "var(--dj-accent-1)",
+          "accent-2": "var(--dj-accent-2)",
+          texte: "var(--dj-texte)",
+          "texte-muet": "var(--dj-texte-muet)",
+          succes: "var(--dj-succes)",
+          inactif: "var(--dj-inactif)",
         },
       },
       backgroundImage: {
-        "dj-gradient": "linear-gradient(135deg, #F3D387 0%, #DFB256 55%, #A78026 100%)",
-        "dj-hero-glow":
-          "radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227,179,65,0.10), transparent 60%)",
+        "dj-gradient": "var(--dj-gradient)",
+        "dj-hero-glow": "var(--dj-hero-glow)",
         // Shimmer (09/08, demande Bourama : remplacer partout le texte figé
         // "Chargement..." et les blocs animate-pulse par un balayage
         // lumineux, comme Claude.ai/Vercel). Gris neutre (dj-inactif),
@@ -53,12 +63,8 @@ const config: Config = {
         //   - dj-shimmer-texte : pour un texte qui scintille sur place (ex.
         //     "{agent} réfléchit"), couleurs pleines, combiné à
         //     bg-clip-text/text-transparent côté composant.
-        // CORRECTIF (17/08) -- valeurs recalculées pour fond sombre (le
-        // même principe "gris neutre, pas teinté accent" s'applique, mais
-        // les tons clairs de dj-inactif/dj-bordure d'origine étaient
-        // calibrés pour un fond clair et deviendraient invisibles ici.
-        "dj-shimmer": "linear-gradient(100deg, rgba(245,240,230,0.03) 20%, rgba(154,145,132,0.35) 50%, rgba(245,240,230,0.03) 80%)",
-        "dj-shimmer-texte": "linear-gradient(100deg, #9A9184 25%, #C7BFAE 50%, #9A9184 75%)",
+        "dj-shimmer": "var(--dj-shimmer)",
+        "dj-shimmer-texte": "var(--dj-shimmer-texte)",
       },
       fontFamily: {
         display: ["var(--font-space-grotesk)", "sans-serif"],

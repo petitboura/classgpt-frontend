@@ -80,7 +80,7 @@ export function EspaceInviter() {
 
       {chargement && <Skeleton className="mt-4 h-24 rounded-xl border border-dj-bordure" />}
 
-      {erreur && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-[#F87171]">{erreur}</p>}
+      {erreur && <p className="mt-3 animate-dj-fade-in-rapide text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {!chargement && (
         <div className="mt-4 animate-dj-fade-in-rapide space-y-3">

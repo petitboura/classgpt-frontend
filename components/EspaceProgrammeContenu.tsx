@@ -249,6 +249,11 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
   // (voir aussi les pièces jointes dans le panneau ci-dessous, pour un
   // exercice déjà créé).
   const [envoiFichierEnCours, setEnvoiFichierEnCours] = useState(false);
+  // 17/08 (Bourama : "c'est l'upload qui doit être en avant, je ne sais
+  // pas qui va aller écrire l'énoncé d'un exercice à la main") -- le
+  // formulaire texte passe en option repliée, comme pour SectionDocuments
+  // plus haut.
+  const [formulaireTexteOuvert, setFormulaireTexteOuvert] = useState(false);
 
   async function ajouterParFichier(fichiers: File[]) {
     if (fichiers.length === 0) return;
@@ -292,6 +297,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
       const cree = await ajouterExerciceChapitre(chapitreId, nouvelEnonce.trim());
       setExercices((prec) => [...(prec || []), cree]);
       setNouvelEnonce("");
+      setFormulaireTexteOuvert(false);
     } catch (e) {
       setErreur(messageErreur(e));
     } finally {
@@ -381,27 +387,13 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
       )}
 
       <div className="flex items-center gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-3">
-        <textarea
-          value={nouvelEnonce}
-          onChange={(e) => setNouvelEnonce(e.target.value)}
-          placeholder="Énoncé du nouvel exercice…"
-          rows={2}
-          className="min-w-0 flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-fond px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
-        />
-        <button
-          onClick={ajouter}
-          disabled={ajoutEnCours || !nouvelEnonce.trim()}
-          title="Ajouter"
-          className="flex-shrink-0 rounded-cgpt-bouton bg-dj-accent-1 p-2.5 text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
-        >
-          <Plus size={16} />
-        </button>
         <label
-          title="Créer un exercice à partir d'une photo/PDF, sans taper de texte"
-          className="flex flex-shrink-0 cursor-pointer items-center rounded-cgpt-bouton border border-dj-bordure p-2.5 text-dj-texte transition-colors hover:border-dj-bordure-forte aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          title="Créer un exercice à partir d'une photo/PDF"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 py-2.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
           aria-disabled={envoiFichierEnCours}
         >
           <Paperclip size={16} />
+          {envoiFichierEnCours ? "Envoi…" : "Ajouter une photo/PDF"}
           <input
             type="file"
             multiple
@@ -416,6 +408,34 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
           />
         </label>
       </div>
+      {!formulaireTexteOuvert ? (
+        <button
+          type="button"
+          onClick={() => setFormulaireTexteOuvert(true)}
+          className="w-fit text-xs text-dj-texte-muet underline decoration-dotted transition-colors hover:text-dj-texte"
+        >
+          Ou taper un énoncé à la main
+        </button>
+      ) : (
+        <div className="flex items-center gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-3">
+          <textarea
+            autoFocus
+            value={nouvelEnonce}
+            onChange={(e) => setNouvelEnonce(e.target.value)}
+            placeholder="Énoncé du nouvel exercice…"
+            rows={2}
+            className="min-w-0 flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-fond px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+          />
+          <button
+            onClick={ajouter}
+            disabled={ajoutEnCours || !nouvelEnonce.trim()}
+            title="Ajouter"
+            className="flex-shrink-0 rounded-cgpt-bouton bg-dj-accent-1 p-2.5 text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+      )}
       {erreur && <p className="text-sm text-[#F87171]">{erreur}</p>}
 
       {panneau && (

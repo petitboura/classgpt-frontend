@@ -11,9 +11,9 @@ interface ButonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const classesParVariante: Record<string, string> = {
   primaire:
-    "bg-dj-gradient text-[#1a0f06] hover:-translate-y-0.5 hover:rotate-[-.3deg] hover:shadow-[0_10px_26px_rgba(232,147,74,.28)] active:translate-y-0 active:scale-[.98]",
+    "bg-dj-accent-1 text-[#1a0f06] hover:bg-dj-accent-2 active:scale-[.98]",
   secondaire:
-    "bg-dj-surface-haute text-dj-accent-2 border border-dj-accent-2 hover:-translate-y-0.5 hover:rotate-[.25deg] hover:bg-dj-accent-2/5",
+    "bg-dj-surface-haute text-dj-accent-2 border border-dj-accent-2 hover:bg-dj-accent-2/10",
   fantome:
     "bg-transparent text-dj-texte-muet hover:text-dj-texte hover:bg-dj-surface",
 };
@@ -23,7 +23,7 @@ export function Bouton({ variante = "primaire", className = "", disabled, ...pro
     <button
       {...props}
       disabled={disabled}
-      className={`rounded-cgpt-bouton px-[22px] py-3 text-sm font-semibold font-sans transition-all duration-300 ease-cgpt-geste disabled:pointer-events-none disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:rotate-0 ${classesParVariante[variante]} ${className}`}
+      className={`rounded-cgpt-bouton px-[22px] py-3 text-sm font-semibold font-sans transition-colors duration-200 ease-cgpt-doux disabled:pointer-events-none disabled:opacity-50 ${classesParVariante[variante]} ${className}`}
     />
   );
 }

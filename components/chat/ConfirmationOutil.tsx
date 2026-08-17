@@ -46,7 +46,7 @@ export function ConfirmationOutil({
             <button
               onClick={onConfirmer}
               disabled={enAttente}
-              className="flex items-center gap-1.5 rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-semibold text-[#1A0D02] disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] disabled:opacity-50"
             >
               <Check size={13} /> Confirmer
             </button>

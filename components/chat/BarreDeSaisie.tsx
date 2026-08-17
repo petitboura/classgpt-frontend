@@ -1668,7 +1668,7 @@ export function BarreDeSaisie({
                 aria-label="Répondre sans utiliser le contenu d'un enseignant"
                 title="Répondre sans utiliser le contenu d'un enseignant"
                 className={
-                  "relative rounded-full p-1 transition-colors " +
+                  "relative rounded-cgpt-bouton p-1 transition-colors " +
                   (sansEnseignant
                     ? "bg-dj-accent-1/10 text-dj-accent-1"
                     : "text-dj-texte-muet hover:text-dj-texte")
@@ -1703,7 +1703,7 @@ export function BarreDeSaisie({
                     : "Choisir un ou plusieurs outils"
                 }
                 className={
-                  "relative rounded-full p-1 transition-colors " +
+                  "relative rounded-cgpt-bouton p-1 transition-colors " +
                   (outilsForces.length || menuOutilsOuvert
                     ? "bg-dj-accent-1/10 text-dj-accent-1"
                     : "text-dj-texte-muet hover:text-dj-texte")
@@ -1739,7 +1739,7 @@ export function BarreDeSaisie({
                       key={id}
                       onClick={() => setOngletOutilActif(id)}
                       className={
-                        "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors " +
+                        "shrink-0 whitespace-nowrap rounded-cgpt-bouton px-2.5 py-1 text-[11px] font-medium transition-colors " +
                         (ongletOutilActif === id
                           ? "bg-dj-accent-1/10 text-dj-accent-1"
                           : "text-dj-texte-muet hover:text-dj-texte")
@@ -1875,7 +1875,7 @@ export function BarreDeSaisie({
                 aria-label="Choisir un ou plusieurs utilitaires"
                 title="Choisir un ou plusieurs utilitaires"
                 className={
-                  "relative rounded-full p-1 transition-colors " +
+                  "relative rounded-cgpt-bouton p-1 transition-colors " +
                   (menuUtilitairesOuvert || outilsUtilitairesPourAgent.some((o) => estOutilActif(o.nom))
                     ? "bg-dj-accent-1/10 text-dj-accent-1"
                     : "text-dj-texte-muet hover:text-dj-texte")
@@ -1934,7 +1934,7 @@ export function BarreDeSaisie({
                   onClick={() => executerActionAppli(appli.nom)}
                   aria-label={appli.label}
                   title={appli.label}
-                  className="relative rounded-full p-1 text-dj-texte-muet transition-colors hover:text-dj-texte"
+                  className="relative rounded-cgpt-bouton p-1 text-dj-texte-muet transition-colors hover:text-dj-texte"
                 >
                   <Icone size={18} />
                 </button>
@@ -1957,7 +1957,7 @@ export function BarreDeSaisie({
                 aria-label="Choisir une application"
                 title="Choisir une application"
                 className={
-                  "relative rounded-full p-1 transition-colors " +
+                  "relative rounded-cgpt-bouton p-1 transition-colors " +
                   (menuAppliOuvert ? "bg-dj-accent-1/10 text-dj-accent-1" : "text-dj-texte-muet hover:text-dj-texte")
                 }
               >
@@ -2150,7 +2150,7 @@ export function BarreDeSaisie({
               <button
                 onClick={arreterDictee}
                 aria-label="Arrêter la dictée"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-dj-accent-2 text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-2 text-white"
               >
                 <Square size={14} />
               </button>
@@ -2159,7 +2159,7 @@ export function BarreDeSaisie({
                 onClick={envoyer}
                 disabled={desactive}
                 aria-label="Envoyer"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-dj-gradient text-[#1A0D02] disabled:opacity-60"
+                className="flex h-8 w-8 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
               >
                 <ArrowUp size={16} />
               </button>
@@ -2251,7 +2251,7 @@ export function BarreDeSaisie({
             onClick={() => setMenuPlusOuvert((v) => !v)}
             aria-label="Plus d'options"
             className={
-              "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors " +
+              "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cgpt-bouton transition-colors " +
               (menuPlusOuvert
                 ? "bg-dj-surface text-dj-accent-1"
                 : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte")
@@ -2353,7 +2353,7 @@ export function BarreDeSaisie({
           <button
             onClick={arreterDictee}
             aria-label="Arrêter la dictée"
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-dj-accent-2 text-white"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-2 text-white"
           >
             <Square size={14} />
           </button>
@@ -2362,7 +2362,7 @@ export function BarreDeSaisie({
             onClick={envoyer}
             disabled={desactive}
             aria-label="Envoyer"
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-dj-gradient text-[#1A0D02] disabled:opacity-60"
+            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] disabled:opacity-60"
           >
             <ArrowUp size={16} />
           </button>
@@ -2372,7 +2372,7 @@ export function BarreDeSaisie({
               onClick={demarrerDictee}
               disabled={transcriptionEnCours}
               aria-label="Dictée vocale"
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte disabled:opacity-60"
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cgpt-bouton text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte disabled:opacity-60"
             >
               <Mic size={16} />
             </button>
@@ -2438,7 +2438,7 @@ export function BarreDeSaisie({
                   <button
                     onClick={() => setMenuOutilsOuvert(true)}
                     aria-label="Outils"
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cgpt-bouton text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
                   >
                     <Wrench size={16} />
                   </button>
@@ -2455,7 +2455,7 @@ export function BarreDeSaisie({
                   aria-label={candidat.label}
                   title={candidat.label}
                   className={
-                    "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors " +
+                    "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cgpt-bouton transition-colors " +
                     (actif
                       ? "bg-dj-surface text-dj-accent-1"
                       : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte")
@@ -2514,7 +2514,7 @@ export function BarreDeSaisie({
                   key={id}
                   onClick={() => setOngletOutilActif(id)}
                   className={
-                    "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium transition-colors " +
+                    "shrink-0 whitespace-nowrap rounded-cgpt-bouton px-2.5 py-1 text-xs font-medium transition-colors " +
                     (ongletOutilActif === id
                       ? "bg-dj-accent-1/10 text-dj-accent-1"
                       : "text-dj-texte-muet hover:text-dj-texte")
@@ -2847,7 +2847,7 @@ export function BarreDeSaisie({
               }}
               disabled={(!texte.trim() && !texteColle) || desactive}
               aria-label="Envoyer"
-              className="flex items-center gap-2 rounded-full bg-dj-gradient px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
+              className="flex items-center gap-2 rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2.5 text-sm font-medium text-[#1A0D02] disabled:opacity-60"
             >
               Envoyer <ArrowUp size={16} />
             </button>

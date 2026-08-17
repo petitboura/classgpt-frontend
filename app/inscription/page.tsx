@@ -111,13 +111,13 @@ export default function PageInscription() {
         <div className="rounded-2xl border border-dj-bordure bg-dj-surface p-6 shadow-[0_2px_24px_rgba(0,0,0,0.35)]">
           <h1 className="font-display text-xl font-bold text-dj-texte">Créer un compte</h1>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 rounded-full border border-dj-bordure bg-dj-surface-haute p-1">
+          <div className="mt-4 grid grid-cols-2 gap-2 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute p-1">
             <button
               type="button"
               onClick={() => setMethode("email")}
-              className={`rounded-full py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-cgpt-bouton py-1.5 text-sm font-medium transition-colors ${
                 methode === "email"
-                  ? "bg-dj-gradient text-[#1A0D02]"
+                  ? "bg-dj-accent-1 text-[#1A0D02]"
                   : "text-dj-texte-muet hover:text-dj-texte"
               }`}
             >
@@ -126,9 +126,9 @@ export default function PageInscription() {
             <button
               type="button"
               onClick={() => setMethode("telephone")}
-              className={`rounded-full py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-cgpt-bouton py-1.5 text-sm font-medium transition-colors ${
                 methode === "telephone"
-                  ? "bg-dj-gradient text-[#1A0D02]"
+                  ? "bg-dj-accent-1 text-[#1A0D02]"
                   : "text-dj-texte-muet hover:text-dj-texte"
               }`}
             >

@@ -106,12 +106,12 @@ export function EspaceDiffuser() {
             ))}
           </select>
 
-          <div className="mt-3 grid grid-cols-2 gap-2 rounded-full border border-dj-bordure bg-dj-surface-haute p-1">
+          <div className="mt-3 grid grid-cols-2 gap-2 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute p-1">
             <button
               type="button"
               onClick={() => setOnglet("document")}
-              className={`rounded-full py-1.5 text-sm font-medium transition-colors ${
-                onglet === "document" ? "bg-dj-gradient text-[#1A0D02]" : "text-dj-texte-muet hover:text-dj-texte"
+              className={`rounded-cgpt-bouton py-1.5 text-sm font-medium transition-colors ${
+                onglet === "document" ? "bg-dj-accent-1 text-[#1A0D02]" : "text-dj-texte-muet hover:text-dj-texte"
               }`}
             >
               Document
@@ -119,8 +119,8 @@ export function EspaceDiffuser() {
             <button
               type="button"
               onClick={() => setOnglet("lien")}
-              className={`rounded-full py-1.5 text-sm font-medium transition-colors ${
-                onglet === "lien" ? "bg-dj-gradient text-[#1A0D02]" : "text-dj-texte-muet hover:text-dj-texte"
+              className={`rounded-cgpt-bouton py-1.5 text-sm font-medium transition-colors ${
+                onglet === "lien" ? "bg-dj-accent-1 text-[#1A0D02]" : "text-dj-texte-muet hover:text-dj-texte"
               }`}
             >
               Lien
@@ -132,7 +132,7 @@ export function EspaceDiffuser() {
               <input
                 type="file"
                 onChange={(e) => setFichier(e.target.files?.[0] ?? null)}
-                className="block w-full text-sm text-dj-texte-muet file:mr-3 file:rounded-full file:border-0 file:bg-dj-surface-haute file:px-3 file:py-1.5 file:text-xs file:text-dj-texte"
+                className="block w-full text-sm text-dj-texte-muet file:mr-3 file:rounded-cgpt-bouton file:border-0 file:bg-dj-surface-haute file:px-3 file:py-1.5 file:text-xs file:text-dj-texte"
               />
               <input
                 value={descriptionFichier}
@@ -171,7 +171,7 @@ export function EspaceDiffuser() {
           <button
             onClick={envoyer}
             disabled={!pretAEnvoyer || enCours}
-            className="mt-3 rounded-full bg-dj-gradient px-4 py-1.5 text-sm font-bold text-[#1A0D02] transition-opacity disabled:opacity-50"
+            className="mt-3 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-sm font-bold text-[#1A0D02] transition-opacity disabled:opacity-50"
           >
             {enCours ? "Diffusion…" : "Diffuser"}
           </button>

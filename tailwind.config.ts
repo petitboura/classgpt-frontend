@@ -28,8 +28,8 @@ const config: Config = {
           "surface-haute": "#221E18",
           bordure: "rgba(245,240,230,0.08)",
           "bordure-forte": "rgba(227,179,65,0.35)",
-          "accent-1": "#E3B341",
-          "accent-2": "#B8860B",
+          "accent-1": "#E8BF60",
+          "accent-2": "#DA9F0D",
           texte: "#F5F0E6",
           "texte-muet": "#9A9184",
           succes: "#34D399",
@@ -37,7 +37,7 @@ const config: Config = {
         },
       },
       backgroundImage: {
-        "dj-gradient": "linear-gradient(135deg, #F0C766 0%, #D9A438 55%, #8A6A1F 100%)",
+        "dj-gradient": "linear-gradient(135deg, #F3D387 0%, #DFB256 55%, #A78026 100%)",
         "dj-hero-glow":
           "radial-gradient(ellipse 120% 60% at 50% -10%, rgba(227,179,65,0.10), transparent 60%)",
         // Shimmer (09/08, demande Bourama : remplacer partout le texte figé

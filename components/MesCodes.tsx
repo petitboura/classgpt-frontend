@@ -132,7 +132,7 @@ export function MesCodes() {
         <button
           onClick={creerVide}
           disabled={creation}
-          className="flex flex-shrink-0 items-center gap-1.5 rounded-full bg-dj-gradient px-3 py-2 text-xs font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+          className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-3 py-2 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
         >
           <Plus size={14} /> Nouveau code
         </button>
@@ -220,7 +220,7 @@ function ChampNom({ c, onSauver }: { c: CodePartage; onSauver: (v: string) => vo
           className="flex-1 rounded-lg border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
         />
         {valeur !== (c.nom || "") && (
-          <button onClick={() => onSauver(valeur)} className="rounded-lg bg-dj-gradient px-2.5 text-[#1A0D02]">
+          <button onClick={() => onSauver(valeur)} className="rounded-lg bg-dj-accent-1 px-2.5 text-[#1A0D02]">
             <Check size={14} />
           </button>
         )}
@@ -243,7 +243,7 @@ function ChampComportement({ c, onSauver }: { c: CodePartage; onSauver: (v: stri
           className="flex-1 resize-none rounded-lg border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
         />
         {valeur !== (c.comportement_texte || "") && (
-          <button onClick={() => onSauver(valeur)} className="self-start rounded-lg bg-dj-gradient px-2.5 py-1.5 text-[#1A0D02]">
+          <button onClick={() => onSauver(valeur)} className="self-start rounded-lg bg-dj-accent-1 px-2.5 py-1.5 text-[#1A0D02]">
             <Check size={14} />
           </button>
         )}
@@ -303,7 +303,7 @@ function ChampTexteLibre({ c, onSauver }: { c: CodePartage; onSauver: (v: string
           className="flex-1 resize-none rounded-lg border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
         />
         {valeur !== (c.texte_libre || "") && (
-          <button onClick={() => onSauver(valeur)} className="self-start rounded-lg bg-dj-gradient px-2.5 py-1.5 text-[#1A0D02]">
+          <button onClick={() => onSauver(valeur)} className="self-start rounded-lg bg-dj-accent-1 px-2.5 py-1.5 text-[#1A0D02]">
             <Check size={14} />
           </button>
         )}

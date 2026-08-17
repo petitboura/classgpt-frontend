@@ -250,7 +250,7 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
                   <button
                     onClick={enregistrerEdition}
                     disabled={envoi || !edition.niveau.trim()}
-                    className="flex items-center gap-1 rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                    className="flex items-center gap-1 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
                   >
                     <Check size={12} /> Enregistrer
                   </button>
@@ -324,7 +324,7 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
             <button
               onClick={creer}
               disabled={envoi || !niveauNouveau.trim()}
-              className="flex items-center gap-1 rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              className="flex items-center gap-1 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               <Plus size={12} /> {envoi ? "Création…" : "Créer"}
             </button>
@@ -333,7 +333,7 @@ function ListeProgrammes({ onOuvrir }: { onOuvrir: (p: Programme) => void }) {
       ) : (
         <button
           onClick={() => setCreation(true)}
-          className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dj-bordure px-4 py-2 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface"
+          className="flex items-center justify-center gap-1.5 self-start rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface"
         >
           <Plus size={14} /> Nouveau programme
         </button>
@@ -458,7 +458,7 @@ function ListeMatieres({
                   <button
                     onClick={enregistrerEdition}
                     disabled={envoi || !edition.nom.trim()}
-                    className="flex items-center gap-1 rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                    className="flex items-center gap-1 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
                   >
                     <Check size={12} /> Enregistrer
                   </button>
@@ -530,7 +530,7 @@ function ListeMatieres({
             <button
               onClick={creer}
               disabled={envoi || !nomNouveau.trim()}
-              className="flex items-center gap-1 rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              className="flex items-center gap-1 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               <Plus size={12} /> {envoi ? "Création…" : "Créer"}
             </button>
@@ -539,7 +539,7 @@ function ListeMatieres({
       ) : (
         <button
           onClick={() => setCreation(true)}
-          className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dj-bordure px-4 py-2 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface"
+          className="flex items-center justify-center gap-1.5 self-start rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface"
         >
           <Plus size={14} /> Nouvelle matière
         </button>
@@ -739,7 +739,7 @@ function ListeChapitres({
                   <button
                     onClick={enregistrerEdition}
                     disabled={envoi || !edition.nom.trim()}
-                    className="flex items-center gap-1 rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                    className="flex items-center gap-1 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
                   >
                     <Check size={12} /> Enregistrer
                   </button>
@@ -820,7 +820,7 @@ function ListeChapitres({
             <button
               onClick={creer}
               disabled={envoi || !nomNouveau.trim()}
-              className="flex items-center gap-1 rounded-lg bg-dj-gradient px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              className="flex items-center gap-1 rounded-lg bg-dj-accent-1 px-3 py-1.5 text-xs font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               <Plus size={12} /> {envoi ? "Création…" : "Créer"}
             </button>
@@ -829,7 +829,7 @@ function ListeChapitres({
       ) : (
         <button
           onClick={() => setCreation(true)}
-          className="flex items-center justify-center gap-1.5 self-start rounded-full border border-dj-bordure px-4 py-2 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface"
+          className="flex items-center justify-center gap-1.5 self-start rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface"
         >
           <Plus size={14} /> Nouveau chapitre
         </button>

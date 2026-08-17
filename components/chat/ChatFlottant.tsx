@@ -157,7 +157,7 @@ export function ChatFlottant({
       <button
         onClick={() => setEtat("mini")}
         aria-label="Ouvrir le chat"
-        className="group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-dj-gradient text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-transform hover:-translate-y-0.5"
+        className="group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-colors hover:bg-dj-accent-2"
       >
         <MessageCircle size={24} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
       </button>
@@ -265,7 +265,7 @@ export function ChatFlottant({
               <p className="text-sm text-dj-texte">{erreur ?? "Une erreur est survenue."}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="rounded-lg bg-dj-gradient px-4 py-2 text-sm font-bold text-[#1A0D02]"
+                className="rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-bold text-[#1A0D02]"
               >
                 Réessayer
               </button>

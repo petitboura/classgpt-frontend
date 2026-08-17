@@ -107,7 +107,7 @@ export function EspaceInviter() {
           <button
             onClick={enregistrer}
             disabled={enCours || !texte.trim()}
-            className="rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            className="rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {enCours ? "Enregistrement…" : contenuExistant ? "Mettre à jour" : "Enregistrer et générer le code"}
           </button>
@@ -119,7 +119,7 @@ export function EspaceInviter() {
               </span>
               <button
                 onClick={() => copier(contenuExistant.code)}
-                className="flex items-center gap-1.5 rounded-full border border-dj-bordure px-4 py-3 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
+                className="flex items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-4 py-3 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
               >
                 {codeCopie === contenuExistant.code ? <Check size={14} /> : <Copy size={14} />}
                 {codeCopie === contenuExistant.code ? "Copié !" : "Copier"}
@@ -137,7 +137,7 @@ export function EspaceInviter() {
                     <button
                       key={c.id}
                       onClick={() => setMatiere(c.matiere)}
-                      className="rounded-full border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+                      className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
                     >
                       {c.matiere} · {c.code}
                     </button>

@@ -198,12 +198,12 @@ export function MesComportements({ agentId }: { agentId: string }) {
           onChange={(e) => setNouveauTexte(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && ajouter()}
           placeholder="Ex : réponds-moi toujours en langage simple"
-          className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+          className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
         />
         <div className="flex items-center gap-2">
           <button
             onClick={ouvrirCreation}
-            className="flex flex-shrink-0 items-center gap-2 rounded-full border border-dj-bordure px-4 py-2 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
+            className="flex flex-shrink-0 items-center gap-2 rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
           >
             <Maximize2 size={14} />
             Plein écran
@@ -211,7 +211,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
           <button
             onClick={ajouter}
             disabled={ajoutEnCours || !nouveauTexte.trim()}
-            className="flex flex-shrink-0 items-center gap-1.5 self-end rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] shadow-[0_2px_14px_rgba(217,99,31,0.25)] transition-transform hover:-translate-y-0.5 disabled:opacity-50 sm:self-auto"
+            className="flex flex-shrink-0 items-center gap-1.5 self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50 sm:self-auto"
           >
             <Plus size={14} />
             {ajoutEnCours ? "Ajout…" : "Ajouter"}
@@ -289,7 +289,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
               <button
                 onClick={enregistrer}
                 disabled={enregistrementEnCours || suppressionEnCours || !texteOuvert.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-gradient px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
                 <Check size={14} />{" "}
                 {enregistrementEnCours ? "Enregistrement…" : panneau.type === "creation" ? "Créer" : "Enregistrer"}

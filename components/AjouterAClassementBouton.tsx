@@ -90,7 +90,7 @@ export function AjouterAClassementBouton({
         onClick={() => setOuvert(true)}
         title="Ajouter à un classement (semestre, année, section…)"
         className={
-          "flex-shrink-0 rounded-full border border-dj-bordure p-1.5 text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute " +
+          "flex-shrink-0 rounded-cgpt-bouton border border-dj-bordure p-1.5 text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute " +
           className
         }
       >
@@ -159,7 +159,7 @@ export function AjouterAClassementBouton({
             type="button"
             onClick={confirmer}
             disabled={enCours || (!selection && !nouveauLabel.trim())}
-            className="self-end rounded-full bg-dj-gradient px-3 py-1.5 font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            className="self-end rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {enCours ? "Ajout…" : "Ajouter"}
           </button>

@@ -155,7 +155,7 @@ export function EcranAccueil() {
         </div>
         <button
           onClick={ouvrirChat}
-          className="group flex items-center gap-2 rounded-xl bg-dj-gradient px-4 py-2.5 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5"
+          className="group flex items-center gap-2 rounded-xl bg-dj-accent-1 px-4 py-2.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
         >
           <MessageCircle size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
           Ouvrir le chat

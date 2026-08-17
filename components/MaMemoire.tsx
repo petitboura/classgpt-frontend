@@ -108,14 +108,14 @@ export function MaMemoire() {
             <button
               onClick={enregistrer}
               disabled={enregistrement}
-              className="rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              className="rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               {enregistrement ? "Enregistrement…" : "Enregistrer"}
             </button>
             <button
               onClick={toutOublier}
               disabled={enregistrement}
-              className="rounded-full border border-[#F87171] px-5 py-2 text-sm text-[#F87171] transition-colors hover:bg-[#F87171]/10 disabled:opacity-50"
+              className="rounded-cgpt-bouton border border-[#F87171] px-5 py-2 text-sm text-[#F87171] transition-colors hover:bg-[#F87171]/10 disabled:opacity-50"
             >
               Tout oublier
             </button>

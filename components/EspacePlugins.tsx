@@ -73,7 +73,7 @@ export function EspacePlugins() {
           value={motCle}
           onChange={(e) => setMotCle(e.target.value)}
           placeholder="Rechercher un plugin par nom, niveau ou créateur…"
-          className="w-full rounded-full border border-dj-bordure bg-dj-surface py-2.5 pl-10 pr-4 text-sm text-dj-texte outline-none transition-colors focus:border-dj-bordure-forte"
+          className="w-full rounded-cgpt-bouton border border-dj-bordure bg-dj-surface py-2.5 pl-10 pr-4 text-sm text-dj-texte outline-none transition-colors focus:border-dj-bordure-forte"
         />
       </div>
 
@@ -167,7 +167,7 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
           <button
             onClick={telecharger}
             disabled={envoi}
-            className="rounded-full bg-dj-gradient px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {envoi ? "…" : "Confirmer"}
           </button>
@@ -182,7 +182,7 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
       ) : (
         <button
           onClick={() => setConfirmation(true)}
-          className="flex flex-shrink-0 items-center gap-1.5 rounded-full border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
+          className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
         >
           <Download size={13} /> Télécharger
         </button>

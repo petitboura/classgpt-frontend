@@ -104,7 +104,7 @@ export function EspaceEntrerCode() {
         <button
           onClick={valider}
           disabled={enCours || !code.trim()}
-          className="rounded-full bg-dj-gradient px-5 py-3 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+          className="rounded-cgpt-bouton bg-dj-accent-1 px-5 py-3 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
         >
           {enCours ? "…" : "Valider"}
         </button>

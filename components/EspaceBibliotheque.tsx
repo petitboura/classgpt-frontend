@@ -146,9 +146,9 @@ export function EspaceBibliotheque() {
             value={texteOuLien}
             onChange={(e) => setTexteOuLien(e.target.value)}
             placeholder="Colle un lien, ou écris/colle un texte…"
-            className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+            className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
           />
-          <label className="flex cursor-pointer items-center gap-2 rounded-full border border-dj-bordure px-4 py-2 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte">
+          <label className="flex cursor-pointer items-center gap-2 rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte">
             <Paperclip size={14} />
             {nouveauxFichiers.length > 0 ? `${nouveauxFichiers.length} fichier(s)` : "Joindre des fichiers"}
             <input
@@ -164,7 +164,7 @@ export function EspaceBibliotheque() {
           type="button"
           onClick={ajouter}
           disabled={(nouveauxFichiers.length === 0 && !texteOuLien.trim()) || envoi}
-          className="self-end rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] shadow-[0_2px_14px_rgba(217,99,31,0.25)] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+          className="self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
         >
           {envoi ? "Envoi…" : "Ajouter"}
         </button>
@@ -186,7 +186,7 @@ export function EspaceBibliotheque() {
             key={s.id}
             onClick={() => setSousOnglet(s.id)}
             className={
-              "rounded-full px-3 py-1.5 font-semibold transition-colors " +
+              "rounded-cgpt-bouton px-3 py-1.5 font-semibold transition-colors " +
               (sousOnglet === s.id ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
             }
           >

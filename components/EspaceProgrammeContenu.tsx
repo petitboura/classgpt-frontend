@@ -107,19 +107,19 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
           value={titre}
           onChange={(e) => setTitre(e.target.value)}
           placeholder="Titre du document"
-          className="rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte sm:w-48"
+          className="rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte sm:w-48"
         />
         <input
           value={urlOuContenu}
           onChange={(e) => setUrlOuContenu(e.target.value)}
           placeholder="Colle un lien, ou écris le contenu…"
-          className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+          className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
         />
         <button
           type="button"
           onClick={ajouter}
           disabled={envoi || !titre.trim() || !urlOuContenu.trim()}
-          className="self-end rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] shadow-[0_2px_14px_rgba(217,99,31,0.25)] transition-transform hover:-translate-y-0.5 disabled:opacity-50 sm:self-auto"
+          className="self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50 sm:self-auto"
         >
           {envoi ? "Envoi…" : "Ajouter"}
         </button>
@@ -305,7 +305,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
           onClick={ajouter}
           disabled={ajoutEnCours || !nouvelEnonce.trim()}
           title="Ajouter"
-          className="flex-shrink-0 rounded-full bg-dj-gradient p-2.5 text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+          className="flex-shrink-0 rounded-cgpt-bouton bg-dj-accent-1 p-2.5 text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
         >
           <Plus size={16} />
         </button>
@@ -349,7 +349,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
               <button
                 onClick={enregistrer}
                 disabled={enregistrementEnCours || suppressionEnCours || !texteOuvert.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-gradient px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
               >
                 <Check size={14} /> {enregistrementEnCours ? "Enregistrement…" : "Enregistrer"}
               </button>
@@ -455,7 +455,7 @@ function SectionExamens({
         <h3 className="text-sm font-semibold text-dj-texte">Examens &amp; devoirs du programme</h3>
         <button
           onClick={() => setFormulaireOuvert((v) => !v)}
-          className="flex items-center gap-1 rounded-full border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
+          className="flex items-center gap-1 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
         >
           <Plus size={13} /> Nouveau
         </button>
@@ -468,12 +468,12 @@ function SectionExamens({
               value={titre}
               onChange={(e) => setTitre(e.target.value)}
               placeholder="Titre"
-              className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+              className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
             />
             <select
               value={type}
               onChange={(e) => setType(e.target.value as TypeExamen)}
-              className="rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+              className="rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
             >
               {TYPES_EXAMEN.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -494,7 +494,7 @@ function SectionExamens({
                     type="button"
                     onClick={() => basculerChapitre(c.id)}
                     className={
-                      "rounded-full border px-3 py-1 text-xs transition-colors " +
+                      "rounded-cgpt-bouton border px-3 py-1 text-xs transition-colors " +
                       (choisi
                         ? "border-dj-accent-1 bg-dj-accent-1/10 text-dj-accent-2"
                         : "border-dj-bordure text-dj-texte-muet hover:border-dj-bordure-forte")
@@ -515,7 +515,7 @@ function SectionExamens({
           <button
             onClick={creer}
             disabled={envoi || !titre.trim() || chapitreIdsChoisis.length === 0}
-            className="self-end rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+            className="self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
           >
             {envoi ? "Création…" : "Créer"}
           </button>
@@ -648,12 +648,12 @@ function SectionPublierPlugin({ programmeId }: { programmeId: string }) {
               value={nom}
               onChange={(e) => setNom(e.target.value)}
               placeholder="Nom du plugin"
-              className="flex-1 rounded-full border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+              className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
             />
             <button
               onClick={publier}
               disabled={envoi || !nom.trim()}
-              className="rounded-full bg-dj-gradient px-5 py-2 text-sm font-bold text-[#1A0D02] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+              className="rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
               {envoi ? "Publication…" : "Publier"}
             </button>
@@ -662,7 +662,7 @@ function SectionPublierPlugin({ programmeId }: { programmeId: string }) {
       ) : (
         <button
           onClick={() => setOuvert(true)}
-          className="self-start rounded-full border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte"
+          className="self-start rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte"
         >
           Publier comme plugin
         </button>

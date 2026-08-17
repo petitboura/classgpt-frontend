@@ -173,11 +173,25 @@ function EcranConsentement() {
                   <p className="text-xs font-semibold uppercase tracking-wide text-dj-texte-muet">
                     Accès demandé
                   </p>
-                  <ul className="mt-1.5 space-y-1 text-sm text-dj-texte">
+                  <ul className="mt-2 space-y-2.5 text-sm text-dj-texte">
                     {scopes.map((s) => (
-                      <li key={s} className="flex items-start gap-1.5">
-                        <span className="mt-0.5 text-dj-accent-1">✓</span>
-                        {libelleScope(s)}
+                      <li key={s} className="flex items-start gap-2">
+                        <svg
+                          className="mt-0.5 h-4 w-4 flex-shrink-0 text-dj-accent-1"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 111.42-1.42L8.5 12.086l6.79-6.79a1 1 0 011.42 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span>
+                          <span className="font-medium">{libelleScope(s)}</span>
+                          <span className="block font-mono text-xs text-dj-texte-muet">{s}</span>
+                        </span>
                       </li>
                     ))}
                   </ul>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, X, Maximize2, Minimize2, MessageSquarePlus, History } from "lucide-react";
+import { Bird, X, Maximize2, Minimize2, MessageSquarePlus, History } from "lucide-react";
 import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { ChatIA } from "./ChatIA";
@@ -159,7 +159,7 @@ export function ChatFlottant({
         aria-label="Ouvrir le chat"
         className="group fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-cgpt-bouton bg-dj-accent-1 text-[#1A0D02] shadow-[0_4px_20px_rgba(0,0,0,0.35)] transition-colors hover:bg-dj-accent-2"
       >
-        <MessageCircle size={24} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
+        <Bird size={24} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
       </button>
     );
   }
@@ -171,7 +171,13 @@ export function ChatFlottant({
       className={
         pleinEcran
           ? "fixed inset-0 z-[110] flex flex-col bg-dj-fond"
-          : "fixed bottom-5 right-5 z-40 flex h-[min(70dvh,600px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)]"
+          : // Mini popup : centré au milieu de l'écran en desktop (demande
+            // Bourama, 17/08/2026 -- "le popup se met à gauche, au coin, je
+            // veux qu'il soit au milieu"), inchangé en bas à droite sur
+            // mobile (faute de place, clavier virtuel). La bulle fermée,
+            // elle, reste toujours en bas à droite (voir le bouton
+            // ci-dessus) -- seule la fenêtre une fois ouverte est concernée.
+            "fixed bottom-5 right-5 z-40 flex h-[min(70dvh,600px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)] md:bottom-auto md:right-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2"
       }
       style={pleinEcran ? { height: "var(--vh-visuelle, 100dvh)" } : undefined}
     >

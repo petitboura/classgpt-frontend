@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, MessageSquare, Library, ScanSearch, BookOpen, type LucideIcon } from "lucide-react";
+import { Bird, MessageSquare, Library, ScanSearch, BookOpen, type LucideIcon } from "lucide-react";
 import { appelerApi, listerProgrammes, listerAuditsProgramme, listerMatieresProgramme } from "@/lib/api";
 import { dateRelative } from "@/lib/dateRelative";
 import { useOuvrirChat } from "@/lib/contexteChat";
@@ -157,7 +157,7 @@ export function EcranAccueil() {
           onClick={ouvrirChat}
           className="group flex items-center gap-2 rounded-xl bg-dj-accent-1 px-4 py-2.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
         >
-          <MessageCircle size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
+          <Bird size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
           Ouvrir le chat
         </button>
       </div>

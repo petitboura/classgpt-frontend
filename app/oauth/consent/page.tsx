@@ -35,6 +35,22 @@ type DetailsAutorisation = {
   scope?: string | null;
 };
 
+// Traduit chaque scope OAuth technique en une phrase compréhensible pour
+// l'utilisateur (voir Canva/Notion/Railway : jamais de code brut affiché).
+// Fallback : le scope inconnu est affiché tel quel plutôt que masqué, pour
+// ne jamais cacher une permission réellement demandée à l'utilisateur.
+const LIBELLES_SCOPES: Record<string, string> = {
+  openid: "Vérifier votre identité",
+  profile: "Voir votre profil (nom, informations de compte)",
+  email: "Voir votre adresse e-mail",
+  phone: "Voir votre numéro de téléphone (connexion par téléphone)",
+  offline_access: "Rester connecté même en dehors de l'application",
+};
+
+function libelleScope(scope: string): string {
+  return LIBELLES_SCOPES[scope] ?? scope;
+}
+
 // useSearchParams() oblige Next.js à traiter la page en rendu client --
 // doit être isolé dans un composant séparé, enveloppé de <Suspense>,
 // sinon `next build` échoue ("should be wrapped in a suspense boundary").
@@ -125,7 +141,7 @@ function EcranConsentement() {
         <div className="mb-8 flex items-center justify-center gap-2.5">
           <Logo taille={32} />
           <span className="font-display text-lg font-bold tracking-tight text-dj-texte">
-            Class <span className="text-dj-accent-1">GPT</span>
+            Clovis
           </span>
         </div>
 
@@ -159,7 +175,10 @@ function EcranConsentement() {
                   </p>
                   <ul className="mt-1.5 space-y-1 text-sm text-dj-texte">
                     {scopes.map((s) => (
-                      <li key={s}>{s}</li>
+                      <li key={s} className="flex items-start gap-1.5">
+                        <span className="mt-0.5 text-dj-accent-1">✓</span>
+                        {libelleScope(s)}
+                      </li>
                     ))}
                   </ul>
                 </div>

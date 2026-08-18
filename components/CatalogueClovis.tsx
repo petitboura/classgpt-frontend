@@ -8,11 +8,11 @@ import {
   Calculator,
   BookOpen,
   Puzzle,
-  Bell,
-  ShieldCheck,
   Smartphone,
   Upload,
   Download,
+  Share2,
+  Link2,
 } from "lucide-react";
 
 // Catalogue "Ce qui différencie Clovis" (14/08, demande Bourama : "un
@@ -34,12 +34,6 @@ type Fonctionnalite = {
 };
 
 const FONCTIONNALITES: Fonctionnalite[] = [
-  {
-    Icone: Brain,
-    titre: "Une mémoire qui se construit seule",
-    description:
-      "Clovis retient qui tu es et comment tu travailles au fil des conversations, pas de questionnaire à remplir, et le résumé reste modifiable dans Mon espace.",
-  },
   {
     Icone: Library,
     titre: "Bibliothèque personnelle",
@@ -64,19 +58,27 @@ const FONCTIONNALITES: Fonctionnalite[] = [
     description: "Télécharge ou partage des espaces de classe entiers créés par d'autres utilisateurs.",
   },
   {
-    Icone: Bell,
-    titre: "Peut prendre les devants",
-    description: "Si tu l'autorises, Clovis peut te relancer de lui-même après une période d'inactivité.",
-  },
-  {
-    Icone: ShieldCheck,
-    titre: "Toujours disponible",
-    description: "Toujours prêt à prendre le relais automatiquement en cas de souci, sans jamais couper la conversation.",
-  },
-  {
     Icone: Smartphone,
     titre: "Une vraie application",
     description: "S'installe sur téléphone ou ordinateur, avec notifications, pas juste un site ouvert dans un onglet.",
+  },
+  {
+    Icone: Brain,
+    titre: "Une IA qui agit, pas juste qui répond",
+    description:
+      "Clovis peut naviguer dans l'appli comme toi -- ton programme, tes matières, tes chapitres -- ajouter des documents dans ta bibliothèque et mettre à jour sa mémoire de toi, sans que tu aies à tout faire à la main.",
+  },
+  {
+    Icone: Share2,
+    titre: "Partage en un code",
+    description:
+      "Partage ta bibliothèque, tes comportements ou ton programme entier via un simple code ; tout se propage automatiquement chez celui qui le reçoit.",
+  },
+  {
+    Icone: Link2,
+    titre: "Connectable à Claude",
+    description:
+      "Une fois connecté, Claude peut naviguer dans Clovis exactement comme toi -- bibliothèque, mémoire, programme, matières, chapitres -- pas juste lire des données en vrac.",
   },
 ];
 

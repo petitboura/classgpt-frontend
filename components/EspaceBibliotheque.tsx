@@ -180,13 +180,13 @@ export function EspaceBibliotheque() {
         </div>
       )}
 
-      <div className="flex gap-1 text-xs">
+      <div className="flex gap-1 overflow-x-auto text-xs">
         {SOUS_ONGLETS.map((s) => (
           <button
             key={s.id}
             onClick={() => setSousOnglet(s.id)}
             className={
-              "rounded-cgpt-bouton px-3 py-1.5 font-semibold transition-colors " +
+              "flex-shrink-0 rounded-cgpt-bouton px-3 py-1.5 font-semibold transition-colors " +
               (sousOnglet === s.id ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte")
             }
           >

@@ -624,6 +624,9 @@ export function ChatIA({
                 </span>
                 <h1 className="font-display text-3xl font-bold tracking-[-0.01em] text-dj-texte sm:text-4xl">{titreAccueil}</h1>
               </div>
+              {sousTitreAccueil && (
+                <p className="mt-2 text-sm text-dj-texte-muet">{sousTitreAccueil}</p>
+              )}
             </div>
           ) : (
             <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>

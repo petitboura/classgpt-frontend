@@ -49,8 +49,20 @@ type FilConversation = {
 const AGENT_INVITE_ID = "clovis";
 const LIMITE_MESSAGES_INVITE = 5;
 const CLE_COMPTEUR_INVITE = "clovis_nb_messages_invite";
-const TITRE_ACCUEIL_CLOVIS = "Clovis";
 const SOUS_TITRE_ACCUEIL_CLOVIS = "Ton compagnon d'études, à tes côtés.";
+
+// Titre d'accueil variable selon l'heure (comme claude.ai), à la place du
+// nom "Clovis" -- déjà affiché juste au-dessus dans le header du popup
+// (voir plus bas), pas besoin de le répéter ici (demande Bourama,
+// 18/08/2026). Calculé à l'ouverture du chat, pas de mise à jour live
+// pendant que la fenêtre reste ouverte.
+function texteAccueilSelonHeure(): string {
+  const heure = new Date().getHours();
+  if (heure >= 5 && heure < 12) return "Bonjour";
+  if (heure >= 12 && heure < 18) return "Bon après-midi";
+  if (heure >= 18 && heure < 23) return "Bonsoir";
+  return "Bonne nuit";
+}
 
 export function ChatFlottant({
   connecte,
@@ -316,7 +328,7 @@ export function ChatFlottant({
               key={cle}
               agentId={agent.id}
               nomAgent="Clovis"
-              titreAccueil={TITRE_ACCUEIL_CLOVIS}
+              titreAccueil={texteAccueilSelonHeure()}
               sousTitreAccueil={SOUS_TITRE_ACCUEIL_CLOVIS}
               iconePersonnalisee={<Logo taille={40} />}
               conversationId={cle}

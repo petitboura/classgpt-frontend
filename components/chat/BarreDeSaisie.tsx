@@ -2313,7 +2313,7 @@ export function BarreDeSaisie({
           }}
           placeholder={transcriptionEnCours ? "Transcription en cours..." : "Pose ta question..."}
           rows={1}
-          className="max-h-32 min-h-8 w-full resize-none overflow-y-auto bg-transparent px-1 py-1 text-[15px] leading-normal text-dj-texte outline-none placeholder:text-dj-texte-muet"
+          className="max-h-32 min-h-8 w-full resize-none overflow-y-auto bg-transparent px-1 py-1 text-base leading-normal text-dj-texte outline-none placeholder:text-dj-texte-muet"
         />
 
         {/* Deuxième ligne (14/08, demande Bourama : forme carte en deux

@@ -37,6 +37,7 @@ export function ChatIA({
   avantEnvoi,
   iconePersonnalisee,
   outilsActifsAgent = null,
+  pleinEcran = false,
 }: {
   agentId: string;
   nomAgent: string;
@@ -83,6 +84,9 @@ export function ChatIA({
   // encore montée (page.tsx n'affiche le chat qu'une fois etat==="pret"),
   // donc en pratique cette prop est toujours déjà résolue ici.
   outilsActifsAgent?: { outils: string[]; actions_locales: string[] } | null;
+  // Pour relancer l'animation du titre d'accueil à l'entrée en plein
+  // écran (18/08/2026, demande Bourama) -- voir l'effet dédié plus bas.
+  pleinEcran?: boolean;
 }) {
   const [modeleSelectionne, setModeleSelectionne] = useState<string | null>(modeleChoisi);
   const [messages, setMessages] = useState<MessageAffiche[]>(messagesInitiaux);
@@ -129,23 +133,53 @@ export function ChatIA({
   // comme un seul bloc (voir plus bas, items-center sur le parent) : faire
   // grandir juste le texte progressivement suffit à obtenir l'effet
   // demandé, l'icône se déplaçant seule vers la gauche à mesure que le
-  // bloc entier se recentre. Se relance à chaque nouveau titreAccueil
-  // (nouvelle conversation ou nouvelle heure).
+  // bloc entier se recentre.
   const [titreRevele, setTitreRevele] = useState("");
-  useEffect(() => {
+  const idIntervalTitreRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function jouerRevelationTitre() {
+    if (idIntervalTitreRef.current) clearInterval(idIntervalTitreRef.current);
     if (!titreAccueil) {
       setTitreRevele("");
       return;
     }
     setTitreRevele("");
     let i = 0;
-    const id = setInterval(() => {
+    idIntervalTitreRef.current = setInterval(() => {
       i++;
       setTitreRevele(titreAccueil.slice(0, i));
-      if (i >= titreAccueil.length) clearInterval(id);
+      if (i >= titreAccueil.length && idIntervalTitreRef.current) {
+        clearInterval(idIntervalTitreRef.current);
+        idIntervalTitreRef.current = null;
+      }
     }, 35);
-    return () => clearInterval(id);
+  }
+
+  // Relance au montage et à chaque nouveau titreAccueil (nouvelle
+  // conversation ou nouvelle heure).
+  useEffect(() => {
+    jouerRevelationTitre();
+    return () => {
+      if (idIntervalTitreRef.current) clearInterval(idIntervalTitreRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [titreAccueil]);
+
+  // Relance spécifiquement à l'ENTRÉE en plein écran (18/08/2026, demande
+  // Bourama) -- ChatIA reste monté en continu entre mini/plein écran pour
+  // préserver la conversation (voir ChatFlottant.tsx), donc l'effet
+  // ci-dessus ne se redéclenche pas tout seul au changement d'état. Ne se
+  // relance PAS en sortant du plein écran (retour au mini) : seule
+  // l'entrée est concernée, via le ref qui retient l'état précédent.
+  const pleinEcranPrecedentRef = useRef(pleinEcran);
+  useEffect(() => {
+    const entreEnPleinEcran = pleinEcran && !pleinEcranPrecedentRef.current;
+    pleinEcranPrecedentRef.current = pleinEcran;
+    if (entreEnPleinEcran) {
+      jouerRevelationTitre();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pleinEcran]);
 
   function majMessages(fabriqueSuivant: (prec: MessageAffiche[]) => MessageAffiche[]) {
     setMessages((prec) => {

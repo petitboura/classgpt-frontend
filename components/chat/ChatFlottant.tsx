@@ -344,6 +344,7 @@ export function ChatFlottant({
               outilsActifsAgent={outilsActifsAgent}
               boutonSansEnseignant={false}
               avantEnvoi={verifierLimiteInvite}
+              pleinEcran={pleinEcran}
             />
           )}
         </div>

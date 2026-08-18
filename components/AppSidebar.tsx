@@ -21,6 +21,7 @@ import {
   Share2,
   Star,
   Compass,
+  Link2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Logo } from "@/components/Logo";
@@ -57,7 +58,15 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 
 const AGENT_ID = "clovis";
 
-export type OngletId = "bureau" | "comportements" | "bibliotheque" | "memoire" | "programme" | "plugins" | "audits";
+export type OngletId =
+  | "bureau"
+  | "comportements"
+  | "bibliotheque"
+  | "memoire"
+  | "programme"
+  | "plugins"
+  | "audits"
+  | "claude";
 
 export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof Briefcase }[] = [
   { id: "bureau", href: "/bureau", label: "Bureau", Icone: Briefcase },
@@ -67,6 +76,9 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
   { id: "programme", href: "/programme", label: "Mon programme", Icone: BookOpen },
   { id: "plugins", href: "/plugins", label: "Plugins", Icone: Puzzle },
   { id: "audits", href: "/audits", label: "Audits", Icone: ScanSearch },
+  // Guide "Utiliser Clovis dans Claude" (18/08, demande Bourama) --
+  // icône Link2 générique (pas le logo Claude, propriété d'Anthropic).
+  { id: "claude", href: "/connecter-claude", label: "Utiliser Clovis dans Claude", Icone: Link2 },
 ];
 
 // Rotation des mouvements pour les icônes de nav (Accueil + les 7
@@ -82,6 +94,7 @@ const MOUVEMENTS_NAV = [
   "group-hover:scale-110", // Mon programme
   "group-hover:rotate-12", // Plugins
   "group-hover:-translate-y-0.5 group-hover:scale-105", // Audits : petit rebond
+  "group-hover:-rotate-12 group-hover:scale-110", // Utiliser Clovis dans Claude
 ];
 
 function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.ReactNode }) {

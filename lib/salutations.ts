@@ -1,0 +1,15 @@
+// Texte d'accueil variable selon l'heure (18/08/2026, demande Bourama --
+// textes fournis par lui, répartition des heures faite par Claude, à
+// ajuster si besoin). Partagé entre le popup/plein écran du chat
+// (ChatFlottant.tsx) et l'écran d'accueil de l'app (EcranAccueil.tsx) --
+// extrait ici pour éviter que les deux dérivent chacun de leur côté.
+export function texteAccueilSelonHeure(): string {
+  const heure = new Date().getHours();
+  if (heure >= 0 && heure < 3) return "Oiseaux de nuit toi ?";
+  if (heure >= 3 && heure < 5) return "Nuit blanche donc !!";
+  if (heure >= 5 && heure < 8) return "Donc on est matinale !!";
+  if (heure >= 8 && heure < 12) return "La nuit, longue ou courte ?";
+  if (heure >= 12 && heure < 18) return "On détruit quoi cet après-midi ?";
+  if (heure >= 18 && heure < 21) return "La journée termine, mais l'aventure commence.";
+  return "On veille ?";
+}

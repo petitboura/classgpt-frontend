@@ -6,6 +6,7 @@ import { Bird, MessageSquare, Library, ScanSearch, BookOpen, type LucideIcon } f
 import { appelerApi, listerProgrammes, listerAuditsProgramme, listerMatieresProgramme } from "@/lib/api";
 import { dateRelative } from "@/lib/dateRelative";
 import { useOuvrirChat } from "@/lib/contexteChat";
+import { texteAccueilSelonHeure } from "@/lib/salutations";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/Skeleton";
 import { ONGLETS } from "@/components/AppSidebar";
@@ -45,6 +46,24 @@ const MOUVEMENTS_CARTE = [
 export function EcranAccueil() {
   const ouvrirChat = useOuvrirChat();
   const [activite, setActivite] = useState<ActiviteItem[] | null>(null);
+
+  // Titre d'accueil variable selon l'heure + révélation lettre par lettre
+  // (18/08/2026, demande Bourama : "on fait pareil" que le chat, voir
+  // ChatFlottant.tsx/ChatIA.tsx -- même fonction partagée, voir
+  // lib/salutations.ts). Le texte de l'heure est figé au montage de la
+  // page (pas de mise à jour live tant que l'onglet reste ouvert).
+  const [titreAccueilEcran] = useState(texteAccueilSelonHeure);
+  const [titreRevele, setTitreRevele] = useState("");
+  useEffect(() => {
+    setTitreRevele("");
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setTitreRevele(titreAccueilEcran.slice(0, i));
+      if (i >= titreAccueilEcran.length) clearInterval(id);
+    }, 35);
+    return () => clearInterval(id);
+  }, [titreAccueilEcran]);
 
   useEffect(() => {
     let annule = false;
@@ -150,7 +169,7 @@ export function EcranAccueil() {
       <div className="flex flex-col items-start gap-4">
         <Logo taille={40} />
         <div>
-          <h1 className="font-display text-2xl font-bold text-dj-texte">Bonjour</h1>
+          <h1 className="font-display text-2xl font-bold text-dj-texte">{titreRevele}</h1>
           <p className="mt-1 text-sm text-dj-texte-muet">Ton compagnon d&apos;études, à tes côtés.</p>
         </div>
         <button

@@ -123,6 +123,30 @@ export function ChatIA({
     questionMessageId: number | null;
   } | null>(null);
 
+  // Titre d'accueil révélé lettre par lettre (18/08/2026, demande Bourama :
+  // "le texte doit s'afficher... lettre par lettre fluidement... comme si
+  // il poussait les deux bords"). Le conteneur icône+titre est déjà centré
+  // comme un seul bloc (voir plus bas, items-center sur le parent) : faire
+  // grandir juste le texte progressivement suffit à obtenir l'effet
+  // demandé, l'icône se déplaçant seule vers la gauche à mesure que le
+  // bloc entier se recentre. Se relance à chaque nouveau titreAccueil
+  // (nouvelle conversation ou nouvelle heure).
+  const [titreRevele, setTitreRevele] = useState("");
+  useEffect(() => {
+    if (!titreAccueil) {
+      setTitreRevele("");
+      return;
+    }
+    setTitreRevele("");
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setTitreRevele(titreAccueil.slice(0, i));
+      if (i >= titreAccueil.length) clearInterval(id);
+    }, 35);
+    return () => clearInterval(id);
+  }, [titreAccueil]);
+
   function majMessages(fabriqueSuivant: (prec: MessageAffiche[]) => MessageAffiche[]) {
     setMessages((prec) => {
       const suivant = fabriqueSuivant(prec);
@@ -622,11 +646,8 @@ export function ChatIA({
                     <IconeGenerique className="h-9 w-9 text-dj-accent-1" />
                   )}
                 </span>
-                <h1 className="font-display text-3xl font-bold tracking-[-0.01em] text-dj-texte sm:text-4xl">{titreAccueil}</h1>
+                <h1 className="font-display text-3xl font-bold tracking-[-0.01em] text-dj-texte sm:text-4xl">{titreRevele}</h1>
               </div>
-              {sousTitreAccueil && (
-                <p className="mt-2 text-sm text-dj-texte-muet">{sousTitreAccueil}</p>
-              )}
             </div>
           ) : (
             <p className="mb-8 text-center text-base text-dj-texte-muet">Pose ta question à {nomAgent}...</p>

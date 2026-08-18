@@ -54,14 +54,19 @@ const SOUS_TITRE_ACCUEIL_CLOVIS = "Ton compagnon d'études, à tes côtés.";
 // Titre d'accueil variable selon l'heure (comme claude.ai), à la place du
 // nom "Clovis" -- déjà affiché juste au-dessus dans le header du popup
 // (voir plus bas), pas besoin de le répéter ici (demande Bourama,
-// 18/08/2026). Calculé à l'ouverture du chat, pas de mise à jour live
-// pendant que la fenêtre reste ouverte.
+// 18/08/2026, textes eux-mêmes fournis par Bourama le même jour --
+// répartition des heures faite par Claude, à ajuster si besoin).
+// Calculé à l'ouverture du chat, pas de mise à jour live pendant que la
+// fenêtre reste ouverte.
 function texteAccueilSelonHeure(): string {
   const heure = new Date().getHours();
-  if (heure >= 5 && heure < 12) return "Bonjour";
-  if (heure >= 12 && heure < 18) return "Bon après-midi";
-  if (heure >= 18 && heure < 23) return "Bonsoir";
-  return "Bonne nuit";
+  if (heure >= 0 && heure < 3) return "Oiseaux de nuit toi ?";
+  if (heure >= 3 && heure < 5) return "Nuit blanche donc !!";
+  if (heure >= 5 && heure < 8) return "Donc on est matinale !!";
+  if (heure >= 8 && heure < 12) return "La nuit, longue ou courte ?";
+  if (heure >= 12 && heure < 18) return "On détruit quoi cet après-midi ?";
+  if (heure >= 18 && heure < 21) return "La journée termine, mais l'aventure commence.";
+  return "On veille ?";
 }
 
 export function ChatFlottant({

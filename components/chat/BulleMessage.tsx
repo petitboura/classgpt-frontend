@@ -114,7 +114,13 @@ export interface MessageAffiche {
   // valable seulement le temps de la session ; pas besoin de la faire
   // survivre à un rechargement de page, juste de montrer ce qui a été
   // envoyé dans le fil de la conversation en cours.
-  pieceJointe?: { nom: string; type: "image" | "document" | "video" | "audio"; previewUrl?: string } | null;
+  // Devenu un TABLEAU le 17/08 (demande Bourama : "permet l'upload de
+  // plusieurs fichiers dans le chat") -- un message peut désormais avoir
+  // zéro, un ou plusieurs fichiers joints. `erreur` (même date) : nom
+  // affiché avec un état "échec" plutôt que retiré silencieusement, pour
+  // le cas où un fichier précis n'a pas pu être uploadé/lu alors que les
+  // autres, eux, sont bien partis (voir ChatIA.tsx:envoyerMessage).
+  piecesJointes?: { nom: string; type: "image" | "document" | "video" | "audio"; previewUrl?: string; erreur?: string }[] | null;
   // Ajouté 2026-07-26 (demande Bourama) : true quand cette réponse précise
   // a été générée par un modèle de secours de qualité nettement réduite
   // (llama-3.1-8b-instant, tout dernier recours Groq avant Gemini -- voir
@@ -177,20 +183,60 @@ export interface MessageAffiche {
 // que le contenu persisté en base à afficher.
 //
 // Corrige l'AFFICHAGE seul (aucun changement backend) : détecte les 4
-// marqueurs injectés par ChatIA.tsx et reconstruit un texte propre + un
-// pieceJointe (avec l'URL réelle du fichier, toujours valable après
-// rechargement contrairement à previewUrl qui était une URL locale
+// marqueurs injectés par ChatIA.tsx et reconstruit un texte propre + les
+// piecesJointes (avec l'URL réelle de chaque fichier, toujours valable
+// après rechargement contrairement à previewUrl qui était une URL locale
 // éphémère).
+//
+// Généralisé à PLUSIEURS blocs le 17/08 (upload multi-fichiers, demande
+// Bourama) : ChatIA.tsx concatène désormais un bloc "\n\n[Type joint(e) :
+// ...]" par fichier envoyé, dans l'ordre. Avant ce changement, seule la
+// PREMIÈRE occurrence était reconstruite et tout ce qui suivait (texte
+// éventuel + autres fichiers) était perdu -- sans conséquence tant qu'un
+// seul fichier par message était possible, mais aurait silencieusement
+// tronqué l'affichage dès qu'un deuxième bloc apparaissait.
 const MARQUEURS_PIECE_JOINTE: { motif: RegExp; type: "image" | "document" | "video" | "audio" }[] = [
-  { motif: /\n\n\[Image jointe : /, type: "image" },
-  { motif: /\n\n\[Audio joint : /, type: "audio" },
-  { motif: /\n\n\[Vidéo jointe : /, type: "video" },
-  { motif: /\n\n\[Document joint : /, type: "document" },
+  { motif: /\[Image jointe : /, type: "image" },
+  { motif: /\[Audio joint : /, type: "audio" },
+  { motif: /\[Vidéo jointe : /, type: "video" },
+  { motif: /\[Document joint : /, type: "document" },
 ];
+// Repère le début de CHAQUE bloc pièce jointe dans le texte (peu importe
+// le type), pour pouvoir découper le contenu en segments un par un.
+const DEBUT_BLOC_PIECE_JOINTE = /\n\n\[(?:Image jointe|Audio joint|Vidéo jointe|Document joint) : /g;
+
+function extraireUneBloc(bloc: string): { nom: string; type: "image" | "document" | "video" | "audio"; previewUrl?: string } | null {
+  const correspondance = MARQUEURS_PIECE_JOINTE.find(({ motif }) => motif.test(bloc));
+  if (!correspondance) return null;
+  const { type } = correspondance;
+
+  // Nom du fichier : entre "jointe/joint : " et le premier "]" ou " -- ".
+  // Cas particulier image : le marqueur ne contient que l'URL, pas de nom
+  // -- on prend le dernier segment du chemin en repli.
+  const nomMatch = /(?:Audio joint|Vidéo jointe|Document joint) : ([^\]\n]+?)(?:\]| -- )/.exec(bloc);
+  let nom = nomMatch ? nomMatch[1].trim() : "fichier";
+  if (type === "image") {
+    const urlImage = /\[Image jointe : (.+?)\]/.exec(bloc)?.[1] ?? "";
+    nom = urlImage.split("/").pop()?.split("?")[0] || "image";
+  }
+  // Retire un éventuel " (tronqué)" laissé par le marqueur document.
+  nom = nom.replace(/\s*\(tronqué\)$/, "");
+
+  // URL réelle du fichier : toujours en toute fin de bloc si présente
+  // (image : c'est directement le contenu entre crochets ; les 3
+  // autres : "[Lien réel du fichier : URL]" en dernière ligne).
+  const urlMatch =
+    type === "image"
+      ? /\[Image jointe : (.+?)\]/.exec(bloc)
+      : /\[Lien réel du fichier : (.+?)\]/.exec(bloc);
+  const url = urlMatch ? urlMatch[1].trim() : undefined;
+
+  return { nom, type, previewUrl: url };
+}
 
 export function nettoyerMessageHistorique(content: string): {
   texte: string;
-  pieceJointe: MessageAffiche["pieceJointe"];
+  piecesJointes: MessageAffiche["piecesJointes"];
 } {
   // Texte collé (2026-07-23) : pas un "fichier" comme les 4 marqueurs
   // ci-dessous (pas d'URL, pas de pieceJointe type -- juste un pavé de
@@ -200,40 +246,21 @@ export function nettoyerMessageHistorique(content: string): {
   const collageMotif = /\n\n\[Texte collé joint\]\n[\s\S]*$/;
   content = content.replace(collageMotif, "");
 
-  for (const { motif, type } of MARQUEURS_PIECE_JOINTE) {
-    const correspondance = motif.exec(content);
-    if (!correspondance) continue;
-
-    const texte = content.slice(0, correspondance.index);
-    const bloc = content.slice(correspondance.index);
-
-    // Nom du fichier : entre "jointe/joint : " et le premier "]" ou " -- ".
-    // Cas particulier image : le marqueur ne contient que l'URL, pas de nom
-    // -- on prend le dernier segment du chemin en repli.
-    const nomMatch = /(?:Audio joint|Vidéo jointe|Document joint) : ([^\]\n]+?)(?:\]| -- )/.exec(bloc);
-    let nom = nomMatch ? nomMatch[1].trim() : "fichier";
-    if (type === "image") {
-      const urlImage = /\[Image jointe : (.+?)\]/.exec(bloc)?.[1] ?? "";
-      nom = urlImage.split("/").pop()?.split("?")[0] || "image";
-    }
-    // Retire un éventuel " (tronqué)" laissé par le marqueur document.
-    nom = nom.replace(/\s*\(tronqué\)$/, "");
-
-    // URL réelle du fichier : toujours en toute fin de bloc si présente
-    // (image : c'est directement le contenu entre crochets ; les 3
-    // autres : "[Lien réel du fichier : URL]" en dernière ligne).
-    const urlMatch =
-      type === "image"
-        ? /\[Image jointe : (.+?)\]/.exec(bloc)
-        : /\[Lien réel du fichier : (.+?)\]/.exec(bloc);
-    const url = urlMatch ? urlMatch[1].trim() : undefined;
-
-    return {
-      texte,
-      pieceJointe: { nom, type, previewUrl: url },
-    };
+  const debuts = [...content.matchAll(DEBUT_BLOC_PIECE_JOINTE)].map((m) => m.index ?? -1).filter((i) => i >= 0);
+  if (debuts.length === 0) {
+    return { texte: content, piecesJointes: null };
   }
-  return { texte: content, pieceJointe: null };
+
+  const texte = content.slice(0, debuts[0]);
+  const piecesJointes: NonNullable<MessageAffiche["piecesJointes"]> = [];
+  for (let i = 0; i < debuts.length; i++) {
+    const fin = i + 1 < debuts.length ? debuts[i + 1] : content.length;
+    const bloc = content.slice(debuts[i], fin);
+    const piece = extraireUneBloc(bloc);
+    if (piece) piecesJointes.push(piece);
+  }
+
+  return { texte, piecesJointes: piecesJointes.length ? piecesJointes : null };
 }
 
 // - heure affichée sous le message UTILISATEUR uniquement
@@ -286,7 +313,7 @@ function BulleMessageInterne({
   fichiersGeneres?: { nomOutil: string; fichiers: { url: string; nom: string }[] }[];
 }) {
   const [copie, setCopie] = useState(false);
-  const [pieceJointeOuverte, setPieceJointeOuverte] = useState(false);
+  const [pieceJointeOuverteIndex, setPieceJointeOuverteIndex] = useState<number | null>(null);
   const [enEdition, setEnEdition] = useState(false);
   const [texteEdition, setTexteEdition] = useState(message.content);
   const [enLecture, setEnLecture] = useState(false);
@@ -419,34 +446,51 @@ function BulleMessageInterne({
             : "max-w-[80%] px-1 py-1 font-lecture text-[16px] leading-relaxed text-dj-texte"
         }
       >
-        {message.pieceJointe && (
-          <div className="mb-2">
-            {message.pieceJointe.type === "image" && message.pieceJointe.previewUrl ? (
-              <button
-                onClick={() => setPieceJointeOuverte(true)}
-                aria-label="Agrandir l'image"
-                className="block max-h-48 overflow-hidden rounded-xl border border-dj-bordure"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element -- aperçu local (URL.createObjectURL), pas un asset à optimiser */}
-                <img src={message.pieceJointe.previewUrl} alt={message.pieceJointe.nom} className="max-h-48 w-auto" />
-              </button>
-            ) : (message.pieceJointe.type === "video" || message.pieceJointe.type === "audio") && message.pieceJointe.previewUrl ? (
-              // Lecteur jouable directement dans le message envoyé
-              // (2026-07-23) -- avant, seul un nom de fichier cliquable qui
-              // ouvrait un nouvel onglet, aucun moyen d'écouter/regarder
-              // sans quitter le chat.
-              <div className="w-full max-w-xs">
-                <LecteurMedia href={message.pieceJointe.previewUrl} type={message.pieceJointe.type} />
-              </div>
-            ) : (
-              <button
-                onClick={() => message.pieceJointe?.previewUrl && window.open(message.pieceJointe.previewUrl, "_blank")}
-                aria-label="Ouvrir le fichier"
-                className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-fond/40 px-3 py-2 text-xs text-dj-texte-muet hover:text-dj-texte"
-              >
-                <FileText size={14} />
-                <span className="max-w-[220px] truncate">{message.pieceJointe.nom}</span>
-              </button>
+        {message.piecesJointes && message.piecesJointes.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {message.piecesJointes.map((piece, index) =>
+              piece.erreur ? (
+                // Fichier qui a échoué à l'upload (17/08) : les autres
+                // pièces jointes/le message partent quand même, celle-ci
+                // affiche juste son erreur au lieu d'être retirée en
+                // silence.
+                <div
+                  key={index}
+                  className="flex w-fit items-center gap-2 rounded-xl border border-red-400/40 bg-red-400/10 px-3 py-2 text-xs text-red-400"
+                  title={piece.erreur}
+                >
+                  <FileText size={14} />
+                  <span className="max-w-[220px] truncate">{piece.nom} -- {piece.erreur}</span>
+                </div>
+              ) : piece.type === "image" && piece.previewUrl ? (
+                <button
+                  key={index}
+                  onClick={() => setPieceJointeOuverteIndex(index)}
+                  aria-label="Agrandir l'image"
+                  className="block max-h-48 overflow-hidden rounded-xl border border-dj-bordure"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- aperçu local (URL.createObjectURL), pas un asset à optimiser */}
+                  <img src={piece.previewUrl} alt={piece.nom} className="max-h-48 w-auto" />
+                </button>
+              ) : (piece.type === "video" || piece.type === "audio") && piece.previewUrl ? (
+                // Lecteur jouable directement dans le message envoyé
+                // (2026-07-23) -- avant, seul un nom de fichier cliquable qui
+                // ouvrait un nouvel onglet, aucun moyen d'écouter/regarder
+                // sans quitter le chat.
+                <div key={index} className="w-full max-w-xs">
+                  <LecteurMedia href={piece.previewUrl} type={piece.type} />
+                </div>
+              ) : (
+                <button
+                  key={index}
+                  onClick={() => piece.previewUrl && window.open(piece.previewUrl, "_blank")}
+                  aria-label="Ouvrir le fichier"
+                  className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-fond/40 px-3 py-2 text-xs text-dj-texte-muet hover:text-dj-texte"
+                >
+                  <FileText size={14} />
+                  <span className="max-w-[220px] truncate">{piece.nom}</span>
+                </button>
+              )
             )}
           </div>
         )}
@@ -692,16 +736,16 @@ function BulleMessageInterne({
         </div>
       )}
 
-      {pieceJointeOuverte && message.pieceJointe?.previewUrl && (
+      {pieceJointeOuverteIndex !== null && message.piecesJointes?.[pieceJointeOuverteIndex]?.previewUrl && (
         <div
           className="fixed inset-0 z-50 flex animate-dj-fade-in items-center justify-center bg-black/85 p-6"
-          onClick={() => setPieceJointeOuverte(false)}
+          onClick={() => setPieceJointeOuverteIndex(null)}
         >
           <button aria-label="Fermer" className="absolute right-5 top-5 text-dj-texte-muet hover:text-dj-texte">
             <X size={22} />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={message.pieceJointe.previewUrl} alt="" className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain" />
+          <img src={message.piecesJointes[pieceJointeOuverteIndex].previewUrl} alt="" className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain" />
         </div>
       )}
     </div>

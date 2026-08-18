@@ -140,8 +140,8 @@ export function ChatFlottant({
           if (l.role !== "user") {
             return { id: null, role: l.role, content: l.content, created_at: l.created_at };
           }
-          const { texte, pieceJointe } = nettoyerMessageHistorique(l.content);
-          return { id: null, role: l.role, content: texte, created_at: l.created_at, pieceJointe };
+          const { texte, piecesJointes } = nettoyerMessageHistorique(l.content);
+          return { id: null, role: l.role, content: texte, created_at: l.created_at, piecesJointes };
         })
       );
       setNbMessages(lignes.length);

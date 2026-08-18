@@ -288,7 +288,7 @@ export function ChatIA({
   async function envoyerMessage(
     texte: string,
     longueur: LongueurReponse,
-    fichier: File | null,
+    fichiers: File[],
     localisation: LocalisationJointe = null,
     texteColle: string | null = null,
     rechercheForcee: boolean = false,
@@ -310,28 +310,17 @@ export function ChatIA({
     // fois par appareil, jamais si déjà répondu avant".
     proposerNotificationsPushUneFois(activerNotificationsPush);
 
-    const typePieceJointe: "image" | "document" | "video" | "audio" | null = fichier
-      ? fichier.type.startsWith("image/")
-        ? "image"
-        : fichier.type.startsWith("video/")
-        ? "video"
-        : fichier.type.startsWith("audio/")
-        ? "audio"
-        : "document"
-      : null;
+    const typeDeFichier = (f: File): "image" | "document" | "video" | "audio" =>
+      f.type.startsWith("image/") ? "image" : f.type.startsWith("video/") ? "video" : f.type.startsWith("audio/") ? "audio" : "document";
+
     const messageUtilisateur: MessageAffiche = {
       id: null,
       role: "user",
       content: texte,
       created_at: new Date().toISOString(),
-      pieceJointe:
-        fichier && typePieceJointe
-          ? {
-              nom: fichier.name,
-              type: typePieceJointe,
-              previewUrl: URL.createObjectURL(fichier),
-            }
-          : null,
+      piecesJointes: fichiers.length
+        ? fichiers.map((f) => ({ nom: f.name, type: typeDeFichier(f), previewUrl: URL.createObjectURL(f) }))
+        : null,
     };
     const historiquePourApi = messages.map((m) => ({ role: m.role, content: m.content }));
 
@@ -341,10 +330,13 @@ export function ChatIA({
     setRaisonnementEnCours(false);
     setConfirmation(null);
 
-    // Upload/traitement du fichier AVANT le message texte :
-    // - image -> /api/chat a besoin de l'URL finale dans image_url (voir
-    //   api/chat.py + core/main.py:chat(), branche image_url -- routage
-    //   direct vers Gemini, seul modèle multimodal de la cascade).
+    // Upload/traitement des fichiers AVANT le message texte, EN PARALLÈLE
+    // (17/08, demande Bourama : "permet l'upload de plusieurs fichiers" --
+    // jusque-là un seul fichier possible par message) :
+    // - image -> /api/chat a besoin de l'URL finale dans image_url/
+    //   image_urls (voir api/chat.py + core/main.py:chat(), branche
+    //   image_url -- routage direct vers Gemini, seul modèle multimodal
+    //   de la cascade).
     // - PDF/Word/Excel -> texte extrait côté backend (voir
     //   api/uploads.py:uploader_document_chat) et injecté APRÈS le texte
     //   de l'étudiant, jamais à la place -- le cascade Groq habituel le
@@ -354,32 +346,41 @@ export function ChatIA({
     //   les frames image sont envoyées à Gemini (comme des images) --
     //   voir api/uploads.py:uploader_video_chat et core/main.py:chat(),
     //   paramètre images_base64.
-    let imageUrl: string | null = null;
-    let imagesBase64: string[] | null = null;
+    //
+    // Chaque fichier est indépendant (Promise.allSettled, pas Promise.all) :
+    // demande explicite de Bourama, "les autres partent, erreur juste pour
+    // celui qui échoue" -- un PDF scanné sans texte, par exemple, ne doit
+    // plus faire échouer tout le message si une image valide l'accompagne.
+    const imageUrls: string[] = [];
+    const imagesBase64: string[] = [];
     let texteEnrichi = texteColle ? `${texte}\n\n[Texte collé joint]\n${texteColle}` : texte;
-    const typeFichier = typePieceJointe;
-    if (fichier) {
-      try {
-        if (typeFichier === "image") {
-          imageUrl = await uploaderImageChat(fichier);
-          // Le lien réel doit aussi être en TEXTE dans le message, pas
-          // seulement envoyé à part pour l'analyse visuelle (image_url) --
-          // sinon l'IA "voit" l'image via la vision mais n'a jamais son
-          // adresse réelle en mémoire, et invente un lien si on la lui
-          // redemande plus tard (repéré en test réel, 2026-07-23).
-          texteEnrichi = `${texte}\n\n[Image jointe : ${imageUrl}]`;
-        } else if (typeFichier === "audio") {
-          const { texte: texteAudio, url: urlAudio } = await transcrireAudioChat(fichier);
-          const lienAudio = urlAudio ? `\n[Lien réel du fichier : ${urlAudio}]` : "";
-          texteEnrichi = `${texte}\n\n[Audio joint : ${fichier.name} -- transcription]\n${texteAudio}${lienAudio}`;
-        } else if (typeFichier === "video") {
-          const { transcript, frames_base64, url: urlVideo } = await uploaderVideoChat(fichier);
-          imagesBase64 = frames_base64.length ? frames_base64 : null;
-          const lienVideo = urlVideo ? `\n[Lien réel du fichier : ${urlVideo}]` : "";
-          texteEnrichi = transcript
-            ? `${texte}\n\n[Vidéo jointe : ${fichier.name} -- transcription audio]\n${transcript}${lienVideo}`
-            : `${texte}\n\n[Vidéo jointe : ${fichier.name} -- pas de son exploitable, images seules]${lienVideo}`;
-        } else {
+
+    if (fichiers.length) {
+      const resultats = await Promise.allSettled(
+        fichiers.map(async (fichier) => {
+          const type = typeDeFichier(fichier);
+          if (type === "image") {
+            const url = await uploaderImageChat(fichier);
+            // Le lien réel doit aussi être en TEXTE dans le message, pas
+            // seulement envoyé à part pour l'analyse visuelle (image_url) --
+            // sinon l'IA "voit" l'image via la vision mais n'a jamais son
+            // adresse réelle en mémoire, et invente un lien si on la lui
+            // redemande plus tard (repéré en test réel, 2026-07-23).
+            return { imageUrl: url, texteBloc: `\n\n[Image jointe : ${url}]` };
+          }
+          if (type === "audio") {
+            const { texte: texteAudio, url: urlAudio } = await transcrireAudioChat(fichier);
+            const lienAudio = urlAudio ? `\n[Lien réel du fichier : ${urlAudio}]` : "";
+            return { texteBloc: `\n\n[Audio joint : ${fichier.name} -- transcription]\n${texteAudio}${lienAudio}` };
+          }
+          if (type === "video") {
+            const { transcript, frames_base64, url: urlVideo } = await uploaderVideoChat(fichier);
+            const lienVideo = urlVideo ? `\n[Lien réel du fichier : ${urlVideo}]` : "";
+            const texteBloc = transcript
+              ? `\n\n[Vidéo jointe : ${fichier.name} -- transcription audio]\n${transcript}${lienVideo}`
+              : `\n\n[Vidéo jointe : ${fichier.name} -- pas de son exploitable, images seules]${lienVideo}`;
+            return { texteBloc, imagesBase64: frames_base64.length ? frames_base64 : undefined };
+          }
           const { texte: texteDocument, tronque, url: urlDocument, url_apercu: urlApercu } = await uploaderDocumentChat(fichier);
           const lienDocument = urlDocument ? `\n[Lien réel du fichier : ${urlDocument}]` : "";
           // Aperçu PDF (25/07) : lien séparé, volontairement en .pdf --
@@ -387,26 +388,57 @@ export function ChatIA({
           // le visualiseur PDF intégré pour ce lien, sans aucun changement
           // nécessaire dans FichierChip.tsx lui-même (voir core/conversion_pdf.py).
           const lienApercu = urlApercu ? `\n[Aperçu visuel du fichier (PDF) : ${urlApercu}]` : "";
-          texteEnrichi =
-            `${texte}\n\n[Document joint : ${fichier.name}${tronque ? " (tronqué)" : ""}]\n${texteDocument}${lienDocument}${lienApercu}`;
+          return {
+            texteBloc: `\n\n[Document joint : ${fichier.name}${tronque ? " (tronqué)" : ""}]\n${texteDocument}${lienDocument}${lienApercu}`,
+          };
+        })
+      );
+
+      const echecs: { nom: string; typeFichier: "image" | "document" | "video" | "audio"; detail: string }[] = [];
+      resultats.forEach((resultat, index) => {
+        const fichier = fichiers[index];
+        if (resultat.status === "fulfilled") {
+          texteEnrichi += resultat.value.texteBloc;
+          if (resultat.value.imageUrl) imageUrls.push(resultat.value.imageUrl);
+          if (resultat.value.imagesBase64) imagesBase64.push(...resultat.value.imagesBase64);
+        } else {
+          // Même correction que pour la dictée vocale (2026-07-20) : le
+          // message générique masquait la vraie cause (format refusé,
+          // fichier trop lourd, erreur serveur précise...) derrière un seul
+          // texte, impossible à diagnostiquer depuis le retour utilisateur.
+          echecs.push({ nom: fichier.name, typeFichier: typeDeFichier(fichier), detail: messageErreur(resultat.reason) || "erreur inconnue" });
         }
-      } catch (e) {
-        // Même correction que pour la dictée vocale (2026-07-20) : le
-        // message générique masquait la vraie cause (format refusé,
-        // fichier trop lourd, erreur serveur précise...) derrière un seul
-        // texte, impossible à diagnostiquer depuis le retour utilisateur.
-        const detail = messageErreur(e);
-        const prefixe =
-          typeFichier === "image"
-            ? "Je n'ai pas pu envoyer l'image jointe"
-            : typeFichier === "video"
-            ? "Je n'ai pas pu traiter la vidéo jointe"
-            : "Je n'ai pas pu lire le document joint";
+      });
+
+      if (echecs.length) {
+        // Marque en erreur, dans la bulle utilisateur déjà affichée, juste
+        // les pièces jointes qui ont échoué -- les autres gardent leur
+        // aperçu normal, rien n'est retiré silencieusement.
+        majMessages((prec) =>
+          prec.map((m) =>
+            m === messageUtilisateur
+              ? {
+                  ...m,
+                  piecesJointes:
+                    m.piecesJointes?.map((p) => {
+                      const echec = echecs.find((e) => e.nom === p.nom);
+                      return echec ? { ...p, erreur: echec.detail } : p;
+                    }) ?? null,
+                }
+              : m
+          )
+        );
+      }
+
+      if (echecs.length === fichiers.length && !texte.trim() && !texteColle) {
+        // Cas limite : absolument aucun fichier n'a pu être traité, et pas
+        // de texte à côté pour porter le message quand même -- rien
+        // d'utile à envoyer au modèle.
         majMessages((prec) => {
           const copie = [...prec];
           copie[copie.length - 1] = {
             ...copie[copie.length - 1],
-            content: detail ? `${prefixe} : ${detail}` : `${prefixe}, réessaie.`,
+            content: "Aucun des fichiers joints n'a pu être traité, réessaie.",
           };
           return copie;
         });
@@ -424,8 +456,9 @@ export function ChatIA({
           historique: historiquePourApi,
           conversation_id: conversationId,
           longueur_reponse: longueur,
-          image_url: imageUrl,
-          images_base64: imagesBase64,
+          image_url: null,
+          image_urls: imageUrls.length ? imageUrls : null,
+          images_base64: imagesBase64.length ? imagesBase64 : null,
           localisation,
           // Fuseau du navigateur, pas une valeur figée côté code -- voir
           // core/main.py:chat(), paramètre fuseau_horaire.
@@ -473,7 +506,7 @@ export function ChatIA({
     const messageUtilisateur = messages[index - 1];
     if (!messageUtilisateur) return;
     majMessages((prec) => prec.slice(0, index - 1));
-    envoyerMessage(messageUtilisateur.content, "moyenne", null);
+    envoyerMessage(messageUtilisateur.content, "moyenne", []);
   }
 
   function relancerAvecOutils(index: number, nomsOutils: string[]) {
@@ -487,7 +520,7 @@ export function ChatIA({
     const messageUtilisateur = messages[index - 1];
     if (!messageUtilisateur) return;
     majMessages((prec) => prec.slice(0, index - 1));
-    envoyerMessage(messageUtilisateur.content, "moyenne", null, null, null, false, nomsOutils);
+    envoyerMessage(messageUtilisateur.content, "moyenne", [], null, null, false, nomsOutils);
   }
 
   function ignorerSuggestionOutils(index: number) {
@@ -501,21 +534,21 @@ export function ChatIA({
     const messageUtilisateur = messages[index - 1];
     if (!messageUtilisateur) return;
     majMessages((prec) => prec.slice(0, index - 1));
-    envoyerMessage(messageUtilisateur.content, "moyenne", null, null, null, false, [], true);
+    envoyerMessage(messageUtilisateur.content, "moyenne", [], null, null, false, [], true);
   }
 
   function editerMessage(index: number, nouveauTexte: string) {
     // Tronque tout ce qui suit (y compris la réponse assistant concernée)
     // et relance avec le message modifié -- section 3.1.
     majMessages((prec) => prec.slice(0, index));
-    envoyerMessage(nouveauTexte, "moyenne", null);
+    envoyerMessage(nouveauTexte, "moyenne", []);
   }
 
   function expliquerSelection(texteSelectionne: string) {
     // Signal non textuel (sélection de souris/tactile dans une réponse
     // assistant) converti en message texte classique -- pas de nouveau
     // champ backend, juste un prompt construit côté frontend.
-    envoyerMessage(`Peux-tu expliquer ce passage : "${texteSelectionne}"`, "moyenne", null);
+    envoyerMessage(`Peux-tu expliquer ce passage : "${texteSelectionne}"`, "moyenne", []);
   }
 
   async function repriseApresConfirmation(approuve: boolean) {
@@ -649,7 +682,7 @@ export function ChatIA({
               onRegenerer={
                 message.role === "assistant"
                   ? () => regenererDepuis(index)
-                  : () => envoyerMessage(message.content, "moyenne", null)
+                  : () => envoyerMessage(message.content, "moyenne", [])
               }
               onEditer={message.role === "user" ? (texte) => editerMessage(index, texte) : undefined}
               onLike={

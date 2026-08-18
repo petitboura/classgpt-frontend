@@ -204,7 +204,7 @@ export function BarreDeSaisie({
   onEnvoyer: (
     texte: string,
     longueur: LongueurReponse,
-    fichier: File | null,
+    fichiers: File[],
     localisation: LocalisationJointe,
     texteColle: string | null,
     rechercheForcee: boolean,
@@ -241,9 +241,13 @@ export function BarreDeSaisie({
 }) {
   const [texte, setTexte] = useState("");
   const [longueur, setLongueur] = useState<LongueurReponse>("moyenne");
-  const [fichier, setFichier] = useState<File | null>(null);
-  const [apercuFichier, setApercuFichier] = useState<string | null>(null);
-  const [imageOuverte, setImageOuverte] = useState(false);
+  // Devenu un TABLEAU le 17/08 (demande Bourama : "permet l'upload de
+  // plusieurs fichiers dans le chat" -- avant, un seul fichier possible
+  // par message). Chaque entrée garde son propre aperçu (image only, même
+  // logique qu'avant) et un id stable pour la clé React / le retrait
+  // individuel.
+  const [fichiers, setFichiers] = useState<{ id: string; fichier: File; apercu: string | null }[]>([]);
+  const [imageAgrandieId, setImageAgrandieId] = useState<string | null>(null);
   // Icône de recherche web (2026-07-23, demande de Bourama : "une icône
   // dans la barre de saisie mais peut s'activer automatiquement") --
   // forçage manuel EN PLUS de l'activation automatique déjà possible
@@ -620,8 +624,8 @@ export function BarreDeSaisie({
   // auto restait trop limité pour écrire un long message confortablement).
   const [pleinEcranSaisie, setPleinEcranSaisie] = useState(false);
   // Canvas de dessin (2026-07-25) -- géométrie/graphe/croquis, voir
-  // CanvasDessin.tsx. Le résultat rejoint le même état `fichier` qu'un
-  // upload classique (choisirFichier), donc suit exactement le même
+  // CanvasDessin.tsx. Le résultat rejoint le tableau `fichiers` comme un
+  // upload classique (ajouterFichiers), donc suit exactement le même
   // chemin d'envoi/aperçu, aucun état séparé nécessaire pour l'envoi.
   const [canvasOuvert, setCanvasOuvert] = useState(false);
   // Éditeur de formule maths/chimie (2026-07-25) -- voir EditeurFormule.tsx.
@@ -648,10 +652,15 @@ export function BarreDeSaisie({
   const [formuleInitiale, setFormuleInitiale] = useState<string | undefined>(undefined);
 
   async function extraireFormuleDeImage() {
-    if (!fichier || extractionFormuleEnCours) return;
+    // Plusieurs fichiers possibles depuis le 17/08 -- on cible la
+    // première image jointe (choix par défaut raisonnable, cette action
+    // n'a de sens que pour une image ; documenté ici plutôt que deviné en
+    // silence si Bourama veut un comportement différent plus tard).
+    const premiereImage = fichiers.find((f) => f.fichier.type.startsWith("image/"))?.fichier;
+    if (!premiereImage || extractionFormuleEnCours) return;
     setExtractionFormuleEnCours(true);
     try {
-      const latex = await extraireFormuleImage(fichier);
+      const latex = await extraireFormuleImage(premiereImage);
       setFormuleInitiale(latex);
       setEditeurFormuleOuvert(true);
     } catch (e) {
@@ -694,17 +703,39 @@ export function BarreDeSaisie({
   const zoneTextePleinEcranRef = useRef<HTMLTextAreaElement>(null);
   const calquePleinEcranRef = useRef<HTMLDivElement>(null);
 
-  // Aperçu du fichier joint AVANT envoi (2026-07-20, bug trouvé par
+  // Aperçu des fichiers joints AVANT envoi (2026-07-20, bug trouvé par
   // Bourama : jusqu'ici juste le nom du fichier en texte, aucune vignette).
   // URL.createObjectURL uniquement pour les images -- documents/vidéos
   // gardent le chip icône+nom (une vraie prévisualisation vidéo ou PDF
   // demanderait un lecteur/rendu dédié, hors scope de ce correctif ciblé).
-  function choisirFichier(f: File | null) {
-    setApercuFichier((prec) => {
-      if (prec) URL.revokeObjectURL(prec);
-      return f && f.type.startsWith("image/") ? URL.createObjectURL(f) : null;
+  // Devenu un tableau le 17/08 (demande Bourama : "permet l'upload de
+  // plusieurs fichiers dans le chat").
+  function ajouterFichiers(nouveaux: File[]) {
+    if (!nouveaux.length) return;
+    setFichiers((prec) => [
+      ...prec,
+      ...nouveaux.map((f) => ({
+        id: crypto.randomUUID(),
+        fichier: f,
+        apercu: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+      })),
+    ]);
+  }
+
+  function retirerFichier(id: string) {
+    setFichiers((prec) => {
+      const cible = prec.find((f) => f.id === id);
+      if (cible?.apercu) URL.revokeObjectURL(cible.apercu);
+      return prec.filter((f) => f.id !== id);
     });
-    setFichier(f);
+    setImageAgrandieId((prec) => (prec === id ? null : prec));
+  }
+
+  function viderFichiers() {
+    setFichiers((prec) => {
+      prec.forEach((f) => f.apercu && URL.revokeObjectURL(f.apercu));
+      return [];
+    });
   }
 
   // Auto-agrandissement du textarea (2026-07-20, bug trouvé par Bourama en
@@ -1223,9 +1254,19 @@ export function BarreDeSaisie({
 
   function envoyer() {
     if ((!texte.trim() && !texteColle) || desactive) return;
-    onEnvoyer(texte, longueur, fichier, localisation, texteColle, rechercheForcee, outilsForces, false, sansEnseignant);
+    onEnvoyer(
+      texte,
+      longueur,
+      fichiers.map((f) => f.fichier),
+      localisation,
+      texteColle,
+      rechercheForcee,
+      outilsForces,
+      false,
+      sansEnseignant
+    );
     setTexte("");
-    choisirFichier(null);
+    viderFichiers();
     setLocalisation(null);
     setTexteColle(null);
     setLangageDetecte(null);
@@ -1302,22 +1343,22 @@ export function BarreDeSaisie({
 
   return (
     <div className="w-full">
-      {/* Vignettes d'aperçu (fichier joint / position jointe), avant envoi. */}
-      {(fichier || localisation || texteColle) && (
+      {/* Vignettes d'aperçu (fichiers joints / position jointe), avant envoi. */}
+      {(fichiers.length > 0 || localisation || texteColle) && (
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          {fichier && (
-            apercuFichier ? (
-              <div className="relative w-fit">
+          {fichiers.map(({ id, fichier, apercu }) =>
+            apercu ? (
+              <div key={id} className="relative w-fit">
                 <button
-                  onClick={() => setImageOuverte(true)}
+                  onClick={() => setImageAgrandieId(id)}
                   aria-label="Agrandir l'image"
                   className="block h-16 w-16 overflow-hidden rounded-xl border border-dj-bordure"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- aperçu local (URL.createObjectURL) */}
-                  <img src={apercuFichier} alt={fichier.name} className="h-full w-full object-cover" />
+                  <img src={apercu} alt={fichier.name} className="h-full w-full object-cover" />
                 </button>
                 <button
-                  onClick={() => choisirFichier(null)}
+                  onClick={() => retirerFichier(id)}
                   aria-label="Retirer le fichier"
                   className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-fond text-dj-texte-muet hover:text-dj-texte"
                 >
@@ -1326,16 +1367,22 @@ export function BarreDeSaisie({
                 {/* OCR ciblé formule (2026-07-26) -- extrait le LaTeX de
                     l'image et l'ouvre dans EditeurFormule pour relecture
                     avant insertion, plutôt que d'envoyer l'image telle
-                    quelle et espérer que Nucleos la lise correctement. */}
-                <button
-                  onClick={extraireFormuleDeImage}
-                  disabled={extractionFormuleEnCours}
-                  aria-label="Extraire la formule de cette image"
-                  title="Extraire la formule"
-                  className="absolute -bottom-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-accent-1 text-white disabled:opacity-60"
-                >
-                  <Sigma size={11} className={extractionFormuleEnCours ? "animate-pulse" : ""} />
-                </button>
+                    quelle et espérer que Nucleos la lise correctement.
+                    Cible toujours la première image du tableau (voir
+                    extraireFormuleDeImage), donc affiché seulement sur
+                    cette vignette-là pour ne pas laisser croire qu'il agit
+                    sur une image précise parmi plusieurs. */}
+                {fichiers.find((f) => f.apercu)?.id === id && (
+                  <button
+                    onClick={extraireFormuleDeImage}
+                    disabled={extractionFormuleEnCours}
+                    aria-label="Extraire la formule de cette image"
+                    title="Extraire la formule"
+                    className="absolute -bottom-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-accent-1 text-white disabled:opacity-60"
+                  >
+                    <Sigma size={11} className={extractionFormuleEnCours ? "animate-pulse" : ""} />
+                  </button>
+                )}
               </div>
             ) : fichier.type.startsWith("video/") || fichier.type.startsWith("audio/") ? (
               // Aperçu jouable avant envoi (2026-07-23, demande de Bourama :
@@ -1343,13 +1390,13 @@ export function BarreDeSaisie({
               // moyen d'écouter/regarder avant d'envoyer) -- même lecteur
               // que celui utilisé pour un lien reçu, sur une URL locale
               // (blob), pas encore uploadée.
-              <div className="relative w-full max-w-xs">
+              <div key={id} className="relative w-full max-w-xs">
                 <LecteurMedia
                   href={URL.createObjectURL(fichier)}
                   type={fichier.type.startsWith("video/") ? "video" : "audio"}
                 />
                 <button
-                  onClick={() => choisirFichier(null)}
+                  onClick={() => retirerFichier(id)}
                   aria-label="Retirer le fichier"
                   className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-fond text-dj-texte-muet hover:text-dj-texte"
                 >
@@ -1365,14 +1412,14 @@ export function BarreDeSaisie({
               // afficher en iframe, contrairement à FichierChip où
               // estOrigineDeConfiance protège contre un lien externe
               // arbitraire -- cette vérification n'a pas lieu d'être ici.
-              <div className="relative w-full max-w-xs">
+              <div key={id} className="relative w-full max-w-xs">
                 <iframe
                   src={URL.createObjectURL(fichier)}
                   className="h-64 w-full rounded-xl border border-dj-bordure"
                   title={fichier.name}
                 />
                 <button
-                  onClick={() => choisirFichier(null)}
+                  onClick={() => retirerFichier(id)}
                   aria-label="Retirer le fichier"
                   className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-dj-fond text-dj-texte-muet hover:text-dj-texte"
                 >
@@ -1380,7 +1427,7 @@ export function BarreDeSaisie({
                 </button>
               </div>
             ) : (
-              <div className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-xs text-dj-texte-muet">
+              <div key={id} className="flex w-fit items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-xs text-dj-texte-muet">
                 <button
                   onClick={() => window.open(URL.createObjectURL(fichier), "_blank")}
                   aria-label="Ouvrir le fichier"
@@ -1389,7 +1436,7 @@ export function BarreDeSaisie({
                   <FileText size={14} />
                   <span className="max-w-[180px] truncate">{fichier.name}</span>
                 </button>
-                <button onClick={() => choisirFichier(null)} aria-label="Retirer le fichier" className="hover:text-dj-texte">
+                <button onClick={() => retirerFichier(id)} aria-label="Retirer le fichier" className="hover:text-dj-texte">
                   <X size={14} />
                 </button>
               </div>
@@ -1538,8 +1585,15 @@ export function BarreDeSaisie({
               ref={inputFichierRef}
               type="file"
               accept={TYPES_FICHIERS_ACCEPTES}
+              multiple
               className="hidden"
-              onChange={(e) => choisirFichier(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                ajouterFichiers(Array.from(e.target.files ?? []));
+                // Sans ça, choisir deux fois DE SUITE le(s) même(s)
+                // fichier(s) (ex: retirer puis rejoindre le même) ne
+                // redéclenche pas onChange -- même valeur input.
+                e.target.value = "";
+              }}
             />
 
             {/* Slots variables "Outils" (2026-07-28, refonte demandée par
@@ -2759,16 +2813,20 @@ export function BarreDeSaisie({
         </div>
       )}
 
-      {imageOuverte && apercuFichier && (
+      {imageAgrandieId && fichiers.find((f) => f.id === imageAgrandieId)?.apercu && (
         <div
           className="fixed inset-0 z-50 flex animate-dj-fade-in items-center justify-center bg-black/85 p-6"
-          onClick={() => setImageOuverte(false)}
+          onClick={() => setImageAgrandieId(null)}
         >
           <button aria-label="Fermer" className="absolute right-5 top-5 text-dj-texte-muet hover:text-dj-texte">
             <X size={22} />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={apercuFichier} alt="" className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain" />
+          <img
+            src={fichiers.find((f) => f.id === imageAgrandieId)?.apercu ?? ""}
+            alt=""
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain"
+          />
         </div>
       )}
 
@@ -2779,7 +2837,9 @@ export function BarreDeSaisie({
             // Rejoint le pipeline "Joindre un fichier" existant -- le
             // dessin est traité en tout point comme une image uploadée
             // (aperçu + vision Gemini côté backend, aucun code séparé).
-            choisirFichier(fichier);
+            // S'AJOUTE aux fichiers déjà joints depuis le 17/08 (upload
+            // multiple), ne les remplace plus.
+            ajouterFichiers([fichier]);
             setCanvasOuvert(false);
           }}
         />

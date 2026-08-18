@@ -12,7 +12,8 @@ import {
   Upload,
   Download,
   Share2,
-  Link2,
+  Plug,
+  Bot,
 } from "lucide-react";
 
 // Catalogue "Ce qui différencie Clovis" (14/08, demande Bourama : "un
@@ -63,10 +64,10 @@ const FONCTIONNALITES: Fonctionnalite[] = [
     description: "S'installe sur téléphone ou ordinateur, avec notifications, pas juste un site ouvert dans un onglet.",
   },
   {
-    Icone: Brain,
+    Icone: Bot,
     titre: "Une IA qui agit, pas juste qui répond",
     description:
-      "Clovis peut naviguer dans l'appli comme toi -- ton programme, tes matières, tes chapitres -- ajouter des documents dans ta bibliothèque et mettre à jour sa mémoire de toi, sans que tu aies à tout faire à la main.",
+      "Clovis peut naviguer dans l'appli comme toi, dans ton programme, tes matières et tes chapitres, ajouter des documents dans ta bibliothèque, et mettre à jour sa mémoire de toi sans que tu aies à tout faire à la main.",
   },
   {
     Icone: Share2,
@@ -75,10 +76,10 @@ const FONCTIONNALITES: Fonctionnalite[] = [
       "Partage ta bibliothèque, tes comportements ou ton programme entier via un simple code ; tout se propage automatiquement chez celui qui le reçoit.",
   },
   {
-    Icone: Link2,
+    Icone: Plug,
     titre: "Connectable à Claude",
     description:
-      "Une fois connecté, Claude peut naviguer dans Clovis exactement comme toi -- bibliothèque, mémoire, programme, matières, chapitres -- pas juste lire des données en vrac.",
+      "Une fois connecté, Claude peut naviguer dans Clovis exactement comme toi, dans la bibliothèque, la mémoire, le programme, les matières et les chapitres, pas juste lire des données en vrac.",
   },
 ];
 

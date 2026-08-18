@@ -38,6 +38,11 @@ const EXTENSIONS_FICHIER: Record<string, { icone: typeof File; libelle: string }
   // qui n'a aucune métadonnée à afficher pour un fichier .tex brut, d'où
   // le rendu cassé repéré par Bourama en test réel le 27/07.
   tex: { icone: FileCode, libelle: "LaTeX" },
+  // Articles de la base de connaissances renvoyés en pièce jointe tels
+  // quels (voir core/serveur_mcp_generation.py::obtenir_fichier_connaissance,
+  // 18/08) -- même famille que .tex : sans cette entrée, retombe dans le
+  // rendu générique cassé.
+  md: { icone: FileText, libelle: "Markdown" },
 };
 
 const EXTENSIONS_IMAGE = new Set(["png", "jpg", "jpeg", "webp"]);

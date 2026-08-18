@@ -13,3 +13,19 @@ export function texteAccueilSelonHeure(): string {
   if (heure >= 18 && heure < 21) return "La journée termine, mais l'aventure commence.";
   return "On veille ?";
 }
+
+// Variante pour l'écran d'accueil / tableau de bord (18/08/2026, demande
+// Bourama : textes du chat "adaptés à un écran d'accueil" -- ton
+// tableau de bord plutôt qu'ouverture de conversation, mêmes tranches
+// horaires que texteAccueilSelonHeure ci-dessus). Utilisée uniquement
+// par EcranAccueil.tsx.
+export function texteAccueilTableauDeBordSelonHeure(): string {
+  const heure = new Date().getHours();
+  if (heure >= 0 && heure < 3) return "La nuit t'appartient.";
+  if (heure >= 3 && heure < 5) return "Nuit blanche, dernière ligne droite.";
+  if (heure >= 5 && heure < 8) return "Le jour se lève, toi aussi.";
+  if (heure >= 8 && heure < 12) return "Une nouvelle journée commence.";
+  if (heure >= 12 && heure < 18) return "En plein dedans.";
+  if (heure >= 18 && heure < 21) return "La journée touche à sa fin.";
+  return "La soirée continue.";
+}

@@ -6,7 +6,7 @@ import { Bird, MessageSquare, Library, ScanSearch, BookOpen, type LucideIcon } f
 import { appelerApi, listerProgrammes, listerAuditsProgramme, listerMatieresProgramme } from "@/lib/api";
 import { dateRelative } from "@/lib/dateRelative";
 import { useOuvrirChat } from "@/lib/contexteChat";
-import { texteAccueilSelonHeure } from "@/lib/salutations";
+import { texteAccueilTableauDeBordSelonHeure } from "@/lib/salutations";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/Skeleton";
 import { ONGLETS } from "@/components/AppSidebar";
@@ -52,7 +52,7 @@ export function EcranAccueil() {
   // ChatFlottant.tsx/ChatIA.tsx -- même fonction partagée, voir
   // lib/salutations.ts). Le texte de l'heure est figé au montage de la
   // page (pas de mise à jour live tant que l'onglet reste ouvert).
-  const [titreAccueilEcran] = useState(texteAccueilSelonHeure);
+  const [titreAccueilEcran] = useState(texteAccueilTableauDeBordSelonHeure);
   const [titreRevele, setTitreRevele] = useState("");
   useEffect(() => {
     setTitreRevele("");

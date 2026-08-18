@@ -66,7 +66,7 @@ export function EspaceConnecterClaude() {
           <span className="font-semibold text-dj-texte">URL du serveur MCP distant</span>.
         </p>
         <UrlACopier />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Capture
             src="/guide-clovis-claude/4-formulaire-vide.png"
             largeur={530}

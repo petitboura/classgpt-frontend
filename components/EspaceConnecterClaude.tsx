@@ -1,20 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Check, Copy } from "lucide-react";
 
-// Guide "Utiliser Clovis dans Claude" (18/08, demande Bourama : nouvel
-// onglet dédié dans la sidebar, guide étape par étape avec des images
-// plutôt que du texte seul -- "un guide d'image avec quoi mettre où").
+// Guide "Utiliser Clovis dans Claude" (18/08, demande Bourama).
 //
-// Les illustrations sont des mockups SVG dessinés à la main, PAS des
-// captures d'écran réelles de Claude : le logo et l'interface de Claude
-// appartiennent à Anthropic, on ne les reproduit pas. Chaque mockup
-// recrée schématiquement l'écran concerné (mêmes libellés que la vraie
-// interface Claude au 18/08/2026, vérifiés) avec les tokens de couleur
-// dj-* pour rester cohérent en thème clair/sombre. Seul le mockup de
-// l'étape 4 (écran d'autorisation) reproduit fidèlement notre propre
-// écran (app/oauth/consent/page.tsx), puisque c'est du contenu Clovis.
+// v2 (18/08, même jour) : Bourama a fourni ses propres captures d'écran
+// du vrai flux Claude -- remplace les mockups SVG dessinés à la main de
+// la v1 (jugés "inutiles"). Les images viennent de
+// /public/guide-clovis-claude/, numérotées dans l'ordre réel du parcours
+// qu'il a suivi et capturé (2 captures vides fournies par Bourama --
+// écrans de transition sans contenu -- écartées, pas de trou dans la
+// numérotation ni doublon inventé).
 //
 // URL du serveur MCP Clovis confirmée par Bourama le 18/08 :
 // https://clovis-backend-production.up.railway.app/mcp/espace
@@ -29,48 +27,99 @@ export function EspaceConnecterClaude() {
         tes comportements, ta bibliothèque) directement dans vos conversations. Ça se fait une seule fois.
       </p>
 
-      <EtapeGuide numero={1} titre="Ouvre les paramètres de Claude">
+      <EtapeGuide numero={1} titre="Ouvre le menu à côté de la zone de texte">
         <p>
-          Dans Claude, clique sur ton icône de profil en bas à gauche, puis va dans{" "}
-          <span className="font-semibold text-dj-texte">Connecteurs</span>.
+          Dans Claude, clique sur le <span className="font-semibold text-dj-texte">+</span> juste à gauche de la
+          zone où tu écris ton message.
         </p>
-        <MockupParametres />
+        <Capture
+          src="/guide-clovis-claude/1-accueil-bouton-plus.png"
+          largeur={461}
+          hauteur={447}
+          alt="Écran d'accueil de Claude avec la zone de texte et le bouton + à côté"
+        />
       </EtapeGuide>
 
       <EtapeGuide numero={2} titre="Ajoute un connecteur personnalisé">
         <p>
-          Clique sur le bouton <span className="font-semibold text-dj-texte">+</span>, puis choisis{" "}
-          <span className="font-semibold text-dj-texte">Ajouter un connecteur personnalisé</span>.
+          Dans le menu qui s&apos;ouvre, survole <span className="font-semibold text-dj-texte">Ajouter un connecteur</span>{" "}
+          puis clique <span className="font-semibold text-dj-texte">Ajouter un connecteur personnalisé</span>.
         </p>
-        <MockupAjouter />
+        <Capture
+          src="/guide-clovis-claude/2-menu-ajouter-connecteur.png"
+          largeur={577}
+          hauteur={320}
+          alt="Menu du bouton + avec le sous-menu Ajouter un connecteur ouvert"
+        />
+        <Capture
+          src="/guide-clovis-claude/3-ajouter-connecteur-personnalise.png"
+          largeur={286}
+          hauteur={39}
+          alt="Option Ajouter un connecteur personnalisé mise en évidence"
+        />
       </EtapeGuide>
 
       <EtapeGuide numero={3} titre="Remplis le formulaire">
         <p>
-          Donne-lui un nom (ex. <span className="font-semibold text-dj-texte">Clovis</span>) et colle l&apos;URL
-          ci-dessous dans le champ <span className="font-semibold text-dj-texte">URL du serveur MCP distant</span>,
-          puis clique <span className="font-semibold text-dj-texte">Ajouter</span>.
+          Un formulaire s&apos;ouvre. Mets <span className="font-semibold text-dj-texte">Clovis</span> dans{" "}
+          <span className="font-semibold text-dj-texte">Nom</span>, et colle l&apos;URL ci-dessous dans{" "}
+          <span className="font-semibold text-dj-texte">URL du serveur MCP distant</span>.
         </p>
         <UrlACopier />
-        <MockupFormulaire />
+        <div className="grid grid-cols-2 gap-3">
+          <Capture
+            src="/guide-clovis-claude/4-formulaire-vide.png"
+            largeur={530}
+            hauteur={619}
+            alt="Formulaire Ajouter un connecteur personnalisé vide"
+          />
+          <Capture
+            src="/guide-clovis-claude/5-formulaire-rempli.png"
+            largeur={532}
+            hauteur={612}
+            alt="Formulaire rempli avec le nom Clovis et l'URL du serveur MCP"
+          />
+        </div>
+        <p>
+          Clique ensuite sur <span className="font-semibold text-dj-texte">Ajouter</span>.
+        </p>
       </EtapeGuide>
 
       <EtapeGuide numero={4} titre="Autorise l'accès à ton compte Clovis">
         <p>
-          Clique <span className="font-semibold text-dj-texte">Connecter</span> : Claude t&apos;envoie vers Clovis.
-          Connecte-toi à ton compte si besoin, vérifie les accès demandés, puis clique{" "}
-          <span className="font-semibold text-dj-texte">Autoriser</span>.
+          Claude t&apos;envoie vers Clovis. Connecte-toi à ton compte si besoin, vérifie les accès demandés, puis
+          clique <span className="font-semibold text-dj-texte">Autoriser</span>.
         </p>
-        <MockupAutorisation />
+        <Capture
+          src="/guide-clovis-claude/6-autoriser-claude.png"
+          largeur={488}
+          hauteur={629}
+          alt="Écran Clovis « Autoriser Claude ? » avec la liste des accès demandés"
+        />
       </EtapeGuide>
 
-      <EtapeGuide numero={5} titre="Active Clovis dans une conversation" dernier>
+      <EtapeGuide numero={5} titre="Vérifie que Clovis est bien activé">
         <p>
-          De retour dans Claude, ouvre une conversation, clique sur{" "}
-          <span className="font-semibold text-dj-texte">+</span> à côté de la zone de texte, et active{" "}
-          <span className="font-semibold text-dj-texte">Clovis</span>. C&apos;est prêt.
+          De retour dans Claude, rouvre le <span className="font-semibold text-dj-texte">+</span> à côté de la zone
+          de texte, puis <span className="font-semibold text-dj-texte">Connecteurs</span> : Clovis doit apparaître
+          dans la liste, activé.
         </p>
-        <MockupActivation />
+        <Capture
+          src="/guide-clovis-claude/7-connecteur-actif.png"
+          largeur={581}
+          hauteur={431}
+          alt="Liste des connecteurs avec Clovis activé"
+        />
+      </EtapeGuide>
+
+      <EtapeGuide numero={6} titre="C'est prêt : demande-lui ce qu'il peut faire" dernier>
+        <p>Dans une conversation, tu peux directement demander à Claude ce qu&apos;il peut faire avec Clovis.</p>
+        <Capture
+          src="/guide-clovis-claude/8-exemple-usage.png"
+          largeur={734}
+          hauteur={488}
+          alt="Exemple de conversation Claude listant ce qu'il peut faire avec Clovis"
+        />
       </EtapeGuide>
     </div>
   );
@@ -97,7 +146,7 @@ function EtapeGuide({
       </div>
       <div className={`flex-1 space-y-3 ${dernier ? "" : "pb-4"}`}>
         <h2 className="font-display text-sm font-semibold text-dj-texte">{titre}</h2>
-        <div className="space-y-1.5 text-sm leading-relaxed text-dj-texte-muet">{children}</div>
+        <div className="space-y-3 text-sm leading-relaxed text-dj-texte-muet">{children}</div>
       </div>
     </div>
   );
@@ -133,153 +182,27 @@ function UrlACopier() {
   );
 }
 
-// ---- Mockups SVG (illustrations schématiques, pas des captures réelles) ----
-
-function CadreMockup({ children, hauteur = 150 }: { children: React.ReactNode; hauteur?: number }) {
+function Capture({
+  src,
+  largeur,
+  hauteur,
+  alt,
+}: {
+  src: string;
+  largeur: number;
+  hauteur: number;
+  alt: string;
+}) {
   return (
-    <div
-      className="overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface-haute"
-      style={{ height: hauteur }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function Curseur({ x, y }: { x: number; y: number }) {
-  return (
-    <g transform={`translate(${x} ${y})`}>
-      <path
-        d="M0,0 L0,13 L3.2,10.2 L5.4,15 L7.4,14.1 L5.2,9.3 L9,9 Z"
-        fill="var(--dj-accent-1)"
-        stroke="var(--dj-fond)"
-        strokeWidth="0.8"
+    <div className="overflow-hidden rounded-xl border border-dj-bordure bg-dj-surface-haute">
+      <Image
+        src={src}
+        width={largeur}
+        height={hauteur}
+        alt={alt}
+        className="h-auto w-full"
+        sizes="(max-width: 640px) 100vw, 400px"
       />
-    </g>
-  );
-}
-
-function MockupParametres() {
-  return (
-    <CadreMockup>
-      <svg viewBox="0 0 320 150" className="h-full w-full" aria-hidden="true">
-        <rect x="0" y="0" width="90" height="150" fill="var(--dj-surface)" />
-        <rect x="0" y="0" width="320" height="150" fill="none" />
-        {/* liste de paramètres */}
-        <rect x="106" y="16" width="120" height="10" rx="2" fill="var(--dj-bordure)" />
-        <rect x="106" y="40" width="90" height="8" rx="2" fill="var(--dj-texte-muet)" opacity="0.4" />
-        <rect x="98" y="58" width="180" height="26" rx="6" fill="var(--dj-accent-1)" opacity="0.15" />
-        <rect x="98" y="58" width="180" height="26" rx="6" fill="none" stroke="var(--dj-accent-1)" strokeWidth="1.5" />
-        <rect x="106" y="66" width="70" height="10" rx="2" fill="var(--dj-accent-1)" />
-        <rect x="106" y="94" width="70" height="8" rx="2" fill="var(--dj-texte-muet)" opacity="0.4" />
-        {/* icône profil en bas à gauche */}
-        <circle cx="24" cy="128" r="12" fill="var(--dj-accent-1)" opacity="0.3" />
-        <circle cx="24" cy="128" r="12" fill="none" stroke="var(--dj-accent-1)" strokeWidth="1.5" />
-        <Curseur x={20} y={120} />
-      </svg>
-    </CadreMockup>
-  );
-}
-
-function MockupAjouter() {
-  return (
-    <CadreMockup>
-      <svg viewBox="0 0 320 150" className="h-full w-full" aria-hidden="true">
-        <rect x="16" y="14" width="130" height="12" rx="2" fill="var(--dj-texte-muet)" opacity="0.5" />
-        {/* bouton + */}
-        <circle cx="290" cy="20" r="14" fill="var(--dj-accent-1)" opacity="0.2" />
-        <circle cx="290" cy="20" r="14" fill="none" stroke="var(--dj-accent-1)" strokeWidth="1.5" />
-        <path d="M290,13 V27 M283,20 H297" stroke="var(--dj-accent-1)" strokeWidth="2" strokeLinecap="round" />
-        <Curseur x={296} y={26} />
-        {/* menu déroulant */}
-        <rect x="180" y="40" width="132" height="60" rx="8" fill="var(--dj-surface)" stroke="var(--dj-bordure)" />
-        <rect x="192" y="50" width="100" height="8" rx="2" fill="var(--dj-texte-muet)" opacity="0.4" />
-        <rect x="188" y="66" width="116" height="24" rx="5" fill="var(--dj-accent-1)" opacity="0.18" />
-        <rect x="188" y="66" width="116" height="24" rx="5" fill="none" stroke="var(--dj-accent-1)" strokeWidth="1.3" />
-        <rect x="196" y="74" width="90" height="8" rx="2" fill="var(--dj-accent-1)" />
-        {/* liste de connecteurs déjà présents */}
-        <rect x="16" y="40" width="150" height="20" rx="5" fill="var(--dj-surface)" stroke="var(--dj-bordure)" />
-        <rect x="16" y="66" width="150" height="20" rx="5" fill="var(--dj-surface)" stroke="var(--dj-bordure)" />
-      </svg>
-    </CadreMockup>
-  );
-}
-
-function MockupFormulaire() {
-  return (
-    <CadreMockup hauteur={170}>
-      <svg viewBox="0 0 320 170" className="h-full w-full" aria-hidden="true">
-        <rect x="30" y="14" width="260" height="142" rx="10" fill="var(--dj-surface)" stroke="var(--dj-bordure)" />
-        <rect x="46" y="28" width="90" height="10" rx="2" fill="var(--dj-texte-muet)" opacity="0.5" />
-
-        {/* champ Nom */}
-        <rect x="46" y="46" width="60" height="7" rx="2" fill="var(--dj-texte-muet)" opacity="0.6" />
-        <rect x="46" y="56" width="228" height="20" rx="5" fill="var(--dj-surface-haute)" stroke="var(--dj-bordure)" />
-        <rect x="54" y="62" width="34" height="8" rx="2" fill="var(--dj-accent-1)" opacity="0.7" />
-
-        {/* champ URL */}
-        <rect x="46" y="86" width="150" height="7" rx="2" fill="var(--dj-texte-muet)" opacity="0.6" />
-        <rect x="46" y="96" width="228" height="20" rx="5" fill="var(--dj-surface-haute)" stroke="var(--dj-bordure-forte)" strokeWidth="1.3" />
-        <rect x="54" y="102" width="150" height="8" rx="2" fill="var(--dj-accent-1)" opacity="0.7" />
-
-        {/* bouton Ajouter */}
-        <rect x="200" y="128" width="74" height="20" rx="5" fill="var(--dj-accent-1)" />
-        <rect x="214" y="134" width="46" height="8" rx="2" fill="var(--dj-fond)" opacity="0.85" />
-        <Curseur x={266} y={138} />
-      </svg>
-    </CadreMockup>
-  );
-}
-
-function MockupAutorisation() {
-  return (
-    <CadreMockup hauteur={170}>
-      <svg viewBox="0 0 320 170" className="h-full w-full" aria-hidden="true">
-        <rect x="70" y="10" width="180" height="152" rx="12" fill="var(--dj-surface)" stroke="var(--dj-bordure)" />
-        <circle cx="160" cy="32" r="9" fill="var(--dj-accent-1)" />
-        <rect x="118" y="48" width="84" height="10" rx="2" fill="var(--dj-texte)" opacity="0.8" />
-        <rect x="108" y="64" width="104" height="7" rx="2" fill="var(--dj-texte-muet)" opacity="0.5" />
-
-        {/* accès demandés */}
-        <rect x="86" y="80" width="148" height="34" rx="6" fill="var(--dj-surface-haute)" stroke="var(--dj-bordure)" />
-        <path d="M94,90 l3,3 l5,-6" stroke="var(--dj-accent-1)" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <rect x="106" y="88" width="90" height="6" rx="2" fill="var(--dj-texte-muet)" opacity="0.6" />
-        <path d="M94,102 l3,3 l5,-6" stroke="var(--dj-accent-1)" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <rect x="106" y="100" width="70" height="6" rx="2" fill="var(--dj-texte-muet)" opacity="0.6" />
-
-        {/* boutons Refuser / Autoriser */}
-        <rect x="86" y="128" width="66" height="20" rx="5" fill="none" stroke="var(--dj-bordure)" />
-        <rect x="99" y="134" width="40" height="8" rx="2" fill="var(--dj-texte-muet)" opacity="0.6" />
-        <rect x="168" y="128" width="66" height="20" rx="5" fill="var(--dj-accent-1)" />
-        <rect x="180" y="134" width="42" height="8" rx="2" fill="var(--dj-fond)" opacity="0.85" />
-        <Curseur x={226} y={138} />
-      </svg>
-    </CadreMockup>
-  );
-}
-
-function MockupActivation() {
-  return (
-    <CadreMockup hauteur={130}>
-      <svg viewBox="0 0 320 130" className="h-full w-full" aria-hidden="true">
-        {/* zone de saisie */}
-        <rect x="16" y="86" width="288" height="30" rx="10" fill="var(--dj-surface)" stroke="var(--dj-bordure)" />
-        <circle cx="34" cy="101" r="10" fill="var(--dj-accent-1)" opacity="0.18" />
-        <circle cx="34" cy="101" r="10" fill="none" stroke="var(--dj-accent-1)" strokeWidth="1.5" />
-        <path d="M34,96 V106 M29,101 H39" stroke="var(--dj-accent-1)" strokeWidth="2" strokeLinecap="round" />
-        <rect x="54" y="97" width="100" height="8" rx="2" fill="var(--dj-texte-muet)" opacity="0.35" />
-
-        {/* menu connecteurs ouvert au-dessus */}
-        <rect x="16" y="14" width="150" height="60" rx="8" fill="var(--dj-surface)" stroke="var(--dj-bordure)" />
-        <rect x="28" y="24" width="90" height="8" rx="2" fill="var(--dj-texte-muet)" opacity="0.5" />
-        <rect x="24" y="40" width="126" height="24" rx="5" fill="var(--dj-accent-1)" opacity="0.18" />
-        <rect x="24" y="40" width="126" height="24" rx="5" fill="none" stroke="var(--dj-accent-1)" strokeWidth="1.3" />
-        <rect x="32" y="48" width="60" height="8" rx="2" fill="var(--dj-accent-1)" />
-        {/* interrupteur actif */}
-        <rect x="126" y="46" width="18" height="10" rx="5" fill="var(--dj-succes)" />
-        <circle cx="139" cy="51" r="4" fill="var(--dj-surface)" />
-        <Curseur x={34} y={64} />
-      </svg>
-    </CadreMockup>
+    </div>
   );
 }

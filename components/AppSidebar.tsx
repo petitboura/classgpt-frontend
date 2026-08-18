@@ -21,7 +21,7 @@ import {
   Share2,
   Star,
   Compass,
-  Link2,
+  Plug,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Logo } from "@/components/Logo";
@@ -77,8 +77,9 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
   { id: "plugins", href: "/plugins", label: "Plugins", Icone: Puzzle },
   { id: "audits", href: "/audits", label: "Audits", Icone: ScanSearch },
   // Guide "Utiliser Clovis dans Claude" (18/08, demande Bourama) --
-  // icône Link2 générique (pas le logo Claude, propriété d'Anthropic).
-  { id: "claude", href: "/connecter-claude", label: "Utiliser Clovis dans Claude", Icone: Link2 },
+  // icône Plug ("branchement", demande explicite Bourama) plutôt que le
+  // logo Claude, propriété d'Anthropic.
+  { id: "claude", href: "/connecter-claude", label: "Utiliser Clovis dans Claude", Icone: Plug },
 ];
 
 // Rotation des mouvements pour les icônes de nav (Accueil + les 7

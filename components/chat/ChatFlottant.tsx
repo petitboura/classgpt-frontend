@@ -191,7 +191,19 @@ export function ChatFlottant({
             // mobile (faute de place, clavier virtuel). La bulle fermée,
             // elle, reste toujours en bas à droite (voir le bouton
             // ci-dessus) -- seule la fenêtre une fois ouverte est concernée.
-            "fixed bottom-5 right-5 z-40 flex h-[min(70dvh,600px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)] md:bottom-auto md:right-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2") +
+            //
+            // CORRECTIF 18/08/2026 (Bourama : "le popup ... trop en bas") :
+            // le centrage se faisait avant via left-1/2 top-1/2 +
+            // -translate-x/y-1/2, mais cgpt-entree-modal (juste en
+            // dessous) anime aussi la propriété transform -- une fois
+            // l'animation finie (fill-mode "both"), son état final
+            // "translateY(0) scale(1)" écrasait complètement notre
+            // décalage de centrage, qui utilisait aussi transform. Le
+            // popup perdait son -50% vertical et se retrouvait affiché
+            // une demi-hauteur trop bas. Centrage refait ici avec
+            // inset-0 + margin:auto (propriétés indépendantes de
+            // transform), qui coexiste sans conflit avec l'animation.
+            "fixed bottom-5 right-5 z-40 flex h-[min(70dvh,600px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-fond shadow-[0_4px_30px_rgba(0,0,0,0.45)] md:inset-0 md:m-auto") +
         // Fondu d'ouverture (mount -- reprend l'animation standard des
         // modals du projet, cgpt-entree-modal) et de fermeture (juste
         // avant le démontage réel, voir fermerAvecFondu) -- demande

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Download, Trophy, Check } from "lucide-react";
+import { Search, Download, Trophy, Check, Users } from "lucide-react";
 import { listerPlugins, telechargerPlugin, type Plugin } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
@@ -145,7 +145,14 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
           {rang === 0 ? <Trophy size={16} className="text-dj-accent-1" /> : `#${rang + 1}`}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm text-dj-texte">{plugin.nom}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-sm text-dj-texte">{plugin.nom}</p>
+            {plugin.contribution_libre && (
+              <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-dj-accent-1/10 px-2 py-0.5 text-[10px] font-medium text-dj-accent-1">
+                <Users size={10} /> Bibliothèque publique
+              </span>
+            )}
+          </div>
           <p className="text-xs text-dj-texte-muet">
             {plugin.niveau} · {plugin.telechargements_count} téléchargement(s) · {plugin.gratuit ? "Gratuit" : "Payant"}
           </p>

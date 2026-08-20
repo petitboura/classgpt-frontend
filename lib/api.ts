@@ -1115,6 +1115,7 @@ export type Plugin = {
   niveau: string;
   auteur_id: string;
   gratuit: boolean;
+  contribution_libre: boolean;
   telechargements_count: number;
 };
 

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pin, Mic, Square, AudioLines, ArrowUp, X, MapPin, Github, FileText, Maximize2, Minimize2, Search, Code, PenLine, Wrench, FileSearch, Globe, Map, FileType, FileSpreadsheet, Presentation, FolderSearch, Package, Archive, Download, Image as IconImage, Bell, FolderTree, FileCode, Edit3, Sigma, Check, LayoutGrid, ChevronDown, Plus, SlidersHorizontal, UserX } from "lucide-react";
 import { transcrireAudioChat, statutConnexion, demarrerConnexion, depotsGithub, pagesNotion, lignesBaseNotion, creerPageNotion, extraireFormuleImage, lireOutilsChatAgent } from "@/lib/api";
-import { OngletOutil, ONGLETS_OUTILS, APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
+import { APPLIS_DISPONIBLES, useOutilsRegistre } from "@/lib/outils";
 import { IconeNotion } from "@/components/icons/IconeNotion";
 import { LecteurMedia } from "./LecteurMedia";
 import { CanvasDessin } from "./CanvasDessin";
@@ -209,8 +209,6 @@ export function BarreDeSaisie({
     localisation: LocalisationJointe,
     texteColle: string | null,
     rechercheForcee: boolean,
-    outilsForces: string[],
-    ignorerRouteurOutils: boolean,
     sansEnseignant: boolean
   ) => void;
   desactive?: boolean;
@@ -220,7 +218,7 @@ export function BarreDeSaisie({
   // premium debloque, AUCUN bouton affiche (comportement identique a
   // avant cette feature, jamais de selecteur pour un agent qui n'a rien
   // debloque). Controle par le PARENT (ChatIA.tsx) plutot qu'en state
-  // local ici, contrairement a rechercheForcee/outilsForces -- la valeur
+  // local ici, contrairement a rechercheForcee -- la valeur
   // doit survivre au closure de envoyerMessage sans passer par
   // onEnvoyer (deja tres charge), voir ChatIA.tsx:modeleSelectionne.
   modelesDisponibles?: { modele_id: string; label: string; distributeur: string; palier: string }[];
@@ -273,7 +271,7 @@ export function BarreDeSaisie({
   // sans désélectionner le reste) -- demande explicite de Bourama, la
   // sélection unique précédente ne permettait pas de combiner par ex.
   // recherche web + GitHub sur un même message.
-  const [outilsForces, setOutilsForces] = useState<string[]>([]);
+
   // CORRECTION (2026-07-30, re-appliqué après écrasement accidentel par
   // d053181 qui repartait d'une copie locale périmée du fichier) : droits
   // réels de CET agent (flux 1 -> flux 2), via GET
@@ -313,26 +311,21 @@ export function BarreDeSaisie({
   // outilsPourAgent au lieu d'un onglet parmi d'autres.
   const outilsUtilitairesPourAgent = outilsPourAgent.filter((o) => o.onglet === "utilitaires");
 
-  // Interrupteurs (13/08/2026, demande Bourama) -- désactivent l'AFFICHAGE
-  // des boutons "Outils" et "Applications" (et toutes leurs variantes :
-  // menu complet, slots fixes, raccourci "dernier utilisé") sans toucher
-  // au reste du code (state, effets, appels API, logique de sélection).
-  // Remettre à true pour les réactiver.
-  const AFFICHER_BOUTON_OUTILS = false;
+  // Interrupteur (13/08/2026, demande Bourama) -- désactive l'AFFICHAGE du
+  // bouton "Applications" (menu complet, slots fixes, raccourci "dernier
+  // utilisé") sans toucher au reste du code (state, effets, appels API,
+  // logique de sélection). Remettre à true pour le réactiver.
+  // Le menu déroulant "Outils" (sélection manuelle d'un outil backend
+  // forcé) a été retiré entièrement (2026-08-20, demande Bourama) : mort
+  // depuis son kill-switch du 13/08, jamais réactivé, remplacé par le
+  // routeur automatique (routeur_outils_auto) côté backend pour l'agent
+  // clovis. Seul le bouton Utilitaires (ex-onglet de ce menu, sorti à
+  // part le 01/08) reste actif -- voir estOutilActif/executerActionOutil
+  // plus haut, désormais limités aux entrées "ui_*".
   const AFFICHER_BOUTON_APPLICATIONS = false;
 
-  // Flux 3 : bascules d'affichage adaptatif de la barre selon le nombre
-  // d'outils/applis réellement activés pour l'agent.
-  const NB_MIN_POUR_MENU_OUTILS = 3;
-  const outilsButtonVisible = AFFICHER_BOUTON_OUTILS && outilsPourAgent.length >= NB_MIN_POUR_MENU_OUTILS;
-  const outilsSlotsFixes =
-    AFFICHER_BOUTON_OUTILS && outilsPourAgent.length > 0 && outilsPourAgent.length < NB_MIN_POUR_MENU_OUTILS
-      ? outilsPourAgent
-      : [];
   const appliButtonVisible = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length > 1;
   const appliSlotUnique = AFFICHER_BOUTON_APPLICATIONS && applisPourAgent.length === 1 ? applisPourAgent[0] : null;
-
-  const [menuOutilsOuvert, setMenuOutilsOuvert] = useState(false);
   // Menus custom pour les selecteurs modele premium / longueur de reponse
   // (02/08/2026, Bourama : "ce style d'affichage n'est pas propre a ma
   // plateforme" -- <select> natif remplace par le meme pattern
@@ -344,24 +337,13 @@ export function BarreDeSaisie({
   const [menuLongueurOuvert, setMenuLongueurOuvert] = useState(false);
   const boutonLongueurRef = useRef<HTMLButtonElement>(null);
   const menuLongueurRef = useRef<HTMLDivElement>(null);
-  const menuOutilsRef = useRef<HTMLDivElement>(null);
-  const menuOutilsMobileRef = useRef<HTMLDivElement>(null);
-  const boutonOutilsRef = useRef<HTMLButtonElement>(null);
-  // Menu du bouton "Utilitaires" (2026-08-01) -- même pattern que
-  // menuOutilsOuvert ci-dessus (clic dehors ferme, multi-sélection
-  // cumulative via estOutilActif/executerActionOutil déjà génériques),
-  // mais pas d'onglets : une seule liste plate (outilsUtilitairesPourAgent).
+  // Menu du bouton "Utilitaires" (2026-08-01) -- multi-sélection cumulative
+  // via estOutilActif/executerActionOutil déjà génériques, pas d'onglets :
+  // une seule liste plate (outilsUtilitairesPourAgent).
   const [menuUtilitairesOuvert, setMenuUtilitairesOuvert] = useState(false);
   const menuUtilitairesRef = useRef<HTMLDivElement>(null);
   const menuUtilitairesMobileRef = useRef<HTMLDivElement>(null);
   const boutonUtilitairesRef = useRef<HTMLButtonElement>(null);
-  // Onglets du menu Outils (2026-07-28) -- voir ONGLETS_OUTILS en haut du
-  // fichier. "generer" ouvert par défaut au premier affichage.
-  const [ongletOutilActif, setOngletOutilActif] = useState<OngletOutil>("generer");
-  // Groupes d'applis dépliés dans l'onglet "Action dans l'app" -- accordéon
-  // à dépliage multiple (demande explicite de Bourama : "option B", pas un
-  // seul groupe ouvert à la fois).
-  const [groupesAppliDeplies, setGroupesAppliDeplies] = useState<string[]>([]);
 
   // Slots variables (2026-07-28, refonte barre de saisie ; révisé le
   // 2026-08-01 suite retours Bourama) -- 3 emplacements "derniers
@@ -509,15 +491,6 @@ export function BarreDeSaisie({
     enregistrerRecent("appli", nom);
   }
 
-  // Accordéon "Action dans l'app" (2026-07-28) -- dépliage multiple, chaque
-  // groupe d'appli se toggle indépendamment des autres (option B validée
-  // par Bourama).
-  function toggleGroupeAppli(nomAppli: string) {
-    setGroupesAppliDeplies((prec) =>
-      prec.includes(nomAppli) ? prec.filter((n) => n !== nomAppli) : [...prec, nomAppli]
-    );
-  }
-
   // Certaines entrées de OUTILS_DISPONIBLES (préfixe "ui_") ne sont pas des
   // outils backend forcés mais d'anciennes icônes autonomes de la barre --
   // ces deux fonctions font le routage, que l'entrée soit cliquée depuis le
@@ -535,7 +508,7 @@ export function BarreDeSaisie({
       case "ui_dessin":
         return canvasOuvert;
       default:
-        return outilsForces.includes(nom);
+        return false;
     }
   }
 
@@ -559,8 +532,6 @@ export function BarreDeSaisie({
       case "ui_mode_vocal":
         pasDisponible();
         break;
-      default:
-        setOutilsForces((prec) => (prec.includes(nom) ? prec.filter((o) => o !== nom) : [...prec, nom]));
     }
     enregistrerUtilisationOutil(nom);
   }
@@ -576,25 +547,6 @@ export function BarreDeSaisie({
     }
     enregistrerUtilisationAppli(nom);
   }
-
-  // Clic en dehors du menu Outils -> fermeture (même pattern que
-  // SidebarChat.tsx, demande de Bourama 25/07 : "il ne se ferme que
-  // quand tu cliques sur le bouton"). mousedown (pas click) pour se
-  // déclencher avant le onClick du bouton lui-même, exclu explicitement
-  // pour éviter un double-toggle fermeture-puis-réouverture immédiate.
-  useEffect(() => {
-    if (!menuOutilsOuvert) return;
-    function gererClicExterieur(e: MouseEvent) {
-      const cible = e.target as Node;
-      if (menuOutilsRef.current?.contains(cible)) return;
-      if (boutonOutilsRef.current?.contains(cible)) return;
-      if (menuOutilsMobileRef.current?.contains(cible)) return;
-      if (boutonPlusRef.current?.contains(cible)) return;
-      setMenuOutilsOuvert(false);
-    }
-    document.addEventListener("mousedown", gererClicExterieur);
-    return () => document.removeEventListener("mousedown", gererClicExterieur);
-  }, [menuOutilsOuvert]);
 
   useEffect(() => {
     if (!menuUtilitairesOuvert) return;
@@ -1262,8 +1214,6 @@ export function BarreDeSaisie({
       localisation,
       texteColle,
       rechercheForcee,
-      outilsForces,
-      false,
       sansEnseignant
     );
     setTexte("");
@@ -1272,7 +1222,6 @@ export function BarreDeSaisie({
     setTexteColle(null);
     setLangageDetecte(null);
     setRechercheForcee(false);
-    setOutilsForces([]);
     setSansEnseignant(false);
     requestAnimationFrame(ajusterHauteurTexte);
   }
@@ -1597,44 +1546,43 @@ export function BarreDeSaisie({
               }}
             />
 
-            {/* Slots variables "Outils" (2026-07-28, refonte demandée par
-                Bourama) -- jusqu'à 3 raccourcis vers les derniers outils
-                utilisés, qu'il s'agisse d'un outil backend forcé ou d'une
-                des anciennes icônes autonomes (localisation, formule,
-                recherche, dessin) qui vivent maintenant uniquement dans
-                OUTILS_DISPONIBLES. Même comportement qu'un clic dans le
-                menu Outils juste en dessous, sans avoir à l'ouvrir.
-                CORRECTION (2026-07-30, flux 3) : si l'agent a MOINS de 3
-                outils au total, il n'y a pas de bouton Outils (voir
-                outilsButtonVisible plus bas) -- on affiche alors ces
-                outils directement et en permanence (outilsSlotsFixes),
-                pas seulement les derniers cliqués. Sinon, comportement
-                inchangé (derniers cliqués), filtré par sécurité sur ce
-                qui est encore autorisé pour l'agent. */}
-            {(outilsButtonVisible
-              ? outilsRecents.filter((n) => outilsPourAgent.some((o) => o.nom === n))
-              : outilsSlotsFixes.map((o) => o.nom)
-            ).map((nom) => {
-              const entree = outilsDisponibles.find((o) => o.nom === nom);
-              if (!entree) return null;
-              const actif = estOutilActif(nom);
-              return (
-                <button
-                  key={nom}
-                  onClick={() => executerActionOutil(nom)}
-                  disabled={nom === "ui_localisation" && localisationEnCours}
-                  aria-label={entree.label}
-                  title={entree.label}
-                  className={
-                    "animate-dj-fade-in-rapide " +
-                    (actif ? "text-dj-texte transition-colors" : "text-dj-texte-muet transition-colors hover:text-dj-texte") +
-                    " disabled:opacity-60"
-                  }
-                >
-                  <entree.Icone size={18} />
-                </button>
-              );
-            })}
+            {/* Slots variables "Utilitaires récents" (2026-07-28, refonte
+                demandée par Bourama -- révisé le 2026-08-20 lors du
+                nettoyage du menu Outils manuel mort). Jusqu'à 3 raccourcis
+                vers les derniers utilitaires ui_* utilisés (localisation,
+                formule, recherche, dessin). Le menu Outils manuel
+                (sélection d'un outil backend forcé) a été retiré
+                entièrement : mort depuis son kill-switch du 13/08, jamais
+                réactivé, remplacé par le routeur automatique côté backend
+                pour l'agent clovis. CORRECTION (2026-08-20) : la
+                condition précédente dépendait d'un flag mort
+                (AFFICHER_BOUTON_OUTILS), qui empêchait ces slots de
+                remonter le moindre utilitaire récent malgré l'intention
+                d'origine -- corrigé, filtré par sécurité sur ce qui est
+                encore autorisé pour l'agent (outilsUtilitairesPourAgent). */}
+            {outilsRecents
+              .filter((n) => outilsUtilitairesPourAgent.some((o) => o.nom === n))
+              .map((nom) => {
+                const entree = outilsDisponibles.find((o) => o.nom === nom);
+                if (!entree) return null;
+                const actif = estOutilActif(nom);
+                return (
+                  <button
+                    key={nom}
+                    onClick={() => executerActionOutil(nom)}
+                    disabled={nom === "ui_localisation" && localisationEnCours}
+                    aria-label={entree.label}
+                    title={entree.label}
+                    className={
+                      "animate-dj-fade-in-rapide " +
+                      (actif ? "text-dj-texte transition-colors" : "text-dj-texte-muet transition-colors hover:text-dj-texte") +
+                      " disabled:opacity-60"
+                    }
+                  >
+                    <entree.Icone size={18} />
+                  </button>
+                );
+              })}
 
             {/* Slot variable "Appli" (2026-07-28, corrigé le 2026-07-30
                 pour dépendre du nombre RÉEL d'applis activées pour CET
@@ -1756,186 +1704,6 @@ export function BarreDeSaisie({
               </button>
             )}
 
-            {/* Bouton Outils (2026-07-25, multi-sélection depuis le 26/07) --
-                icône FIXE (ne varie jamais) : ouvre la liste complète des
-                outils, y compris les entrées "ui_" ci-dessus.
-                sélection cumulative de PLUSIEURS outils pour le prochain
-                message, voir OUTILS_DISPONIBLES en haut du fichier et
-                core/mcp_tools.py:lister_tous_les_outils côté backend.
-                CORRECTION (2026-07-30, flux 3) : masqué si l'agent a
-                moins de 3 outils activés (voir outilsSlotsFixes) ou
-                aucun. */}
-            {outilsButtonVisible && (
-            <div className="relative">
-              <button
-                ref={boutonOutilsRef}
-                onClick={() => setMenuOutilsOuvert((v) => !v)}
-                aria-label={
-                  outilsForces.length
-                    ? `${outilsForces.length} outil(s) sélectionné(s) : ${outilsForces.join(", ")}`
-                    : "Choisir un ou plusieurs outils"
-                }
-                title={
-                  outilsForces.length
-                    ? `${outilsForces.length} outil(s) sélectionné(s) : ${outilsForces.join(", ")}`
-                    : "Choisir un ou plusieurs outils"
-                }
-                className={
-                  "relative rounded-cgpt-bouton p-1 transition-colors " +
-                  (outilsForces.length || menuOutilsOuvert
-                    ? "bg-dj-accent-1/10 text-dj-accent-1"
-                    : "text-dj-texte-muet hover:text-dj-texte")
-                }
-              >
-                <Wrench size={18} />
-                {outilsForces.length > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-dj-accent-1 px-0.5 text-[9px] font-semibold leading-none text-white">
-                    {outilsForces.length}
-                  </span>
-                )}
-              </button>
-              <div
-                ref={menuOutilsRef}
-                className={
-                  "absolute bottom-full left-0 z-20 mb-2 w-72 max-w-[calc(100vw-2rem)] origin-bottom-left overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-lg transition-all duration-150 ease-cgpt-doux " +
-                  (menuOutilsOuvert
-                    ? "translate-y-0 scale-100 opacity-100"
-                    : "pointer-events-none translate-y-1 scale-95 opacity-0")
-                }
-              >
-                {/* Barre d'onglets (2026-07-28, demande Bourama) -- voir
-                    ONGLETS_OUTILS en haut du fichier. CORRECTION
-                    (2026-07-30) : un onglet sans aucune entrée autorisée
-                    pour cet agent ne s'affiche plus. */}
-                <div className="flex items-center gap-1 overflow-x-auto border-b border-dj-bordure px-1 pb-1 pt-1">
-                  {ONGLETS_OUTILS.filter(({ id }) =>
-                    id === "action_app"
-                      ? applisPourAgent.some((a) => outilsPourAgent.some((o) => o.appli === a.nom))
-                      : outilsPourAgent.some((o) => o.onglet === id)
-                  ).map(({ id, label }) => (
-                    <button
-                      key={id}
-                      onClick={() => setOngletOutilActif(id)}
-                      className={
-                        "shrink-0 whitespace-nowrap rounded-cgpt-bouton px-2.5 py-1 text-[11px] font-medium transition-colors " +
-                        (ongletOutilActif === id
-                          ? "bg-dj-accent-1/10 text-dj-accent-1"
-                          : "text-dj-texte-muet hover:text-dj-texte")
-                      }
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Hauteur FIXE (2026-07-28, demande Bourama : "la fenêtre
-                    d'outils garde sa taille, pas en fonction de combien
-                    d'outils à l'onglet") -- h-64, pas max-h-64 : ne rétrécit
-                    plus pour un onglet avec peu d'entrées (ex. "Action dans
-                    l'app" replié). Défilement interne si un onglet dépasse. */}
-                <div className="h-64 overflow-y-auto p-1">
-                  {/* Fondu à chaque changement d'onglet (2026-07-28, demande
-                      Bourama : "rien ne doit s'afficher brut") -- `key`
-                      force un remount du contenu à chaque clic d'onglet,
-                      ce qui relance l'animation dj-fade-in-rapide. */}
-                  <div key={ongletOutilActif} className="animate-dj-fade-in-rapide">
-                  {ongletOutilActif === "action_app" ? (
-                    // Onglet "Action dans l'app" (2026-07-28) -- groupé par
-                    // appli (icône + nom, trié A→Z) plutôt qu'en liste plate ;
-                    // clic sur une appli déplie ses actions liées en dessous,
-                    // triées A→Z elles aussi. Accordéon à dépliage multiple.
-                    [...applisPourAgent]
-                      .sort((a, b) => a.label.localeCompare(b.label, "fr"))
-                      .map(({ nom: nomAppli, label: labelAppli, Icone: IconeAppli }) => {
-                        const deplie = groupesAppliDeplies.includes(nomAppli);
-                        const actionsAppli = outilsPourAgent.filter((o) => o.appli === nomAppli).sort((a, b) =>
-                          a.label.localeCompare(b.label, "fr")
-                        );
-                        return (
-                          <div key={nomAppli}>
-                            <button
-                              onClick={() => toggleGroupeAppli(nomAppli)}
-                              className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs text-dj-texte transition-colors hover:bg-dj-surface-haute"
-                            >
-                              <IconeAppli size={14} />
-                              <span className="flex-1 font-medium">{labelAppli}</span>
-                              <ChevronDown
-                                size={13}
-                                className={"transition-transform duration-200 ease-out " + (deplie ? "rotate-0" : "-rotate-90")}
-                              />
-                            </button>
-                            {/* Glissement ouvert/fermé (2026-07-28, demande
-                                Bourama) -- toujours monté (pas de retrait/
-                                remontage conditionnel qui saccaderait), le
-                                triplet grid-rows/opacity anime la hauteur en
-                                douceur via la technique CSS grid-rows-[0fr →
-                                1fr] (pas besoin de mesurer la hauteur en JS). */}
-                            <div
-                              className={
-                                "grid transition-all duration-200 ease-out " +
-                                (deplie ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")
-                              }
-                            >
-                              <div className="ml-3 overflow-hidden border-l border-dj-bordure pl-2">
-                                {actionsAppli.map(({ nom, label, Icone }) => {
-                                  const actif = estOutilActif(nom);
-                                  return (
-                                    <button
-                                      key={nom}
-                                      onClick={() => executerActionOutil(nom)}
-                                      className={
-                                        "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs transition-colors " +
-                                        (actif ? "bg-dj-accent-1/10 text-dj-accent-1" : "text-dj-texte hover:bg-dj-surface-haute")
-                                      }
-                                    >
-                                      <Icone size={14} />
-                                      <span className="flex-1">{label}</span>
-                                      {actif && <Check size={13} />}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                  ) : (
-                    [...outilsPourAgent]
-                      .filter((o) => o.onglet === ongletOutilActif)
-                      .sort((a, b) => a.label.localeCompare(b.label, "fr"))
-                      .map(({ nom, label, Icone }) => {
-                        const actif = estOutilActif(nom);
-                        return (
-                          <button
-                            key={nom}
-                            onClick={() => {
-                              executerActionOutil(nom);
-                              // Menu volontairement laissé ouvert (contrairement
-                              // à l'ancienne sélection unique) : cumuler
-                              // plusieurs outils demande plusieurs clics
-                              // d'affilée sans rouvrir le menu à chaque fois.
-                              // Les entrées "ui_" (localisation, formule,
-                              // recherche, dessin) ferment quand même leur
-                              // propre panneau/permission au clic, donc laisser
-                              // le menu ouvert ne gêne pas.
-                            }}
-                            className={
-                              "flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left text-xs transition-colors " +
-                              (actif ? "bg-dj-accent-1/10 text-dj-accent-1" : "text-dj-texte hover:bg-dj-surface-haute")
-                            }
-                          >
-                            <Icone size={14} />
-                            <span className="flex-1">{label}</span>
-                            {actif && <Check size={13} />}
-                          </button>
-                        );
-                      })
-                  )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            )}
 
             {/* Bouton Utilitaires (2026-08-01, demande Bourama : "seront
                 un autre bouton à part, plus dans outils") -- ex-onglet
@@ -2353,23 +2121,13 @@ export function BarreDeSaisie({
               >
                 <Pin size={16} /> Joindre un fichier
               </button>
-              {/* CORRECTION (2026-07-30, flux 3) : ces deux entrées n'ont
-                  de sens que si le bouton dropdown correspondant existe
-                  (>=3 outils / >1 appli) -- sinon un raccourci direct
-                  suffit (slot fixe pour les outils, entrée directe
-                  ci-dessous pour l'appli unique). */}
-              {outilsButtonVisible && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOutilsOuvert(true);
-                  setMenuPlusOuvert(false);
-                }}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-              >
-                <Wrench size={16} /> Outils
-              </button>
-              )}
+              {/* CORRECTION (2026-07-30, flux 3) : cette entrée n'a de
+                  sens que si le bouton dropdown Applications existe
+                  (>1 appli) -- sinon une entrée directe suffit
+                  (appliSlotUnique ci-dessous). Le menu Outils manuel
+                  (dropdown ici, panneau plus bas) a été retiré entièrement
+                  le 2026-08-20 : mort depuis le kill-switch
+                  AFFICHER_BOUTON_OUTILS du 13/08, jamais réactivé. */}
               {outilsUtilitairesPourAgent.length > 0 && (
               <button
                 type="button"
@@ -2457,46 +2215,51 @@ export function BarreDeSaisie({
             {/* Slot variable unique mobile (2026-07-28 ; revu 2026-08-01
                 suite retour Bourama : "sur mobile le un slot gère les
                 trois, outils utilitaires, appli" -- ce slot fusionne
-                désormais les 3 catégories via `recentsCombines`
-                (l'historique persisté), pas juste les outils comme
-                avant.
+                les catégories via `recentsCombines` (l'historique
+                persisté), pas juste les outils comme avant.
+                RÉVISÉ 2026-08-20 (nettoyage du menu Outils manuel mort,
+                demande Bourama) : le menu Outils dropdown/panneau a été
+                retiré entièrement (mort depuis le kill-switch
+                AFFICHER_BOUTON_OUTILS du 13/08). Le type "outil" ne
+                couvre donc plus que les Utilitaires (ui_*,
+                outilsUtilitairesPourAgent) -- CORRECTION au passage :
+                l'ancienne condition `AFFICHER_BOUTON_OUTILS && ...`
+                bloquait déjà silencieusement toute remontée d'un
+                utilitaire récent ici, contrairement à l'intention
+                d'origine ("les trois" incluait les utilitaires) ; le
+                filtre ci-dessous répare ça.
                 Algorithme : on calcule d'abord un "candidat par défaut"
                 (ce qui s'affiche tant qu'aucun clic pertinent n'a
                 encore eu lieu), par ordre de priorité :
-                  1. outilsSlotsFixes[0] (agent à 1-2 outils/utilitaires,
-                     pas de bouton Outils dropdown)
+                  1. premier utilitaire autorisé pour cet agent
                   2. appliSlotUnique (agent à exactement 1 appli, fixe,
                      ne varie jamais -- règle Bourama)
-                  3. icône Outils générique (si outilsButtonVisible)
-                  4. première appli autorisée (si appliButtonVisible,
+                  3. première appli autorisée (si appliButtonVisible,
                      >1 appli)
-                  5. rien (agent sans outil ni appli)
+                  4. rien (agent sans utilitaire ni appli)
                 Puis on cherche dans recentsCombines la première entrée
-                encore valide pour cet agent (outil/utilitaire toujours
-                valide s'il est dans outilsPourAgent ; appli valide
-                seulement si appliButtonVisible, car une appli unique
-                ne "varie" pas) -- si trouvée, elle REMPLACE le candidat
-                par défaut (c'est la partie qui "varie"). */}
+                encore valide pour cet agent (utilitaire valide s'il est
+                dans outilsUtilitairesPourAgent ; appli valide seulement
+                si appliButtonVisible, car une appli unique ne "varie"
+                pas) -- si trouvée, elle REMPLACE le candidat par défaut
+                (c'est la partie qui "varie"). */}
             {(() => {
               type Candidat =
                 | { genre: "outil"; nom: string; label: string; Icone: typeof Wrench }
                 | { genre: "appli"; nom: string; label: string; Icone: typeof Github }
-                | { genre: "generique_outils" }
                 | null;
 
               let candidat: Candidat = null;
-              if (outilsSlotsFixes[0]) {
-                candidat = { genre: "outil", ...outilsSlotsFixes[0] };
+              if (outilsUtilitairesPourAgent[0]) {
+                candidat = { genre: "outil", ...outilsUtilitairesPourAgent[0] };
               } else if (appliSlotUnique) {
                 candidat = { genre: "appli", ...appliSlotUnique };
-              } else if (outilsButtonVisible) {
-                candidat = { genre: "generique_outils" };
               } else if (appliButtonVisible && applisPourAgent[0]) {
                 candidat = { genre: "appli", ...applisPourAgent[0] };
               }
 
               const recentValide = recentsCombines.find((r) => {
-                if (r.type === "outil") return AFFICHER_BOUTON_OUTILS && outilsPourAgent.some((o) => o.nom === r.nom);
+                if (r.type === "outil") return outilsUtilitairesPourAgent.some((o) => o.nom === r.nom);
                 return appliButtonVisible && applisPourAgent.some((a) => a.nom === r.nom);
               });
               if (recentValide) {
@@ -2510,18 +2273,6 @@ export function BarreDeSaisie({
               }
 
               if (!candidat) return null;
-
-              if (candidat.genre === "generique_outils") {
-                return (
-                  <button
-                    onClick={() => setMenuOutilsOuvert(true)}
-                    aria-label="Outils"
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-cgpt-bouton text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
-                  >
-                    <Wrench size={16} />
-                  </button>
-                );
-              }
 
               const Icone = candidat.Icone;
               const actif = candidat.genre === "outil" ? estOutilActif(candidat.nom) : false;
@@ -2570,73 +2321,10 @@ export function BarreDeSaisie({
         </div>
       )}
 
-      {/* Panneau Outils mobile (2026-07-28) -- déclenché par le menu du
-          "+" ci-dessus OU par le slot Outils de repli, même état
-          `menuOutilsOuvert` que le menu desktop. Version volontairement
-          simplifiée (liste à plat par onglet, pas d'accordéon par appli)
-          -- même données/handlers (OUTILS_DISPONIBLES, ONGLETS_OUTILS,
-          executerActionOutil, estOutilActif) que la version desktop. */}
-      {menuOutilsOuvert && (
-        <div
-          ref={menuOutilsMobileRef}
-          className="fixed inset-x-4 bottom-24 z-40 flex max-h-[60vh] flex-col overflow-hidden rounded-2xl border border-dj-bordure bg-dj-surface shadow-xl md:hidden"
-        >
-          <div className="flex items-center justify-between border-b border-dj-bordure px-3 py-2">
-            <div className="flex items-center gap-1 overflow-x-auto">
-              {ONGLETS_OUTILS.filter(({ id }) =>
-                id === "action_app"
-                  ? applisPourAgent.some((a) => outilsPourAgent.some((o) => o.appli === a.nom))
-                  : outilsPourAgent.some((o) => o.onglet === id)
-              ).map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setOngletOutilActif(id)}
-                  className={
-                    "shrink-0 whitespace-nowrap rounded-cgpt-bouton px-2.5 py-1 text-xs font-medium transition-colors " +
-                    (ongletOutilActif === id
-                      ? "bg-dj-accent-1/10 text-dj-accent-1"
-                      : "text-dj-texte-muet hover:text-dj-texte")
-                  }
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setMenuOutilsOuvert(false)}
-              aria-label="Fermer"
-              className="flex-shrink-0 text-dj-texte-muet hover:text-dj-texte"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <div className="overflow-y-auto p-1">
-            {[...outilsPourAgent]
-              .filter((o) => o.onglet === ongletOutilActif)
-              .sort((a, b) => a.label.localeCompare(b.label, "fr"))
-              .map(({ nom, label, Icone }) => {
-                const actif = estOutilActif(nom);
-                return (
-                  <button
-                    key={nom}
-                    onClick={() => executerActionOutil(nom)}
-                    className={
-                      "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors " +
-                      (actif ? "bg-dj-accent-1/10 text-dj-accent-1" : "text-dj-texte hover:bg-dj-surface-haute")
-                    }
-                  >
-                    <Icone size={16} />
-                    <span className="flex-1">{label}</span>
-                    {actif && <Check size={14} />}
-                  </button>
-                );
-              })}
-          </div>
-        </div>
-      )}
-
-      {/* Panneau Utilitaires mobile (2026-08-01) -- même principe que le
-          panneau Outils mobile ci-dessus, sans onglets (liste plate). */}
+      {/* Panneau Utilitaires mobile (2026-08-01) -- sans onglets (liste
+          plate). Panneau Outils mobile équivalent retiré le 2026-08-20
+          (mort, kill-switch AFFICHER_BOUTON_OUTILS du 13/08 jamais
+          réactivé). */}
       {menuUtilitairesOuvert && (
         <div
           ref={menuUtilitairesMobileRef}

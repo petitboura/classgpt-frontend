@@ -155,11 +155,6 @@ export interface MessageAffiche {
   // résultat de leur outil, pas dans un bloc "Sources" à part à la fin
   // -- voir OutilResultatBulle.tsx.
   outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { titre: string; url: string }[] }[];
-  // Routeur d'outils (28/07) : présent quand le backend a court-circuité
-  // la réponse normale pour proposer des boutons à la place (voir
-  // core/main.py, événement SSE "outils_suggeres"). Noms bruts (mêmes
-  // clés que OUTILS_DISPONIBLES dans BarreDeSaisie.tsx).
-  outilsSuggeres?: string[];
   // Ajouté 2026-07-28 (demande Bourama) : lien(s) de fichier(s) générés
   // par un outil, détectés côté backend de façon garantie (voir
   // core/main.py, événement SSE "fichiers_generes") -- INDÉPENDANT de ce
@@ -277,9 +272,6 @@ function BulleMessageInterne({
   raisonnement,
   raisonnementEnCours,
   outilsResultats,
-  outilsSuggeres,
-  onOutilsChoisis,
-  onIgnorerSuggestion,
   fichiersGeneres,
 }: {
   message: MessageAffiche;
@@ -300,16 +292,6 @@ function BulleMessageInterne({
   raisonnement?: string;
   raisonnementEnCours?: boolean;
   outilsResultats?: { nomOutil: string; nomLisible: string; resultat: string; sources?: { titre: string; url: string }[] }[];
-  outilsSuggeres?: string[];
-  // Multi-sélection (2026-07-28, demande Bourama, même mécanique que le
-  // menu manuel Outils) : un seul appel avec la liste complète des outils
-  // cochés au moment de la validation, plutôt qu'un rappel par outil.
-  onOutilsChoisis?: (nomsOutils: string[]) => void;
-  // Bouton "Aucun" (31/07, demande Bourama) : toujours affiché à côté des
-  // suggestions -- le routeur se trompe parfois, l'utilisateur doit
-  // pouvoir décliner sans être bloqué devant un choix qui ne correspond
-  // pas à sa question.
-  onIgnorerSuggestion?: () => void;
   fichiersGeneres?: { nomOutil: string; fichiers: { url: string; nom: string }[] }[];
 }) {
   const [copie, setCopie] = useState(false);
@@ -320,20 +302,6 @@ function BulleMessageInterne({
   const [fichiersOuverts, setFichiersOuverts] = useState(false);
   const estUtilisateur = message.role === "user";
 
-  // Envoi automatique des outils suggérés par le routeur (02/08, demande
-  // Bourama : retirer la confirmation manuelle -- dès que le routeur juge
-  // un ou plusieurs outils pertinents, on relance directement avec, sans
-  // attendre un clic). Remplace l'ancienne coche/validation manuelle.
-  // Le ref évite un second envoi si le composant se re-rend avant que le
-  // message ne change (ex. streaming d'un message suivant).
-  const outilsAutoEnvoyesRef = useRef(false);
-  useEffect(() => {
-    if (estUtilisateur) return;
-    if (!outilsSuggeres || outilsSuggeres.length === 0) return;
-    if (outilsAutoEnvoyesRef.current) return;
-    outilsAutoEnvoyesRef.current = true;
-    onOutilsChoisis?.(outilsSuggeres);
-  }, [outilsSuggeres, estUtilisateur, onOutilsChoisis]);
 
   // Sélection de texte -> "expliquer ce passage" (2026-07-20). Signal
   // utilisateur non textuel : on capte la sélection native du navigateur
@@ -782,7 +750,6 @@ function memeApparence(
     precedent.raisonnement === suivant.raisonnement &&
     precedent.raisonnementEnCours === suivant.raisonnementEnCours &&
     precedent.outilsResultats === suivant.outilsResultats &&
-    precedent.outilsSuggeres === suivant.outilsSuggeres &&
     precedent.fichiersGeneres === suivant.fichiersGeneres
   );
 }

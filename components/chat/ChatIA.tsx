@@ -329,17 +329,6 @@ export function ChatIA({
         arguments: evenement.arguments || {},
         etatReprise: evenement.etat_reprise,
       });
-    } else if (evenement.type === "outils_suggeres") {
-      // Routeur d'outils (28/07) : le backend n'a PAS généré de réponse
-      // ce tour-ci (voir core/main.py) -- le message assistant reste
-      // vide, seuls les boutons s'affichent (voir BulleMessage.tsx).
-      setStatuts([]);
-      setRaisonnementEnCours(false);
-      majMessages((prec) => {
-        const copie = [...prec];
-        copie[copie.length - 1] = { ...copie[copie.length - 1], outilsSuggeres: evenement.outils };
-        return copie;
-      });
     }
   }
 
@@ -350,8 +339,6 @@ export function ChatIA({
     localisation: LocalisationJointe = null,
     texteColle: string | null = null,
     rechercheForcee: boolean = false,
-    outilsForces: string[] = [],
-    ignorerRouteurOutils: boolean = false,
     sansEnseignant: boolean = false
   ) {
     // Doit être le tout premier test de la fonction : si le parent
@@ -521,13 +508,16 @@ export function ChatIA({
           // Fuseau du navigateur, pas une valeur figée côté code -- voir
           // core/main.py:chat(), paramètre fuseau_horaire.
           fuseau_horaire: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          // Bouton Outils (2026-07-25, TEST agent nucleos) -- voir
-          // BarreDeSaisie.tsx:OUTILS_DISPONIBLES et
-          // core/mcp_tools.py:lister_tous_les_outils côté backend.
-          outil_force: outilsForces,
-          // Bouton "Aucun" (31/07, demande Bourama) -- voir
-          // ignorerSuggestionOutils ci-dessous.
-          ignorer_suggestion_outils: ignorerRouteurOutils,
+          // outil_force / ignorer_suggestion_outils : toujours []/false
+          // pour clovis (2026-08-20, nettoyage) -- le menu manuel Outils
+          // et le bouton "Aucun" ont été retirés du frontend (morts
+          // depuis le kill-switch AFFICHER_BOUTON_OUTILS du 13/08 et le
+          // passage de l'agent clovis en routeur_outils_auto=true côté
+          // backend). Champs gardés car l'API core/mcp_tools.py:
+          // lister_tous_les_outils les attend toujours pour d'autres
+          // agents (ex. nucleos) qui utilisent un autre frontend.
+          outil_force: [],
+          ignorer_suggestion_outils: false,
           // Bouton "Sans enseignant" (06/08/2026, demande Bourama) --
           // uniquement pour les agents à contenu dynamique par matière
           // (Clovis) : force le prompt généraliste pour CE message
@@ -565,34 +555,6 @@ export function ChatIA({
     if (!messageUtilisateur) return;
     majMessages((prec) => prec.slice(0, index - 1));
     envoyerMessage(messageUtilisateur.content, "moyenne", []);
-  }
-
-  function relancerAvecOutils(index: number, nomsOutils: string[]) {
-    // Validation d'une sélection (un ou plusieurs) parmi les boutons
-    // suggérés par le routeur d'outils (28/07, multi-sélection demandée
-    // par Bourama) -- même mécanique que regenererDepuis (on retire la
-    // paire et on renvoie la question d'origine), sauf qu'on force ces
-    // outils précis au lieu de laisser le routeur redécider -- exactement
-    // comme une sélection manuelle via le menu Outils (BarreDeSaisie.tsx).
-    if (!nomsOutils.length) return;
-    const messageUtilisateur = messages[index - 1];
-    if (!messageUtilisateur) return;
-    majMessages((prec) => prec.slice(0, index - 1));
-    envoyerMessage(messageUtilisateur.content, "moyenne", [], null, null, false, nomsOutils);
-  }
-
-  function ignorerSuggestionOutils(index: number) {
-    // Bouton "Aucun" (31/07, demande Bourama : le routeur se trompe
-    // souvent -- suggère un outil sans rapport avec la question, et
-    // l'utilisateur se retrouvait bloqué devant des boutons à choisir
-    // pour rien). Même mécanique que relancerAvecOutils (retire la paire,
-    // renvoie la question d'origine), mais avec ignorerRouteurOutils=true
-    // pour que le backend réponde normalement SANS repasser par le
-    // routeur (sinon la même suggestion inutile pourrait réapparaître).
-    const messageUtilisateur = messages[index - 1];
-    if (!messageUtilisateur) return;
-    majMessages((prec) => prec.slice(0, index - 1));
-    envoyerMessage(messageUtilisateur.content, "moyenne", [], null, null, false, [], true);
   }
 
   function editerMessage(index: number, nouveauTexte: string) {
@@ -733,10 +695,7 @@ export function ChatIA({
               raisonnement={message.raisonnement}
               raisonnementEnCours={estDernier ? raisonnementEnCours : false}
               outilsResultats={message.outilsResultats}
-              outilsSuggeres={message.outilsSuggeres}
               fichiersGeneres={message.fichiersGeneres}
-              onOutilsChoisis={(noms) => relancerAvecOutils(index, noms)}
-              onIgnorerSuggestion={() => ignorerSuggestionOutils(index)}
               onRegenerer={
                 message.role === "assistant"
                   ? () => regenererDepuis(index)

@@ -216,7 +216,8 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
   // rejoignent désormais la même liste "Outils" pour libérer de la place.
   // Préfixe "ui_" utilisé comme marqueur de traitement spécial -- voir
   // estOutilActif/executerActionOutil dans BarreDeSaisie.tsx, qui
-  // interceptent ce préfixe au lieu de pousser vers `outilsForces` (backend).
+  // interceptent ce préfixe pour un traitement local (dessin, formule...)
+  // au lieu d'un vrai appel outil backend.
   { nom: "ui_localisation", label: "Joindre ma position", Icone: MapPin, onglet: "utilitaires" },
   { nom: "ui_formule", label: "Insérer une formule / réaction chimique", Icone: Sigma, onglet: "utilitaires" },
   // Éditeur riche à part (01/08, demande Bourama : "un vrai éditeur latex
@@ -238,15 +239,14 @@ export const OUTILS_DISPONIBLES: { nom: string; label: string; Icone: typeof Sea
 // entrées (onglet: "utilitaires" dans OUTILS_DISPONIBLES ci-dessus)
 // n'apparaissent donc plus comme onglet du menu Outils, mais sont
 // rendues par leur propre bouton dédié dans BarreDeSaisie.tsx (filtre
-// direct sur onglet === "utilitaires", pas besoin de les retirer du
-// type OngletOutil ni de OUTILS_DISPONIBLES, qui restent la source
-// unique partagée avec BulleMessage.tsx / OutilResultatBulle.tsx /
-// app/dashboard/applications/page.tsx).
-export const ONGLETS_OUTILS: { id: OngletOutil; label: string }[] = [
-  { id: "generer", label: "Générer" },
-  { id: "rechercher", label: "Rechercher / Explorer" },
-  { id: "action_app", label: "Action dans l'app" },
-];
+// direct sur onglet === "utilitaires"). Le type OngletOutil et le champ
+// onglet de OUTILS_DISPONIBLES restent la source unique partagée avec
+// BulleMessage.tsx / OutilResultatBulle.tsx / app/dashboard/applications/page.tsx,
+// même après la suppression du tableau ONGLETS_OUTILS ci-dessous
+// (2026-08-20, nettoyage) : ce tableau ne servait qu'à afficher la barre
+// d'onglets du menu Outils manuel, retiré entièrement (mort depuis le
+// kill-switch AFFICHER_BOUTON_OUTILS du 13/08, remplacé par le routeur
+// automatique côté backend pour l'agent clovis).
 
 // Liste "Appli" (2026-07-28) -- pendant symétrique à OUTILS_DISPONIBLES,
 // mais réservée à ce qui nécessite une connexion/authentification

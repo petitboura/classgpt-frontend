@@ -29,6 +29,7 @@ import { Skeleton } from "./Skeleton";
 import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
 import { LinkPreview } from "./chat/LinkPreview";
 import { SectionDocumentsBibliotheque } from "./SectionDocumentsBibliotheque";
+import { PanneauFlottant } from "./PanneauFlottant";
 
 // Lot 5 (chantier programme étudiant) -- au moment où ce fichier a été
 // écrit, components/EspaceProgramme.tsx (lot 4 : navigation
@@ -193,38 +194,36 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
       )}
 
       {documentOuvert && (
-        <div
-          className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6"
-          onClick={() => setDocumentOuvert(null)}
+        <PanneauFlottant
+          onFerme={() => setDocumentOuvert(null)}
+          entete={
+            <div className="flex items-center justify-between">
+              <span className="truncate text-sm text-dj-texte-muet">{documentOuvert.titre}</span>
+              <button
+                onClick={() => setDocumentOuvert(null)}
+                className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute"
+              >
+                <X size={14} /> Fermer
+              </button>
+            </div>
+          }
         >
-          <div className="flex items-center justify-between pb-4">
-            <span className="truncate text-sm text-dj-texte-muet">{documentOuvert.titre}</span>
-            <button
-              onClick={() => setDocumentOuvert(null)}
-              className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface"
-            >
-              <X size={14} /> Fermer
-            </button>
-          </div>
-
-          <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col overflow-auto" onClick={(e) => e.stopPropagation()}>
-            {URL_REGEX.test(documentOuvert.url_ou_contenu) ? (
-              <div className="flex flex-col gap-3 py-2">
-                <LinkPreview href={documentOuvert.url_ou_contenu} texteLien={documentOuvert.titre} />
-                <button
-                  onClick={() => window.open(documentOuvert.url_ou_contenu, "_blank", "noopener,noreferrer")}
-                  className="flex w-fit items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
-                >
-                  <ExternalLink size={13} /> Ouvrir le site
-                </button>
-              </div>
-            ) : (
-              <pre className="whitespace-pre-wrap break-words rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 font-sans text-sm text-dj-texte">
-                {documentOuvert.url_ou_contenu}
-              </pre>
-            )}
-          </div>
-        </div>
+          {URL_REGEX.test(documentOuvert.url_ou_contenu) ? (
+            <div className="flex flex-col gap-3 py-2">
+              <LinkPreview href={documentOuvert.url_ou_contenu} texteLien={documentOuvert.titre} />
+              <button
+                onClick={() => window.open(documentOuvert.url_ou_contenu, "_blank", "noopener,noreferrer")}
+                className="flex w-fit items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+              >
+                <ExternalLink size={13} /> Ouvrir le site
+              </button>
+            </div>
+          ) : (
+            <pre className="whitespace-pre-wrap break-words rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 font-sans text-sm text-dj-texte">
+              {documentOuvert.url_ou_contenu}
+            </pre>
+          )}
+        </PanneauFlottant>
       )}
     </div>
   );
@@ -439,30 +438,35 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
       {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
 
       {panneau && (
-        <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col overflow-y-auto bg-dj-fond p-4 sm:p-6">
-          <div className="flex items-center justify-between pb-4">
-            <span className="text-sm text-dj-texte-muet">Modifier cet exercice</span>
-            <button
-              onClick={fermer}
-              disabled={enregistrementEnCours || suppressionEnCours}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface disabled:opacity-50"
-            >
-              <X size={14} /> Fermer
-            </button>
-          </div>
-
+        <PanneauFlottant
+          onFerme={enregistrementEnCours || suppressionEnCours ? undefined : fermer}
+          large
+          entete={
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-dj-texte-muet">Modifier cet exercice</span>
+              <button
+                onClick={fermer}
+                disabled={enregistrementEnCours || suppressionEnCours}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
+              >
+                <X size={14} /> Fermer
+              </button>
+            </div>
+          }
+        >
           <textarea
             autoFocus
             value={texteOuvert}
             onChange={(e) => setTexteOuvert(e.target.value)}
-            className="mx-auto w-full max-w-2xl flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
+            rows={8}
+            className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
           />
 
-          <div className="mx-auto w-full max-w-2xl pt-4">
+          <div className="w-full pt-4">
             <SectionDocumentsBibliotheque typeCible="exercice" cibleId={panneau.id} titre="Pièces jointes" />
           </div>
 
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
             {erreurOuvert ? (
               <p className="text-xs text-[var(--dj-erreur)]">{erreurOuvert}</p>
             ) : (
@@ -485,7 +489,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
               </button>
             </div>
           </div>
-        </div>
+        </PanneauFlottant>
       )}
     </div>
   );
@@ -690,24 +694,22 @@ function SectionExamens({
       )}
 
       {panneau && (
-        <div
-          className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col overflow-y-auto bg-dj-fond p-4 sm:p-6"
-          onClick={() => setPanneau(null)}
+        <PanneauFlottant
+          onFerme={() => setPanneau(null)}
+          entete={
+            <div className="flex items-center justify-between">
+              <span className="truncate text-sm text-dj-texte-muet">{panneau.titre}</span>
+              <button
+                onClick={() => setPanneau(null)}
+                className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute"
+              >
+                <X size={14} /> Fermer
+              </button>
+            </div>
+          }
         >
-          <div className="flex items-center justify-between pb-4">
-            <span className="truncate text-sm text-dj-texte-muet">{panneau.titre}</span>
-            <button
-              onClick={() => setPanneau(null)}
-              className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface"
-            >
-              <X size={14} /> Fermer
-            </button>
-          </div>
-
-          <div className="mx-auto w-full max-w-2xl flex-1" onClick={(e) => e.stopPropagation()}>
-            <SectionDocumentsBibliotheque typeCible="examen" cibleId={panneau.id} titre="Sujet / pièces jointes" />
-          </div>
-        </div>
+          <SectionDocumentsBibliotheque typeCible="examen" cibleId={panneau.id} titre="Sujet / pièces jointes" />
+        </PanneauFlottant>
       )}
     </div>
   );

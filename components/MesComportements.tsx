@@ -7,6 +7,7 @@ import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ComportementsRecus } from "@/components/ComportementsRecus";
+import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { Skeleton } from "./Skeleton";
 
 // Section "Mes comportements" (06/08/2026, demande Bourama : "on peut en
@@ -261,27 +262,30 @@ export function MesComportements({ agentId }: { agentId: string }) {
       <ComportementsRecus />
 
       {panneau && (
-        <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6">
-          <div className="flex items-center justify-between pb-4">
-            <span className="text-sm text-dj-texte-muet">
-              {panneau.type === "creation" ? "Nouveau comportement" : "Modifier ce comportement"}
-            </span>
-            <button
-              onClick={fermer}
-              disabled={enregistrementEnCours || suppressionEnCours}
-              className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface disabled:opacity-50"
-            >
-              <X size={14} /> Fermer
-            </button>
-          </div>
-
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-1.5 pb-3 sm:flex-row sm:items-center">
+        <PanneauFlottant
+          onFerme={enregistrementEnCours || suppressionEnCours ? undefined : fermer}
+          entete={
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-dj-texte">
+                {panneau.type === "creation" ? "Nouveau comportement" : "Modifier ce comportement"}
+              </span>
+              <button
+                onClick={fermer}
+                disabled={enregistrementEnCours || suppressionEnCours}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
+              >
+                <X size={14} /> Fermer
+              </button>
+            </div>
+          }
+        >
+          <div className="flex w-full flex-col gap-1.5 pb-3 sm:flex-row sm:items-center">
             <input
               value={nomAuto ? "" : nomOuvert}
               onChange={(e) => setNomOuvert(e.target.value)}
               disabled={nomAuto}
               placeholder={nomAuto ? "Nom généré automatiquement" : "Ex : Réponses en langage simple"}
-              className="flex-1 rounded-lg border border-dj-bordure bg-dj-surface px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1 disabled:opacity-50"
+              className="flex-1 rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1 disabled:opacity-50"
             />
             <label className="flex flex-shrink-0 items-center gap-1.5 text-xs text-dj-texte-muet">
               <input
@@ -299,10 +303,11 @@ export function MesComportements({ agentId }: { agentId: string }) {
             value={texteOuvert}
             onChange={(e) => setTexteOuvert(e.target.value)}
             placeholder="Ex : réponds-moi toujours en langage simple"
-            className="mx-auto w-full max-w-2xl flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
+            rows={10}
+            className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
           />
 
-          <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
             {erreurOuvert ? (
               <p className="text-xs text-[var(--dj-erreur)]">{erreurOuvert}</p>
             ) : (
@@ -328,7 +333,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
               </button>
             </div>
           </div>
-        </div>
+        </PanneauFlottant>
       )}
     </div>
   );

@@ -33,6 +33,7 @@ import { X, Sigma, Mic, Square, Check } from "lucide-react";
 import { NoeudMaths } from "./MathNode";
 import { transcrireAudioChat } from "@/lib/api";
 import { texteParleVersLatex } from "@/lib/texteParleVersLatex";
+import { PanneauFlottant } from "@/components/PanneauFlottant";
 
 /** Sérialise le document TipTap en `texte $latex$ texte...` -- l'inverse
  * de ce que segmenterTexteAvecFormules (BarreDeSaisie.tsx) sait lire. */
@@ -127,21 +128,25 @@ export function EditeurMathsRiche({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6">
-      <div className="flex items-center justify-between pb-4">
-        <span className="text-sm text-dj-texte-muet">Éditeur maths live, texte et formules, à part du clavier normal</span>
-        <button
-          onClick={onFermer}
-          className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet hover:bg-dj-surface"
-        >
-          <X size={14} /> Fermer
-        </button>
-      </div>
-
+    <PanneauFlottant
+      onFerme={onFermer}
+      pleine
+      entete={
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-dj-texte-muet">Éditeur maths live, texte et formules, à part du clavier normal</span>
+          <button
+            onClick={onFermer}
+            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet hover:bg-dj-surface-haute"
+          >
+            <X size={14} /> Fermer
+          </button>
+        </div>
+      }
+    >
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <button
           onClick={inserdFormuleVide}
-          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface"
+          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
         >
           <Sigma size={16} /> Insérer une formule
         </button>
@@ -150,7 +155,7 @@ export function EditeurMathsRiche({
           <button
             onClick={demarrerDicteeMaths}
             disabled={transcriptionEnCours}
-            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-1.5 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute disabled:opacity-60"
           >
             <Mic size={16} /> {transcriptionEnCours ? "Conversion en cours..." : "Dicter une formule"}
           </button>
@@ -164,7 +169,7 @@ export function EditeurMathsRiche({
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface-haute p-4">
         <EditorContent
           editor={editor}
           className="prose prose-invert max-w-none text-dj-texte [&_.ProseMirror]:min-h-[200px] [&_.ProseMirror]:outline-none"
@@ -179,6 +184,6 @@ export function EditeurMathsRiche({
           <Check size={16} /> Insérer dans le message
         </button>
       </div>
-    </div>
+    </PanneauFlottant>
   );
 }

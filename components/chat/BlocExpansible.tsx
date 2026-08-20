@@ -2,6 +2,7 @@
 
 import { useState, ReactNode } from "react";
 import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
+import { PanneauFlottant } from "@/components/PanneauFlottant";
 
 // Remplace le panneau latéral (retiré, 2026-07-20 -- Bourama a préféré
 // revenir au déroulement dans le fil, avec un vrai plein écran plutôt
@@ -144,18 +145,23 @@ export function BlocExpansible({
 
   if (pleinEcran) {
     return (
-      <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond">
-        <div className="flex items-center justify-between gap-2 border-b border-dj-bordure px-4 py-3">
-          <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>
-          <div className="flex shrink-0 gap-1.5">
-            <BoutonsActions avecTexte surAgrandir={() => setPleinEcran(false)} />
-            <button onClick={fermer} className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
-              <X size={14} /> Fermer
-            </button>
+      <PanneauFlottant
+        onFerme={fermer}
+        pleine
+        entete={
+          <div className="flex items-center justify-between gap-2">
+            <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>
+            <div className="flex shrink-0 gap-1.5">
+              <BoutonsActions avecTexte surAgrandir={() => setPleinEcran(false)} />
+              <button onClick={fermer} className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
+                <X size={14} /> Fermer
+              </button>
+            </div>
           </div>
-        </div>
+        }
+      >
         <div className="min-h-0 flex-1 overflow-auto">{enfant}</div>
-      </div>
+      </PanneauFlottant>
     );
   }
 

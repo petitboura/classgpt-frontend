@@ -13,6 +13,7 @@ import hljs from "@/lib/coloration";
 import katex from "katex";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "../Skeleton";
+import { PanneauFlottant } from "@/components/PanneauFlottant";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -2763,23 +2764,24 @@ export function BarreDeSaisie({
       )}
 
       {texteColleOuvert && texteColle && (
-        <div
-          className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6"
-          onClick={() => setTexteColleOuvert(false)}
+        <PanneauFlottant
+          onFerme={() => setTexteColleOuvert(false)}
+          large
+          entete={
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm text-dj-texte-muet">{libellePieceJointe(langageDetecte, texteColle)}</span>
+              <button
+                onClick={() => setTexteColleOuvert(false)}
+                aria-label="Fermer"
+                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+              >
+                <X size={14} /> Fermer
+              </button>
+            </div>
+          }
         >
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-4">
-            <span className="text-sm text-dj-texte-muet">{libellePieceJointe(langageDetecte, texteColle)}</span>
-            <button
-              onClick={() => setTexteColleOuvert(false)}
-              aria-label="Fermer"
-              className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
-            >
-              <X size={14} /> Fermer
-            </button>
-          </div>
           {langageDetecte === "latex" ? (
             <div
-              onClick={(e) => e.stopPropagation()}
               className="min-h-0 flex-1 overflow-auto rounded-xl border border-dj-bordure bg-dj-surface-haute p-6 text-dj-texte"
               // Rendu direct en formule (fractions, intégrales, racines...),
               // pas en texte source coloré -- demande Bourama (25/07) : "le
@@ -2799,18 +2801,15 @@ export function BarreDeSaisie({
               }}
             />
           ) : langageDetecte ? (
-            <div onClick={(e) => e.stopPropagation()} className="min-h-0 flex-1 overflow-auto">
+            <div className="min-h-0 flex-1 overflow-auto">
               <BlocCode langage={langageDetecte} code={texteColle} />
             </div>
           ) : (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap text-sm leading-relaxed text-dj-texte"
-            >
+            <div className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap text-sm leading-relaxed text-dj-texte">
               {texteColle}
             </div>
           )}
-        </div>
+        </PanneauFlottant>
       )}
 
       {imageAgrandieId && fichiers.find((f) => f.id === imageAgrandieId)?.apercu && (
@@ -2868,17 +2867,22 @@ export function BarreDeSaisie({
         // 2026-07-23). Coloration des liens reprise ici aussi (2026-07-23,
         // suite) via le même calque que le composer compact, juste sur des
         // refs séparées.
-        <div className="fixed inset-0 z-50 flex flex-col animate-dj-fade-in bg-dj-fond p-4 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-4">
-            <span className="text-sm text-dj-texte-muet">Écris ton message</span>
-            <button
-              onClick={() => setPleinEcranSaisie(false)}
-              aria-label="Rétrécir"
-              className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
-            >
-              <Minimize2 size={14} /> Rétrécir
-            </button>
-          </div>
+        <PanneauFlottant
+          onFerme={() => setPleinEcranSaisie(false)}
+          pleine
+          entete={
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm text-dj-texte-muet">Écris ton message</span>
+              <button
+                onClick={() => setPleinEcranSaisie(false)}
+                aria-label="Rétrécir"
+                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+              >
+                <Minimize2 size={14} /> Rétrécir
+              </button>
+            </div>
+          }
+        >
           <div className="relative min-h-0 flex-1 overflow-hidden">
             {/* Même technique de calque que le composer compact (voir plus
                 haut, segmenterTexteAvecLiens) -- coloration des liens
@@ -2935,7 +2939,7 @@ export function BarreDeSaisie({
               Envoyer <ArrowUp size={16} />
             </button>
           </div>
-        </div>
+        </PanneauFlottant>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { X, Trash2, Eraser, Pencil } from "lucide-react";
+import { PanneauFlottant } from "@/components/PanneauFlottant";
 
 // Canvas de dessin (2026-07-25, demande de Bourama : usage maths --
 // géométrie, tracé de courbe, croquis fait directement dans l'app plutôt
@@ -99,18 +100,22 @@ export function CanvasDessin({ onValider, onFermer }: { onValider: (fichier: Fil
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond p-4 sm:p-6">
-      <div className="flex items-center justify-between pb-3">
-        <span className="text-sm text-dj-texte-muet">Dessin, géométrie, graphe, croquis</span>
-        <button
-          onClick={onFermer}
-          aria-label="Fermer"
-          className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
-        >
-          <X size={14} /> Fermer
-        </button>
-      </div>
-
+    <PanneauFlottant
+      onFerme={onFermer}
+      pleine
+      entete={
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-dj-texte-muet">Dessin, géométrie, graphe, croquis</span>
+          <button
+            onClick={onFermer}
+            aria-label="Fermer"
+            className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+          >
+            <X size={14} /> Fermer
+          </button>
+        </div>
+      }
+    >
       <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-dj-bordure bg-white">
         <canvas
           ref={canvasRef}
@@ -174,6 +179,6 @@ export function CanvasDessin({ onValider, onFermer }: { onValider: (fichier: Fil
           <Pencil size={14} /> Utiliser ce dessin
         </button>
       </div>
-    </div>
+    </PanneauFlottant>
   );
 }

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Copy, Check, Download, Maximize2, Minimize2, X } from "lucide-react";
 import hljs from "@/lib/coloration";
+import { PanneauFlottant } from "@/components/PanneauFlottant";
 
 // Rendu des blocs ```lang ... ``` "code réel" du markdown (les langages
 // spéciaux -- mermaid/chart/carte/html -- sont interceptés un niveau plus
@@ -108,24 +109,29 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
 
   if (pleinEcran) {
     return (
-      <div className="fixed inset-0 z-50 flex animate-dj-fade-in flex-col bg-dj-fond">
-        <div className="flex items-center justify-between gap-2 border-b border-dj-bordure px-4 py-3">
-          <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
-            {langage || "texte"}
-          </span>
-          <div className="flex shrink-0 items-center gap-2">
-            {boutonsActions}
-            <button
-              onClick={() => setPleinEcran(false)}
-              aria-label="Fermer"
-              className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
-            >
-              <X size={14} /> Fermer
-            </button>
+      <PanneauFlottant
+        onFerme={() => setPleinEcran(false)}
+        pleine
+        entete={
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
+              {langage || "texte"}
+            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              {boutonsActions}
+              <button
+                onClick={() => setPleinEcran(false)}
+                aria-label="Fermer"
+                className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
+              >
+                <X size={14} /> Fermer
+              </button>
+            </div>
           </div>
-        </div>
+        }
+      >
         <div className="min-h-0 flex-1 overflow-auto">{blocPre}</div>
-      </div>
+      </PanneauFlottant>
     );
   }
 

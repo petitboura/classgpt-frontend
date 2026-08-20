@@ -204,11 +204,11 @@ export function SectionDocumentsBibliotheque({
 
       {pickerOuvert && (
         <div
-          className="fixed inset-0 z-50 flex animate-dj-fade-in items-end justify-center bg-black/50 sm:items-center"
+          className="fixed inset-0 z-50 flex animate-dj-fade-in-rapide items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-6"
           onClick={() => setPickerOuvert(false)}
         >
           <div
-            className="flex max-h-[70vh] w-full flex-col gap-3 rounded-t-2xl border border-dj-bordure bg-dj-fond p-4 sm:max-w-md sm:rounded-2xl"
+            className="flex max-h-[70vh] w-full flex-col gap-3 rounded-t-2xl border border-dj-bordure bg-dj-surface p-4 shadow-[0_8px_40px_rgba(0,0,0,0.45)] animate-cgpt-entree-modal sm:max-w-md sm:rounded-cgpt-carte"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
@@ -241,7 +241,7 @@ export function SectionDocumentsBibliotheque({
                     <button
                       key={f.id}
                       onClick={() => choisirDepuisBibliotheque(f.id)}
-                      className="flex items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte"
+                      className="flex items-center gap-2 rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte"
                     >
                       <Icone size={14} className="flex-shrink-0 text-dj-accent-1" />
                       <span className="truncate">{f.description || f.nom_fichier}</span>

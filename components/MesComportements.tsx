@@ -60,6 +60,13 @@ export function MesComportements({ agentId }: { agentId: string }) {
   // de place pour écrire.
   const [panneau, setPanneau] = useState<{ type: "edition"; c: Comportement } | { type: "creation" } | null>(null);
   const [texteOuvert, setTexteOuvert] = useState("");
+  // Nom d'affichage (18/08/2026, demande Bourama) : soit choisi par
+  // l'étudiant, soit "Auto" (généré côté serveur avec le skill, même
+  // appel LLM, aucun coût en plus). Disponible dans le panneau plein
+  // écran (édition ET création) -- l'ajout rapide en bas reste en Auto
+  // par simplicité, cohérent avec son rôle de raccourci minimal.
+  const [nomOuvert, setNomOuvert] = useState("");
+  const [nomAuto, setNomAuto] = useState(true);
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
   const [erreurOuvert, setErreurOuvert] = useState<string | null>(null);
@@ -107,12 +114,16 @@ export function MesComportements({ agentId }: { agentId: string }) {
   function ouvrirEdition(c: Comportement) {
     setPanneau({ type: "edition", c });
     setTexteOuvert(c.texte);
+    setNomOuvert(c.nom || "");
+    setNomAuto(false); // un comportement existant a déjà un nom -> édition manuelle par défaut
     setErreurOuvert(null);
   }
 
   function ouvrirCreation() {
     setPanneau({ type: "creation" });
     setTexteOuvert("");
+    setNomOuvert("");
+    setNomAuto(true);
     setErreurOuvert(null);
   }
 
@@ -126,11 +137,13 @@ export function MesComportements({ agentId }: { agentId: string }) {
     const texte = texteOuvert.trim();
     if (!texte) return;
 
+    const nom = nomAuto ? null : nomOuvert.trim() || null;
+
     if (panneau.type === "creation") {
       setEnregistrementEnCours(true);
       setErreurOuvert(null);
       try {
-        const cree = await ajouterComportement(agentId, texte);
+        const cree = await ajouterComportement(agentId, texte, nom);
         setListe((prec) => [...(prec || []), cree]);
         setPanneau(null);
       } catch (e) {
@@ -141,14 +154,14 @@ export function MesComportements({ agentId }: { agentId: string }) {
       return;
     }
 
-    if (texte === panneau.c.texte) {
+    if (texte === panneau.c.texte && nom === (panneau.c.nom || null)) {
       setPanneau(null);
       return;
     }
     setEnregistrementEnCours(true);
     setErreurOuvert(null);
     try {
-      const maj = await modifierComportement(agentId, panneau.c.id, texte);
+      const maj = await modifierComportement(agentId, panneau.c.id, texte, nom);
       setListe((prec) => (prec || []).map((c) => (c.id === panneau.c.id ? maj : c)));
       setPanneau(null);
     } catch (e) {
@@ -234,7 +247,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
             >
               <Sparkles size={16} className="flex-shrink-0 text-dj-accent-1" />
               <span className="min-w-0 flex-1 line-clamp-2 text-sm leading-relaxed text-dj-texte">
-                {c.description}
+                {c.nom || c.description}
               </span>
               <ChevronRight
                 size={16}
@@ -260,6 +273,25 @@ export function MesComportements({ agentId }: { agentId: string }) {
             >
               <X size={14} /> Fermer
             </button>
+          </div>
+
+          <div className="mx-auto flex w-full max-w-2xl flex-col gap-1.5 pb-3 sm:flex-row sm:items-center">
+            <input
+              value={nomAuto ? "" : nomOuvert}
+              onChange={(e) => setNomOuvert(e.target.value)}
+              disabled={nomAuto}
+              placeholder={nomAuto ? "Nom généré automatiquement" : "Ex : Réponses en langage simple"}
+              className="flex-1 rounded-lg border border-dj-bordure bg-dj-surface px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1 disabled:opacity-50"
+            />
+            <label className="flex flex-shrink-0 items-center gap-1.5 text-xs text-dj-texte-muet">
+              <input
+                type="checkbox"
+                checked={nomAuto}
+                onChange={(e) => setNomAuto(e.target.checked)}
+                className="accent-dj-accent-1"
+              />
+              Auto
+            </label>
           </div>
 
           <textarea

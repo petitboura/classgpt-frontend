@@ -9,12 +9,19 @@ import {
   activerCode,
   supprimerCode,
   listerProgrammes,
+  lireMesComportements,
   type CodePartage,
   type Programme,
+  type Comportement,
 } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
+
+// Même agent générique que MesComportements.tsx (app/(app)/comportements/page.tsx)
+// -- "Mes comportements" n'a jamais eu de notion de rôle, un seul agentId
+// pour tout le monde.
+const AGENT_ID = "clovis";
 
 /**
  * "Mes codes" (14/08/2026, demande Bourama -- remplace EspaceInviter /
@@ -22,15 +29,19 @@ import { CTACompteRequis } from "./CTACompteRequis";
  * l'ancien système "un code = une matière", jamais lu par le chat).
  *
  * Plusieurs codes possibles, pour ne pas mélanger "à qui j'envoie quoi"
- * -- chaque code peut porter, tous optionnels et combinables : un
- * comportement, un programme (référence vers un des miens), un partage
- * de bibliothèque (copie automatique à chaque ajout), un texte libre.
- * Vivant : modifier un champ met à jour ce que voient tous les
- * receveurs de ce code, pas besoin d'en générer un nouveau.
+ * -- chaque code peut porter, tous optionnels et combinables : une
+ * sélection de comportements déjà créés dans "Mes comportements"
+ * (18/08/2026, demande Bourama : plus de texte tapé ici, référence
+ * vivante -- voir ChampComportement), un programme (référence vers un
+ * des miens), un partage de bibliothèque (copie automatique à chaque
+ * ajout), un texte libre. Vivant : modifier un champ met à jour ce que
+ * voient tous les receveurs de ce code, pas besoin d'en générer un
+ * nouveau.
  */
 export function MesCodes() {
   const [codes, setCodes] = useState<CodePartage[] | undefined>(undefined);
   const [programmes, setProgrammes] = useState<Programme[]>([]);
+  const [mesComportements, setMesComportements] = useState<Comportement[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [ouvert, setOuvert] = useState<string | null>(null); // id du code en édition
   const [creation, setCreation] = useState(false);
@@ -54,6 +65,7 @@ export function MesCodes() {
   useEffect(() => {
     charger();
     listerProgrammes().then(setProgrammes).catch(() => setProgrammes([]));
+    lireMesComportements(AGENT_ID).then(setMesComportements).catch(() => setMesComportements([]));
   }, []);
 
   async function creerVide() {
@@ -193,7 +205,11 @@ export function MesCodes() {
                   </div>
 
                   <ChampNom c={c} onSauver={(nom) => sauvegarder(c.id, { nom })} />
-                  <ChampComportement c={c} onSauver={(comportement_texte) => sauvegarder(c.id, { comportement_texte })} />
+                  <ChampComportement
+                    c={c}
+                    mesComportements={mesComportements}
+                    onSauver={(comportement_ids) => sauvegarder(c.id, { comportement_ids })}
+                  />
                   <ChampProgramme c={c} programmes={programmes} onSauver={(programme_id) => sauvegarder(c.id, { programme_id })} />
                   <ChampBibliotheque c={c} onSauver={(partage_bibliotheque) => sauvegarder(c.id, { partage_bibliotheque })} />
                   <ChampTexteLibre c={c} onSauver={(texte_libre) => sauvegarder(c.id, { texte_libre })} />
@@ -229,25 +245,56 @@ function ChampNom({ c, onSauver }: { c: CodePartage; onSauver: (v: string) => vo
   );
 }
 
-function ChampComportement({ c, onSauver }: { c: CodePartage; onSauver: (v: string) => void }) {
-  const [valeur, setValeur] = useState(c.comportement_texte || "");
+/**
+ * 18/08/2026, demande Bourama : "je veux pas [...] tu écris ton
+ * comportement tout de suite dans le code, mais tu choisis les
+ * comportements déjà créé[s]". Remplace l'ancien textarea libre --
+ * sélection multiple parmi les comportements déjà créés dans "Mes
+ * comportements" (référence vivante, voir core/codes_partage.py :
+ * modifier un comportement après coup met à jour tous les codes qui le
+ * référencent). Sauvegarde immédiate à chaque coche, comme
+ * ChampBibliotheque -- pas besoin d'un bouton "Enregistrer" séparé pour
+ * des cases à cocher.
+ */
+function ChampComportement({
+  c,
+  mesComportements,
+  onSauver,
+}: {
+  c: CodePartage;
+  mesComportements: Comportement[];
+  onSauver: (v: string[]) => void;
+}) {
+  const idsActuels = c.comportements.map((cm) => cm.id);
+
+  function basculer(id: string) {
+    const nouveaux = idsActuels.includes(id) ? idsActuels.filter((i) => i !== id) : [...idsActuels, id];
+    onSauver(nouveaux);
+  }
+
   return (
     <div>
-      <label className="text-xs font-semibold text-dj-texte-muet">Comportement</label>
-      <div className="mt-1 flex gap-1.5">
-        <textarea
-          value={valeur}
-          onChange={(e) => setValeur(e.target.value)}
-          placeholder="Ex : réponds toujours avec des exemples concrets"
-          rows={2}
-          className="flex-1 resize-none rounded-lg border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
-        />
-        {valeur !== (c.comportement_texte || "") && (
-          <button onClick={() => onSauver(valeur)} className="self-start rounded-lg bg-dj-accent-1 px-2.5 py-1.5 text-[#1A0D02]">
-            <Check size={14} />
-          </button>
-        )}
-      </div>
+      <label className="text-xs font-semibold text-dj-texte-muet">Comportements</label>
+      {mesComportements.length === 0 ? (
+        <p className="mt-1 text-xs text-dj-texte-muet">
+          Aucun comportement créé pour l&apos;instant. Crées-en un dans &quot;Mes comportements&quot; pour pouvoir
+          l&apos;attacher ici.
+        </p>
+      ) : (
+        <div className="mt-1 flex flex-col gap-1.5 rounded-lg border border-dj-bordure bg-dj-surface px-2.5 py-2">
+          {mesComportements.map((cm) => (
+            <label key={cm.id} className="flex items-center gap-2 text-sm text-dj-texte">
+              <input
+                type="checkbox"
+                checked={idsActuels.includes(cm.id)}
+                onChange={() => basculer(cm.id)}
+                className="h-4 w-4 flex-shrink-0 accent-dj-accent-1"
+              />
+              <span className="min-w-0 truncate">{cm.nom || cm.description}</span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -15,6 +15,13 @@ import { listerMesRattachementsCodes, type RattachementCode } from "@/lib/api";
  * Restylé le 16/08/2026 en même temps que MesComportements.tsx, même
  * langage visuel (carte bordée, texte en taille normale) au lieu du
  * mini-panneau compact hérité de l'ancienne sidebar de chat.
+ *
+ * 18/08/2026 : un code peut désormais porter PLUSIEURS comportements
+ * (sélection dans "Mes comportements" côté propriétaire, référence
+ * vivante) -- on affiche leur nom (r.comportements[].nom), plus le texte
+ * brut qui n'existe plus à ce niveau (le texte complet reste lu à la
+ * demande via consulter_comportement, jamais affiché d'office, même
+ * principe que pour les comportements propres).
  */
 export function ComportementsRecus() {
   const [rattachements, setRattachements] = useState<RattachementCode[] | undefined>(undefined);
@@ -39,7 +46,9 @@ export function ComportementsRecus() {
           <Sparkles size={16} className="mt-0.5 flex-shrink-0 text-dj-accent-1" />
           <div className="min-w-0 flex-1">
             <p className="text-xs text-dj-texte-muet">Reçu de {r.proprietaire_nom}</p>
-            <p className="mt-0.5 line-clamp-2 text-sm leading-relaxed text-dj-texte">{r.comportement_texte}</p>
+            <p className="mt-0.5 text-sm leading-relaxed text-dj-texte">
+              {r.comportements.map((cmp) => cmp.nom).filter(Boolean).join(", ")}
+            </p>
           </div>
         </div>
       ))}

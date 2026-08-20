@@ -570,25 +570,27 @@ export async function creerPageNotion(titre: string, contenu: string) {
 // mettre plusieurs hein, pas juste un") : plusieurs instructions perso
 // écrites par l'étudiant, chacune ajoutée EN PLUS du system_prompt déjà
 // résolu (voir core/main.py::_construire_system_prompt côté backend).
-export type Comportement = { id: string; texte: string; description: string };
+export type Comportement = { id: string; texte: string; description: string; nom: string };
 
 export async function lireMesComportements(agentId: string) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`);
   return resultat as Comportement[];
 }
 
-export async function ajouterComportement(agentId: string, texte: string) {
+// nom = null/undefined -> mode "auto" (nom généré côté serveur avec le
+// skill) ; sinon nom choisi par l'étudiant, gardé tel quel.
+export async function ajouterComportement(agentId: string, texte: string, nom?: string | null) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`, {
     method: "POST",
-    body: JSON.stringify({ texte }),
+    body: JSON.stringify({ texte, nom: nom || null }),
   });
   return resultat as Comportement;
 }
 
-export async function modifierComportement(agentId: string, comportementId: string, texte: string) {
+export async function modifierComportement(agentId: string, comportementId: string, texte: string, nom?: string | null) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}`, {
     method: "PATCH",
-    body: JSON.stringify({ texte }),
+    body: JSON.stringify({ texte, nom: nom || null }),
   });
   return resultat as Comportement;
 }
@@ -629,18 +631,21 @@ export async function mettreAJourMonProfil(nomAffiche: string) {
 // qui n'était de toute façon jamais lu par le chat -- voir
 // core/codes_partage.py côté backend) --------------------------------------
 //
-// Un code peut porter, chacun optionnel et combinable : un comportement,
-// un programme (référence vers un des miens), un partage de bibliothèque
-// (copie automatique à chaque ajout), un texte libre. Vivant : modifier
-// le code met à jour ce que voient tous ses receveurs, pas besoin d'un
-// nouveau code.
+// Un code peut porter, chacun optionnel et combinable : des comportements
+// (18/08/2026 : sélection parmi "Mes comportements", référence vivante --
+// plus un texte tapé ici, voir MesCodes.tsx), un programme (référence
+// vers un des miens), un partage de bibliothèque (copie automatique à
+// chaque ajout), un texte libre. Vivant : modifier le code (ou un
+// comportement référencé) met à jour ce que voient tous ses receveurs,
+// pas besoin d'un nouveau code.
+
+export type ComportementLie = { id: string; nom: string };
 
 export type CodePartage = {
   id: string;
   code: string;
   nom: string | null;
-  comportement_texte: string | null;
-  comportement_description: string | null;
+  comportements: ComportementLie[];
   programme_id: string | null;
   partage_bibliotheque: boolean;
   texte_libre: string | null;
@@ -651,7 +656,7 @@ export type CodePartage = {
 
 export type CodePartagePayload = {
   nom?: string | null;
-  comportement_texte?: string | null;
+  comportement_ids?: string[];
   programme_id?: string | null;
   partage_bibliotheque?: boolean;
   texte_libre?: string | null;
@@ -685,7 +690,7 @@ export type RattachementCode = {
   proprietaire_id: string;
   proprietaire_nom: string;
   a_comportement: boolean;
-  comportement_texte: string | null;
+  comportements: ComportementLie[];
   a_programme: boolean;
   programme_id: string | null;
   programme_nom: string | null;

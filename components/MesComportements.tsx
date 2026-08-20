@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Plus, X, Check, Sparkles, ChevronRight } from "lucide-react";
-import { lireMesComportements, ajouterComportement, modifierComportement, supprimerComportement, type Comportement } from "@/lib/api";
+import { Trash2, Plus, X, Check, Sparkles, FileCode2, Loader2 } from "lucide-react";
+import {
+  lireMesComportements,
+  ajouterComportement,
+  modifierComportement,
+  supprimerComportement,
+  lireSkillComportement,
+  modifierSkillComportement,
+  type Comportement,
+} from "@/lib/api";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
@@ -49,6 +57,16 @@ import { Skeleton } from "./Skeleton";
 // nom (choisi ou "Auto") ensemble, dès la création, plutôt qu'un ajout
 // à la va-vite sans nom suivi d'une édition séparée pour en mettre un.
 
+// 18/08/2026, demande Bourama ("les deux : édite le texte, l'impacte,
+// ou tu peux l'éditer directement") : onglet "Voir le skill généré" en
+// plus de l'onglet Texte -- lecture ET édition DIRECTE du skill complet
+// (frontmatter + corps) stocké côté serveur, chargé à la demande
+// (lireSkillComportement) seulement à l'ouverture de cet onglet, jamais
+// eagerly dans la liste. Éditer et enregistrer le Texte régénère
+// toujours le skill depuis ce texte (comportement inchangé, voir plus
+// haut) -- éditer directement le skill l'écrase sans toucher au texte
+// ni au nom ; si le texte est réédité ensuite, le skill regénéré
+// écrasera à son tour cette édition manuelle (voulu, pas un bug).
 export function MesComportements({ agentId }: { agentId: string }) {
   const [liste, setListe] = useState<Comportement[] | undefined>(undefined);
 
@@ -70,6 +88,15 @@ export function MesComportements({ agentId }: { agentId: string }) {
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
   const [erreurOuvert, setErreurOuvert] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
+
+  // Onglet du panneau -- "skill" seulement pertinent en édition (un
+  // comportement en création n'a pas encore de skill à afficher, voir
+  // le rendu conditionnel plus bas).
+  const [onglet, setOnglet] = useState<"texte" | "skill">("texte");
+  const [skillOuvert, setSkillOuvert] = useState("");
+  const [skillChargement, setSkillChargement] = useState(false);
+  const [skillEnregistrementEnCours, setSkillEnregistrementEnCours] = useState(false);
+  const [erreurSkill, setErreurSkill] = useState<string | null>(null);
 
   function charger() {
     lireMesComportements(agentId)
@@ -101,6 +128,9 @@ export function MesComportements({ agentId }: { agentId: string }) {
     setNomOuvert(c.nom || "");
     setNomAuto(false); // un comportement existant a déjà un nom -> édition manuelle par défaut
     setErreurOuvert(null);
+    setOnglet("texte");
+    setSkillOuvert("");
+    setErreurSkill(null);
   }
 
   function ouvrirCreation() {
@@ -109,10 +139,44 @@ export function MesComportements({ agentId }: { agentId: string }) {
     setNomOuvert("");
     setNomAuto(true);
     setErreurOuvert(null);
+    setOnglet("texte");
+    setSkillOuvert("");
+    setErreurSkill(null);
+  }
+
+  async function ouvrirOngletSkill() {
+    setOnglet("skill");
+    if (!panneau || panneau.type !== "edition" || skillOuvert || skillChargement) return;
+    setSkillChargement(true);
+    setErreurSkill(null);
+    try {
+      const md = await lireSkillComportement(agentId, panneau.c.id);
+      setSkillOuvert(md);
+    } catch (e) {
+      setErreurSkill(messageErreur(e));
+    } finally {
+      setSkillChargement(false);
+    }
+  }
+
+  async function enregistrerSkill() {
+    if (!panneau || panneau.type !== "edition") return;
+    const skillMd = skillOuvert.trim();
+    if (!skillMd) return;
+    setSkillEnregistrementEnCours(true);
+    setErreurSkill(null);
+    try {
+      const maj = await modifierSkillComportement(agentId, panneau.c.id, skillMd);
+      setListe((prec) => (prec || []).map((c) => (c.id === maj.id ? maj : c)));
+    } catch (e) {
+      setErreurSkill(messageErreur(e));
+    } finally {
+      setSkillEnregistrementEnCours(false);
+    }
   }
 
   function fermer() {
-    if (enregistrementEnCours || suppressionEnCours) return;
+    if (enregistrementEnCours || suppressionEnCours || skillEnregistrementEnCours) return;
     setPanneau(null);
   }
 
@@ -200,22 +264,16 @@ export function MesComportements({ agentId }: { agentId: string }) {
       {liste.length === 0 && <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>}
 
       {liste.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-2">
           {liste.map((c) => (
             <button
               key={c.id}
               onClick={() => ouvrirEdition(c)}
               title="Ouvrir et modifier"
-              className="group flex items-center gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+              className="group flex max-w-[240px] items-center gap-2 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
             >
-              <Sparkles size={16} className="flex-shrink-0 text-dj-accent-1" />
-              <span className="min-w-0 flex-1 line-clamp-2 text-sm leading-relaxed text-dj-texte">
-                {c.nom || c.description}
-              </span>
-              <ChevronRight
-                size={16}
-                className="flex-shrink-0 text-dj-texte-muet opacity-0 transition-opacity group-hover:opacity-100"
-              />
+              <Sparkles size={14} className="flex-shrink-0 text-dj-accent-1" />
+              <span className="min-w-0 truncate text-sm text-dj-texte">{c.nom || c.description}</span>
             </button>
           ))}
         </div>
@@ -241,60 +299,125 @@ export function MesComportements({ agentId }: { agentId: string }) {
             </div>
           }
         >
-          <div className="flex w-full flex-col gap-1.5 pb-3 sm:flex-row sm:items-center">
-            <input
-              value={nomAuto ? "" : nomOuvert}
-              onChange={(e) => setNomOuvert(e.target.value)}
-              disabled={nomAuto}
-              placeholder={nomAuto ? "Nom généré automatiquement" : "Ex : Réponses en langage simple"}
-              className="flex-1 rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1 disabled:opacity-50"
-            />
-            <label className="flex flex-shrink-0 items-center gap-1.5 text-xs text-dj-texte-muet">
-              <input
-                type="checkbox"
-                checked={nomAuto}
-                onChange={(e) => setNomAuto(e.target.checked)}
-                className="accent-dj-accent-1"
-              />
-              Auto
-            </label>
-          </div>
-
-          <textarea
-            autoFocus
-            value={texteOuvert}
-            onChange={(e) => setTexteOuvert(e.target.value)}
-            placeholder="Ex : réponds-moi toujours en langage simple"
-            rows={10}
-            className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
-          />
-
-          <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            {erreurOuvert ? (
-              <p className="text-xs text-[var(--dj-erreur)]">{erreurOuvert}</p>
-            ) : (
-              <span className="hidden sm:block" />
-            )}
-            <div className="flex items-center gap-2">
-              {panneau.type === "edition" && (
-                <button
-                  onClick={supprimer}
-                  disabled={enregistrementEnCours || suppressionEnCours}
-                  className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
-                >
-                  <Trash2 size={14} /> Supprimer
-                </button>
-              )}
+          <div className="mb-3 flex w-full flex-shrink-0 gap-1 border-b border-dj-bordure">
+            <button
+              onClick={() => setOnglet("texte")}
+              className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                onglet === "texte"
+                  ? "border-dj-accent-1 text-dj-texte"
+                  : "border-transparent text-dj-texte-muet hover:text-dj-texte"
+              }`}
+            >
+              Texte
+            </button>
+            {panneau.type === "edition" && (
               <button
-                onClick={enregistrer}
-                disabled={enregistrementEnCours || suppressionEnCours || !texteOuvert.trim()}
-                className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                onClick={ouvrirOngletSkill}
+                className={`flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+                  onglet === "skill"
+                    ? "border-dj-accent-1 text-dj-texte"
+                    : "border-transparent text-dj-texte-muet hover:text-dj-texte"
+                }`}
               >
-                <Check size={14} />{" "}
-                {enregistrementEnCours ? "Enregistrement…" : panneau.type === "creation" ? "Créer" : "Enregistrer"}
+                <FileCode2 size={14} />
+                Voir le skill généré
               </button>
-            </div>
+            )}
           </div>
+
+          {onglet === "texte" ? (
+            <>
+              <div className="flex w-full flex-col gap-1.5 pb-3 sm:flex-row sm:items-center">
+                <input
+                  value={nomAuto ? "" : nomOuvert}
+                  onChange={(e) => setNomOuvert(e.target.value)}
+                  disabled={nomAuto}
+                  placeholder={nomAuto ? "Nom généré automatiquement" : "Ex : Réponses en langage simple"}
+                  className="flex-1 rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1 disabled:opacity-50"
+                />
+                <label className="flex flex-shrink-0 items-center gap-1.5 text-xs text-dj-texte-muet">
+                  <input
+                    type="checkbox"
+                    checked={nomAuto}
+                    onChange={(e) => setNomAuto(e.target.checked)}
+                    className="accent-dj-accent-1"
+                  />
+                  Auto
+                </label>
+              </div>
+
+              <textarea
+                autoFocus
+                value={texteOuvert}
+                onChange={(e) => setTexteOuvert(e.target.value)}
+                placeholder="Ex : réponds-moi toujours en langage simple"
+                rows={10}
+                className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
+              />
+
+              <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                {erreurOuvert ? (
+                  <p className="text-xs text-[var(--dj-erreur)]">{erreurOuvert}</p>
+                ) : (
+                  <span className="hidden sm:block" />
+                )}
+                <div className="flex items-center gap-2">
+                  {panneau.type === "edition" && (
+                    <button
+                      onClick={supprimer}
+                      disabled={enregistrementEnCours || suppressionEnCours}
+                      className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
+                    >
+                      <Trash2 size={14} /> Supprimer
+                    </button>
+                  )}
+                  <button
+                    onClick={enregistrer}
+                    disabled={enregistrementEnCours || suppressionEnCours || !texteOuvert.trim()}
+                    className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                  >
+                    <Check size={14} />{" "}
+                    {enregistrementEnCours ? "Enregistrement…" : panneau.type === "creation" ? "Créer" : "Enregistrer"}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="pb-2 text-xs text-dj-texte-muet">
+                Ce que l&apos;IA lit vraiment quand elle consulte ce comportement (frontmatter + instructions). Tu
+                peux le corriger directement ici -- si tu réédites le texte brut plus tard, il sera régénéré et
+                remplacera ce que tu écris ici.
+              </p>
+              {skillChargement ? (
+                <div className="flex flex-1 items-center justify-center text-dj-texte-muet">
+                  <Loader2 size={20} className="animate-spin" />
+                </div>
+              ) : (
+                <textarea
+                  value={skillOuvert}
+                  onChange={(e) => setSkillOuvert(e.target.value)}
+                  rows={10}
+                  spellCheck={false}
+                  className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 font-mono text-sm text-dj-texte outline-none focus:border-dj-accent-1"
+                />
+              )}
+              <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                {erreurSkill ? (
+                  <p className="text-xs text-[var(--dj-erreur)]">{erreurSkill}</p>
+                ) : (
+                  <span className="hidden sm:block" />
+                )}
+                <button
+                  onClick={enregistrerSkill}
+                  disabled={skillEnregistrementEnCours || skillChargement || !skillOuvert.trim()}
+                  className="flex items-center gap-1.5 self-end rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50 sm:self-auto"
+                >
+                  <Check size={14} /> {skillEnregistrementEnCours ? "Enregistrement…" : "Enregistrer le skill"}
+                </button>
+              </div>
+            </>
+          )}
         </PanneauFlottant>
       )}
     </div>

@@ -595,6 +595,25 @@ export async function modifierComportement(agentId: string, comportementId: stri
   return resultat as Comportement;
 }
 
+// 18/08/2026, demande Bourama ("les deux : édite le texte, l'impacte,
+// ou tu peux l'éditer directement") : édition DIRECTE du skill généré
+// (frontmatter + corps), lue/écrite à la demande (onglet dédié), sans
+// passer par le texte brut. Éditer le texte régénère toujours le skill
+// (via modifierComportement ci-dessus) -- ces deux chemins coexistent,
+// le second écrasant le premier s'ils sont utilisés l'un après l'autre.
+export async function lireSkillComportement(agentId: string, comportementId: string) {
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/skill`);
+  return (resultat as { skill_md: string }).skill_md;
+}
+
+export async function modifierSkillComportement(agentId: string, comportementId: string, skillMd: string) {
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/skill`, {
+    method: "PATCH",
+    body: JSON.stringify({ skill_md: skillMd }),
+  });
+  return resultat as Comportement;
+}
+
 export async function supprimerComportement(agentId: string, comportementId: string) {
   return appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}`, { method: "DELETE" });
 }

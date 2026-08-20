@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Download, Trophy, Check, Users } from "lucide-react";
+import { Search, Download, Trophy, Check, Users, FilePlus } from "lucide-react";
 import { listerPlugins, telechargerPlugin, type Plugin } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
+import { PanneauAjoutPluginPublic } from "./PanneauAjoutPluginPublic";
 
 // Lot 5 (chantier programme étudiant) -- interface de recherche/téléchar-
 // gement des plugins (espaces de classe exportés en bloc, voir Partie 1 du
@@ -119,6 +120,10 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
   // (refonte "Mon espace = l'app", même détection 401 que les autres
   // sections).
   const [sansCompte, setSansCompte] = useState(false);
+  // Ajouter un document : action EN PLUS du téléchargement (inchangé,
+  // toujours "ta propre copie"), disponible uniquement si ce plugin est
+  // contribution_libre -- panneau replié par défaut (20/08).
+  const [panneauOuvert, setPanneauOuvert] = useState(false);
 
   async function telecharger() {
     setEnvoi(true);
@@ -139,60 +144,79 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="flex w-6 flex-shrink-0 items-center justify-center text-sm font-bold text-dj-texte-muet">
-          {rang === 0 ? <Trophy size={16} className="text-dj-accent-1" /> : `#${rang + 1}`}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-sm text-dj-texte">{plugin.nom}</p>
-            {plugin.contribution_libre && (
-              <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-dj-accent-1/10 px-2 py-0.5 text-[10px] font-medium text-dj-accent-1">
-                <Users size={10} /> Bibliothèque publique
-              </span>
-            )}
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="flex w-6 flex-shrink-0 items-center justify-center text-sm font-bold text-dj-texte-muet">
+            {rang === 0 ? <Trophy size={16} className="text-dj-accent-1" /> : `#${rang + 1}`}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate text-sm text-dj-texte">{plugin.nom}</p>
+              {plugin.contribution_libre && (
+                <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-dj-accent-1/10 px-2 py-0.5 text-[10px] font-medium text-dj-accent-1">
+                  <Users size={10} /> Bibliothèque publique
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-dj-texte-muet">
+              {plugin.niveau} · {plugin.telechargements_count} téléchargement(s) · {plugin.gratuit ? "Gratuit" : "Payant"}
+            </p>
+            {erreur && <p className="mt-1 text-xs text-[var(--dj-erreur)]">{erreur}</p>}
           </div>
-          <p className="text-xs text-dj-texte-muet">
-            {plugin.niveau} · {plugin.telechargements_count} téléchargement(s) · {plugin.gratuit ? "Gratuit" : "Payant"}
-          </p>
-          {erreur && <p className="mt-1 text-xs text-[var(--dj-erreur)]">{erreur}</p>}
+        </div>
+
+        <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
+          {plugin.contribution_libre && (
+            <button
+              onClick={() => setPanneauOuvert((v) => !v)}
+              className="flex items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
+            >
+              <FilePlus size={13} /> Ajouter un document
+            </button>
+          )}
+
+          {sansCompte ? (
+            <CTACompteRequis texte="Crée un compte pour télécharger ce plugin dans ton espace." />
+          ) : telecharge ? (
+            <span className="flex items-center gap-1.5 text-sm text-dj-succes">
+              <Check size={14} /> Téléchargé
+            </span>
+          ) : confirmation ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-dj-texte-muet">Créer une copie dans ton espace ?</span>
+              <button
+                onClick={telecharger}
+                disabled={envoi}
+                className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+              >
+                {envoi ? "…" : "Confirmer"}
+              </button>
+              <button
+                onClick={() => setConfirmation(false)}
+                disabled={envoi}
+                className="text-xs text-dj-texte-muet hover:text-dj-texte"
+              >
+                Annuler
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmation(true)}
+              className="flex items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
+            >
+              <Download size={13} /> Télécharger
+            </button>
+          )}
         </div>
       </div>
 
-      {sansCompte ? (
-        <div className="w-full flex-shrink-0 sm:w-auto">
-          <CTACompteRequis texte="Crée un compte pour télécharger ce plugin dans ton espace." />
-        </div>
-      ) : telecharge ? (
-        <span className="flex flex-shrink-0 items-center gap-1.5 text-sm text-dj-succes">
-          <Check size={14} /> Téléchargé
-        </span>
-      ) : confirmation ? (
-        <div className="flex flex-shrink-0 items-center gap-2">
-          <span className="text-xs text-dj-texte-muet">Créer une copie dans ton espace ?</span>
-          <button
-            onClick={telecharger}
-            disabled={envoi}
-            className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
-          >
-            {envoi ? "…" : "Confirmer"}
-          </button>
-          <button
-            onClick={() => setConfirmation(false)}
-            disabled={envoi}
-            className="text-xs text-dj-texte-muet hover:text-dj-texte"
-          >
-            Annuler
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setConfirmation(true)}
-          className="flex flex-shrink-0 items-center gap-1.5 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
-        >
-          <Download size={13} /> Télécharger
-        </button>
+      {panneauOuvert && (
+        <PanneauAjoutPluginPublic
+          programmeSourceId={plugin.programme_source_id}
+          nomPlugin={plugin.nom}
+          onFermer={() => setPanneauOuvert(false)}
+        />
       )}
     </div>
   );

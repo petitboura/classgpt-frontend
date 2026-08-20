@@ -1111,6 +1111,7 @@ export async function supprimerClassement(classementId: string) {
 
 export type Plugin = {
   id: string;
+  programme_source_id: string;
   nom: string;
   niveau: string;
   auteur_id: string;

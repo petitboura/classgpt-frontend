@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Plus, X, Check, Maximize2, Sparkles, ChevronRight } from "lucide-react";
+import { Trash2, Plus, X, Check, Sparkles, ChevronRight } from "lucide-react";
 import { lireMesComportements, ajouterComportement, modifierComportement, supprimerComportement, type Comportement } from "@/lib/api";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
@@ -40,32 +40,30 @@ import { Skeleton } from "./Skeleton";
 // chaque élément qui peut s'agrandir, est cliquable pour l'ouvrir et
 // bien l'éditer") : cliquer sur un comportement existant ouvre CET
 // élément précis dans un espace dédié plein écran (grand champ de
-// texte, Enregistrer, Supprimer), plus de mini-édition compactée sur
-// place. L'ajout d'un nouveau comportement, lui, reste le petit champ
-// rapide en bas de liste (confirmé par Bourama) -- ces deux décisions
-// UX ne sont pas remises en cause par cette refonte, seule
-// l'habillage visuel change.
+// texte, Enregistrer, Supprimer).
+//
+// 18/08/2026, demande Bourama ("rends-le sérieux, en fait un vrai
+// skill quoi") : la barre rapide d'ajout (petit input + bouton
+// "Ajouter" au fil de l'eau) est supprimée. La création passe désormais
+// UNIQUEMENT par le même panneau plein écran que l'édition -- texte +
+// nom (choisi ou "Auto") ensemble, dès la création, plutôt qu'un ajout
+// à la va-vite sans nom suivi d'une édition séparée pour en mettre un.
 
 export function MesComportements({ agentId }: { agentId: string }) {
   const [liste, setListe] = useState<Comportement[] | undefined>(undefined);
-  const [nouveauTexte, setNouveauTexte] = useState("");
-  const [ajoutEnCours, setAjoutEnCours] = useState(false);
-  const [erreur, setErreur] = useState<string | null>(null);
 
   // Panneau plein écran : soit édition d'un comportement existant, soit
   // création d'un nouveau (07/08/2026, demande Bourama : "le mode plein
   // écran ne doit pas être dispo que pour ceux qui existent -- en mode
   // édition [ajout] il faut aussi un truc à côté de la ligne de champ").
-  // La création rapide (petit champ + bouton en bas) reste disponible en
-  // parallèle, ce plein écran est une option en plus pour qui veut plus
-  // de place pour écrire.
+  // Depuis le 18/08 (voir plus haut), c'est le SEUL chemin de création,
+  // plus de raccourci en parallèle.
   const [panneau, setPanneau] = useState<{ type: "edition"; c: Comportement } | { type: "creation" } | null>(null);
   const [texteOuvert, setTexteOuvert] = useState("");
   // Nom d'affichage (18/08/2026, demande Bourama) : soit choisi par
   // l'étudiant, soit "Auto" (généré côté serveur avec le skill, même
-  // appel LLM, aucun coût en plus). Disponible dans le panneau plein
-  // écran (édition ET création) -- l'ajout rapide en bas reste en Auto
-  // par simplicité, cohérent avec son rôle de raccourci minimal.
+  // appel LLM, aucun coût en plus). Seul endroit de création/édition
+  // depuis la suppression de la barre rapide -- voir plus haut.
   const [nomOuvert, setNomOuvert] = useState("");
   const [nomAuto, setNomAuto] = useState(true);
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
@@ -96,21 +94,6 @@ export function MesComportements({ agentId }: { agentId: string }) {
   // elle-même depuis le chat (ajouter_comportement, etc.) -- ce panneau
   // ne rechargeait avant que sur montage. Voir lib/evenementsDonnees.ts.
   useEffect(() => ecouterDonneesModifiees("comportements", charger), [agentId]);
-
-  async function ajouter() {
-    if (!nouveauTexte.trim()) return;
-    setAjoutEnCours(true);
-    setErreur(null);
-    try {
-      const cree = await ajouterComportement(agentId, nouveauTexte.trim());
-      setListe((prec) => [...(prec || []), cree]);
-      setNouveauTexte("");
-    } catch (e) {
-      setErreur(messageErreur(e));
-    } finally {
-      setAjoutEnCours(false);
-    }
-  }
 
   function ouvrirEdition(c: Comportement) {
     setPanneau({ type: "edition", c });
@@ -206,34 +189,13 @@ export function MesComportements({ agentId }: { agentId: string }) {
         plusieurs, clique sur l&apos;une d&apos;elles pour l&apos;ouvrir en grand et la modifier tranquillement.
       </p>
 
-      <div className="flex flex-col gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-4 sm:flex-row sm:items-center">
-        <input
-          value={nouveauTexte}
-          onChange={(e) => setNouveauTexte(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && ajouter()}
-          placeholder="Ex : réponds-moi toujours en langage simple"
-          className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
-        />
-        <div className="flex items-center gap-2">
-          <button
-            onClick={ouvrirCreation}
-            className="flex flex-shrink-0 items-center gap-2 rounded-cgpt-bouton border border-dj-bordure px-4 py-2 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
-          >
-            <Maximize2 size={14} />
-            Plein écran
-          </button>
-          <button
-            onClick={ajouter}
-            disabled={ajoutEnCours || !nouveauTexte.trim()}
-            className="flex flex-shrink-0 items-center gap-1.5 self-end rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50 sm:self-auto"
-          >
-            <Plus size={14} />
-            {ajoutEnCours ? "Ajout…" : "Ajouter"}
-          </button>
-        </div>
-      </div>
-
-      {erreur && <p className="text-sm text-[var(--dj-erreur)]">{erreur}</p>}
+      <button
+        onClick={ouvrirCreation}
+        className="flex items-center justify-center gap-2 rounded-2xl border border-dj-bordure bg-dj-surface px-4 py-3 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+      >
+        <Plus size={16} />
+        Nouveau comportement
+      </button>
 
       {liste.length === 0 && <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>}
 

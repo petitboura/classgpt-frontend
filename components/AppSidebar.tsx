@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -133,11 +133,28 @@ export function AppSidebar({
   const [avisDeplie, setAvisDeplie] = useState(false);
   const [copie, setCopie] = useState(false);
   const asideRef = useRef<HTMLDivElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
 
   function basculerActions() {
     setActionsDeplie((v) => !v);
-    setOuverte(true);
   }
+
+  // Dropdown "Actions" (20/08/2026, demande Bourama : la barre latérale
+  // étant quasi pleine, l'ancien accordéon poussait le sélecteur de
+  // thème et "Se déconnecter" hors du cadre visible, coupés par
+  // l'overflow-hidden du rail) -- petit menu flottant collé au bouton
+  // plutôt qu'un dépli qui repousse le reste de la colonne. Se ferme au
+  // clic en dehors.
+  useEffect(() => {
+    if (!actionsDeplie) return;
+    function onClicExterieur(e: MouseEvent) {
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
+        setActionsDeplie(false);
+      }
+    }
+    document.addEventListener("mousedown", onClicExterieur);
+    return () => document.removeEventListener("mousedown", onClicExterieur);
+  }, [actionsDeplie]);
 
   async function partager() {
     const url = window.location.origin;
@@ -240,9 +257,9 @@ export function AppSidebar({
 
       <div
         ref={asideRef}
-        className={`hidden flex-shrink-0 flex-col overflow-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
-          ouverte ? "md:w-72" : "md:w-14"
-        }`}
+        className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
+          actionsDeplie ? "overflow-visible" : "overflow-hidden"
+        } ${ouverte ? "md:w-72" : "md:w-14"}`}
       >
         <button
           onClick={() => setOuverte((v) => !v)}
@@ -271,7 +288,7 @@ export function AppSidebar({
           </div>
         )}
 
-        <div className={`rounded-xl ${ouverte ? "mt-2" : "mt-auto"}`}>
+        <div ref={actionsRef} className={`relative rounded-xl ${ouverte ? "mt-2" : "mt-auto"}`}>
           <button
             onClick={basculerActions}
             title="Actions"
@@ -284,54 +301,48 @@ export function AppSidebar({
             </span>
             <LibelleRail ouverte={ouverte}>Actions</LibelleRail>
           </button>
-          {ouverte && (
-            <div
-              className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                actionsDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-              }`}
-            >
-              <div className="overflow-hidden">
-                <div className="flex flex-col gap-2 px-2 pb-2">
-                  <button
-                    onClick={partager}
-                    className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
-                  >
-                    <Share2 size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:-rotate-12" />
-                    {copie ? "Copié !" : "Partager"}
-                  </button>
+          {actionsDeplie && (
+            <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={partager}
+                  className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <Share2 size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:-rotate-12" />
+                  {copie ? "Copié !" : "Partager"}
+                </button>
 
-                  <div className="rounded-lg">
-                    <button
-                      onClick={() => setAvisDeplie((v) => !v)}
-                      className={`group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
-                        avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface hover:text-dj-texte"
-                      }`}
-                    >
-                      <Star size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
-                      Avis sur Clovis
-                    </button>
-                    <div
-                      className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                        avisDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                      }`}
-                    >
-                      <div className="overflow-hidden">
-                        <div className="flex flex-col gap-4 px-2 pb-2">
-                          <NoteAgent agentId={AGENT_ID} />
-                          <CommentairesAgent agentId={AGENT_ID} />
-                        </div>
+                <div className="rounded-lg">
+                  <button
+                    onClick={() => setAvisDeplie((v) => !v)}
+                    className={`group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors ${
+                      avisDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+                    }`}
+                  >
+                    <Star size={16} className="flex-shrink-0 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
+                    Avis sur Clovis
+                  </button>
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                      avisDeplie ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="flex flex-col gap-4 px-2 pb-2">
+                        <NoteAgent agentId={AGENT_ID} />
+                        <CommentairesAgent agentId={AGENT_ID} />
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    onClick={onOuvrirCatalogue}
-                    className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                  >
-                    <Compass size={16} className="flex-shrink-0 transition-transform duration-300 group-hover:rotate-45" />
-                    Pourquoi Clovis ?
-                  </button>
                 </div>
+
+                <button
+                  onClick={onOuvrirCatalogue}
+                  className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                >
+                  <Compass size={16} className="flex-shrink-0 transition-transform duration-300 group-hover:rotate-45" />
+                  Pourquoi Clovis ?
+                </button>
               </div>
             </div>
           )}

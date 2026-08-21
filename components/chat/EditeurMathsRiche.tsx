@@ -59,9 +59,16 @@ function serialiserDocument(doc: any): string {
 export function EditeurMathsRiche({
   onFermer,
   onInserer,
+  enSortie,
 }: {
   onFermer: () => void;
   onInserer: (texte: string) => void;
+  // 18/08/2026, voir lib/useFermetureAnimee.ts -- le hook vit dans le
+  // parent (BarreDeSaisie.tsx), pas ici, car onInserer y ferme aussi
+  // directement (3e chemin de fermeture en plus de onFermer/X) : une
+  // seule source de vérité pour "est-on en train de fermer", au niveau
+  // qui contrôle réellement editeurMathsRicheOuvert.
+  enSortie?: boolean;
 }) {
   const [dictant, setDictant] = useState(false);
   const [transcriptionEnCours, setTranscriptionEnCours] = useState(false);
@@ -131,6 +138,7 @@ export function EditeurMathsRiche({
     <PanneauFlottant
       onFerme={onFermer}
       pleine
+      enSortie={enSortie}
       entete={
         <div className="flex items-center justify-between">
           <span className="text-sm text-dj-texte-muet">Éditeur maths live, texte et formules, à part du clavier normal</span>

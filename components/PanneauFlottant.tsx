@@ -22,6 +22,13 @@ export function PanneauFlottant({
   entete,
   large = false,
   pleine = false,
+  // 18/08/2026, voir lib/useFermetureAnimee.ts : true pendant les
+  // ~180ms où ce panneau doit encore être monté pour jouer son
+  // animation de sortie, alors que la condition d'affichage "réelle"
+  // côté appelant est déjà retombée à false. onFerme, lui, reste la
+  // fonction de fermeture RÉELLE (celle qui finit par démonter) --
+  // c'est au hook, pas à ce composant, de décider quand l'appeler.
+  enSortie = false,
 }: {
   children: ReactNode;
   onFerme?: () => void;
@@ -32,17 +39,22 @@ export function PanneauFlottant({
    * ombre, fond assombri) mais avec beaucoup plus de place qu'un panneau de
    * formulaire classique, plutôt que revenir à l'aplat edge-to-edge. */
   pleine?: boolean;
+  enSortie?: boolean;
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex animate-dj-fade-in-rapide items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6"
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm sm:p-6 ${
+        enSortie ? "opacity-0 transition-opacity duration-150 ease-in" : "animate-dj-fade-in-rapide"
+      }`}
       onClick={onFerme}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className={`flex w-full ${
           pleine ? "max-w-6xl max-h-[94vh]" : large ? "max-w-4xl max-h-[88vh]" : "max-w-2xl max-h-[88vh]"
-        } flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_8px_40px_rgba(0,0,0,0.45)] animate-cgpt-entree-modal`}
+        } flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_8px_40px_rgba(0,0,0,0.45)] ${
+          enSortie ? "animate-cgpt-sortie-modal" : "animate-cgpt-entree-modal"
+        }`}
       >
         {entete && <div className="flex-shrink-0 border-b border-dj-bordure px-5 py-3 sm:px-6">{entete}</div>}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">{children}</div>

@@ -3,6 +3,7 @@
 import { useState, ReactNode } from "react";
 import { ChevronDown, ChevronUp, Copy, Check, Download, Maximize2, Minimize2, X, Loader2, LucideIcon } from "lucide-react";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
+import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 // Remplace le panneau latéral (retiré, 2026-07-20 -- Bourama a préféré
 // revenir au déroulement dans le fil, avec un vrai plein écran plutôt
@@ -42,6 +43,12 @@ export function BlocExpansible({
   const [pleinEcran, setPleinEcran] = useState(false);
   const [copie, setCopie] = useState(false);
   const [premiereOuvertureFaite, setPremiereOuvertureFaite] = useState(false);
+
+  // 18/08/2026, voir lib/useFermetureAnimee.ts : anime la fermeture du
+  // panneau plein écran (PanneauFlottant) -- ne concerne QUE ce mode,
+  // pas le repli inline (contenuPrincipal), qui ne passe pas par
+  // PanneauFlottant.
+  const { enSortie, demarrerFermeture } = useFermetureAnimee();
 
   function basculerOuvert() {
     if (!ouvert && !premiereOuvertureFaite) {
@@ -146,14 +153,15 @@ export function BlocExpansible({
   if (pleinEcran) {
     return (
       <PanneauFlottant
-        onFerme={fermer}
+        onFerme={() => demarrerFermeture(fermer)}
         pleine
+        enSortie={enSortie}
         entete={
           <div className="flex items-center justify-between gap-2">
             <span className="truncate text-sm font-medium text-dj-texte">{titre}</span>
             <div className="flex shrink-0 gap-1.5">
               <BoutonsActions avecTexte surAgrandir={() => setPleinEcran(false)} />
-              <button onClick={fermer} className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
+              <button onClick={() => demarrerFermeture(fermer)} className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte">
                 <X size={14} /> Fermer
               </button>
             </div>

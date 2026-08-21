@@ -14,6 +14,7 @@ import katex from "katex";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "../Skeleton";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
+import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 // EditeurMathsRiche (tiptap + mathlive) et EditeurFormule (mathlive) ne
 // montent que quand leur modale respective s'ouvre (voir
@@ -569,6 +570,9 @@ export function BarreDeSaisie({
   const SEUIL_COLLAGE_LONG = 800;
   const [texteColle, setTexteColle] = useState<string | null>(null);
   const [texteColleOuvert, setTexteColleOuvert] = useState(false);
+  // 18/08/2026, voir lib/useFermetureAnimee.ts -- une instance par
+  // PanneauFlottant de ce fichier, chacun avec sa propre fermeture.
+  const { enSortie: texteColleEnSortie, demarrerFermeture: fermerTexteColleAnime } = useFermetureAnimee();
   // Langage détecté si le collage est du code (2026-07-25) -- null pour
   // un collage de texte normal (>800 caractères, comportement existant
   // inchangé), une valeur hljs (ex. "python") sinon.
@@ -576,11 +580,13 @@ export function BarreDeSaisie({
   // Plein écran de la saisie (2026-07-23, demande de Bourama : l'agrandissement
   // auto restait trop limité pour écrire un long message confortablement).
   const [pleinEcranSaisie, setPleinEcranSaisie] = useState(false);
+  const { enSortie: pleinEcranSaisieEnSortie, demarrerFermeture: fermerPleinEcranSaisieAnime } = useFermetureAnimee();
   // Canvas de dessin (2026-07-25) -- géométrie/graphe/croquis, voir
   // CanvasDessin.tsx. Le résultat rejoint le tableau `fichiers` comme un
   // upload classique (ajouterFichiers), donc suit exactement le même
   // chemin d'envoi/aperçu, aucun état séparé nécessaire pour l'envoi.
   const [canvasOuvert, setCanvasOuvert] = useState(false);
+  const { enSortie: canvasEnSortie, demarrerFermeture: fermerCanvasAnime } = useFermetureAnimee();
   // Éditeur de formule maths/chimie (2026-07-25) -- voir EditeurFormule.tsx.
   const [editeurFormuleOuvert, setEditeurFormuleOuvert] = useState(false);
   // Éditeur maths riche à part (01/08) -- voir EditeurMathsRiche.tsx. Un
@@ -588,6 +594,7 @@ export function BarreDeSaisie({
   // d'"Insérer dans le message", rien d'autre du textarea/clavier
   // n'est touché ni partagé (demande explicite de Bourama).
   const [editeurMathsRicheOuvert, setEditeurMathsRicheOuvert] = useState(false);
+  const { enSortie: editeurMathsEnSortie, demarrerFermeture: fermerEditeurMathsAnime } = useFermetureAnimee();
   // Insertion live (2026-07-27, demande Bourama : "les symboles s'insèrent
   // automatiquement, pas de bouton insérer/effacer") -- plutôt qu'un clic
   // "Insérer" qui pousse le résultat final d'un coup, on garde la trace de
@@ -2453,13 +2460,14 @@ export function BarreDeSaisie({
 
       {texteColleOuvert && texteColle && (
         <PanneauFlottant
-          onFerme={() => setTexteColleOuvert(false)}
+          onFerme={() => fermerTexteColleAnime(() => setTexteColleOuvert(false))}
           large
+          enSortie={texteColleEnSortie}
           entete={
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm text-dj-texte-muet">{libellePieceJointe(langageDetecte, texteColle)}</span>
               <button
-                onClick={() => setTexteColleOuvert(false)}
+                onClick={() => fermerTexteColleAnime(() => setTexteColleOuvert(false))}
                 aria-label="Fermer"
                 className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
               >
@@ -2519,7 +2527,8 @@ export function BarreDeSaisie({
 
       {canvasOuvert && (
         <CanvasDessin
-          onFermer={() => setCanvasOuvert(false)}
+          enSortie={canvasEnSortie}
+          onFermer={() => fermerCanvasAnime(() => setCanvasOuvert(false))}
           onValider={(fichier) => {
             // Rejoint le pipeline "Joindre un fichier" existant -- le
             // dessin est traité en tout point comme une image uploadée
@@ -2527,21 +2536,22 @@ export function BarreDeSaisie({
             // S'AJOUTE aux fichiers déjà joints depuis le 17/08 (upload
             // multiple), ne les remplace plus.
             ajouterFichiers([fichier]);
-            setCanvasOuvert(false);
+            fermerCanvasAnime(() => setCanvasOuvert(false));
           }}
         />
       )}
 
       {editeurMathsRicheOuvert && (
         <EditeurMathsRiche
-          onFermer={() => setEditeurMathsRicheOuvert(false)}
+          enSortie={editeurMathsEnSortie}
+          onFermer={() => fermerEditeurMathsAnime(() => setEditeurMathsRicheOuvert(false))}
           onInserer={(texteSerialise) => {
             // Seul point de contact avec le composer existant : on
             // rejoint `texte` exactement comme la dictée classique
             // (demarrerDictee) ou le collage -- rien d'autre du textarea
             // n'est modifié.
             setTexte((prec) => (prec.trim() ? `${prec} ${texteSerialise}` : texteSerialise));
-            setEditeurMathsRicheOuvert(false);
+            fermerEditeurMathsAnime(() => setEditeurMathsRicheOuvert(false));
             requestAnimationFrame(ajusterHauteurTexte);
           }}
         />
@@ -2556,13 +2566,14 @@ export function BarreDeSaisie({
         // suite) via le même calque que le composer compact, juste sur des
         // refs séparées.
         <PanneauFlottant
-          onFerme={() => setPleinEcranSaisie(false)}
+          onFerme={() => fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false))}
           pleine
+          enSortie={pleinEcranSaisieEnSortie}
           entete={
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm text-dj-texte-muet">Écris ton message</span>
               <button
-                onClick={() => setPleinEcranSaisie(false)}
+                onClick={() => fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false))}
                 aria-label="Rétrécir"
                 className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
               >
@@ -2607,7 +2618,7 @@ export function BarreDeSaisie({
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   envoyer();
-                  setPleinEcranSaisie(false);
+                  fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));
                 }
               }}
               placeholder="Pose ta question..."
@@ -2618,7 +2629,7 @@ export function BarreDeSaisie({
             <button
               onClick={() => {
                 envoyer();
-                setPleinEcranSaisie(false);
+                fermerPleinEcranSaisieAnime(() => setPleinEcranSaisie(false));
               }}
               disabled={(!texte.trim() && !texteColle) || desactive}
               aria-label="Envoyer"

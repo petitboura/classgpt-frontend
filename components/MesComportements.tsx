@@ -17,6 +17,7 @@ import {
 } from "@/lib/api";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
+import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ComportementsRecus } from "@/components/ComportementsRecus";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
@@ -126,6 +127,10 @@ export function MesComportements({ agentId }: { agentId: string }) {
   // aussi, depuis ce même panneau).
   const [detachementEnCours, setDetachementEnCours] = useState(false);
 
+  // 18/08/2026, voir lib/useFermetureAnimee.ts : anime la fermeture du
+  // panneau au lieu de le démonter d'un coup.
+  const { enSortie, demarrerFermeture } = useFermetureAnimee();
+
   function charger() {
     lireMesComportements(agentId)
       .then(setListe)
@@ -206,7 +211,6 @@ export function MesComportements({ agentId }: { agentId: string }) {
   }
 
   function fermer() {
-    if (enregistrementEnCours || suppressionEnCours || skillEnregistrementEnCours || detachementEnCours) return;
     setPanneau(null);
   }
 
@@ -238,7 +242,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
       try {
         const cree = await ajouterComportement(agentId, texte, nom);
         setListe((prec) => [...(prec || []), cree]);
-        setPanneau(null);
+        demarrerFermeture(fermer);
       } catch (e) {
         setErreurOuvert(messageErreur(e));
       } finally {
@@ -248,7 +252,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
     }
 
     if (texte === panneau.c.texte && nom === (panneau.c.nom || null)) {
-      setPanneau(null);
+      demarrerFermeture(fermer);
       return;
     }
     setEnregistrementEnCours(true);
@@ -256,7 +260,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
     try {
       const maj = await modifierComportement(agentId, panneau.c.id, texte, nom);
       setListe((prec) => (prec || []).map((c) => (c.id === panneau.c.id ? maj : c)));
-      setPanneau(null);
+      demarrerFermeture(fermer);
     } catch (e) {
       setErreurOuvert(messageErreur(e));
     } finally {
@@ -271,7 +275,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
     try {
       await supprimerComportement(agentId, panneau.c.id);
       setListe((prec) => (prec || []).filter((c) => c.id !== panneau.c.id));
-      setPanneau(null);
+      demarrerFermeture(fermer);
     } catch (e) {
       setErreurOuvert(messageErreur(e));
       setSuppressionEnCours(false);
@@ -300,9 +304,9 @@ export function MesComportements({ agentId }: { agentId: string }) {
 
       <button
         onClick={ouvrirCreation}
-        className="flex items-center justify-center gap-2 rounded-2xl border border-dj-bordure bg-dj-surface px-4 py-3 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+        className="flex w-fit items-center gap-1.5 rounded-full border border-dj-bordure bg-dj-surface px-3 py-1.5 text-sm font-medium text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
       >
-        <Plus size={16} />
+        <Plus size={14} />
         Nouveau comportement
       </button>
 
@@ -334,10 +338,11 @@ export function MesComportements({ agentId }: { agentId: string }) {
       {panneau && (
         <PanneauFlottant
           large
+          enSortie={enSortie}
           onFerme={
             enregistrementEnCours || suppressionEnCours || skillEnregistrementEnCours || detachementEnCours
               ? undefined
-              : fermer
+              : () => demarrerFermeture(fermer)
           }
           entete={
             <div className="flex items-center justify-between">
@@ -345,8 +350,8 @@ export function MesComportements({ agentId }: { agentId: string }) {
                 {panneau.type === "creation" ? "Nouveau comportement" : "Modifier ce comportement"}
               </span>
               <button
-                onClick={fermer}
-                disabled={enregistrementEnCours || suppressionEnCours}
+                onClick={() => demarrerFermeture(fermer)}
+                disabled={enregistrementEnCours || suppressionEnCours || skillEnregistrementEnCours || detachementEnCours}
                 className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
               >
                 <X size={14} /> Fermer
@@ -414,6 +419,13 @@ export function MesComportements({ agentId }: { agentId: string }) {
                   Auto
                 </label>
               </div>
+
+              {panneau.type === "edition" && (
+                <p className="pb-3 text-xs text-dj-texte-muet">
+                  <span className="font-medium text-dj-texte-muet">Description envoyée au routeur :</span>{" "}
+                  {panneau.c.description || "—"}
+                </p>
+              )}
 
               <textarea
                 autoFocus

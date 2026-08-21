@@ -32,6 +32,7 @@ import { SectionDocumentsBibliotheque } from "./SectionDocumentsBibliotheque";
 import { SectionComportementsEmplacement } from "./SectionComportementsEmplacement";
 import { SelectPersonnalise } from "./SelectPersonnalise";
 import { PanneauFlottant } from "./PanneauFlottant";
+import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 // Lot 5 (chantier programme étudiant) -- au moment où ce fichier a été
 // écrit, components/EspaceProgramme.tsx (lot 4 : navigation
@@ -71,6 +72,7 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
   // main (pas de vrai fichier, voir api/contenu_programme.py), donc pas
   // besoin d'une visionneuse par type MIME -- juste lien vs texte brut.
   const [documentOuvert, setDocumentOuvert] = useState<DocumentChapitre | null>(null);
+  const { enSortie: documentEnSortie, demarrerFermeture: fermerDocumentAnime } = useFermetureAnimee();
   // Demande Bourama 17/08 : ici, texte/lien tapé à la main doit rester
   // discret par rapport à la bibliothèque (SectionDocumentsBibliotheque,
   // juste au-dessus dans VueChapitreContenu) -- formulaire replié par
@@ -198,12 +200,13 @@ function SectionDocuments({ chapitreId }: { chapitreId: string }) {
 
       {documentOuvert && (
         <PanneauFlottant
-          onFerme={() => setDocumentOuvert(null)}
+          onFerme={() => fermerDocumentAnime(() => setDocumentOuvert(null))}
+          enSortie={documentEnSortie}
           entete={
             <div className="flex items-center justify-between">
               <span className="truncate text-sm text-dj-texte-muet">{documentOuvert.titre}</span>
               <button
-                onClick={() => setDocumentOuvert(null)}
+                onClick={() => fermerDocumentAnime(() => setDocumentOuvert(null))}
                 className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute"
               >
                 <X size={14} /> Fermer
@@ -239,6 +242,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
   const [erreur, setErreur] = useState<string | null>(null);
 
   const [panneau, setPanneau] = useState<ExerciceChapitre | null>(null);
+  const { enSortie, demarrerFermeture } = useFermetureAnimee();
   const [texteOuvert, setTexteOuvert] = useState("");
   const [enregistrementEnCours, setEnregistrementEnCours] = useState(false);
   const [suppressionEnCours, setSuppressionEnCours] = useState(false);
@@ -314,7 +318,6 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
   }
 
   function fermer() {
-    if (enregistrementEnCours || suppressionEnCours) return;
     setPanneau(null);
   }
 
@@ -322,7 +325,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
     if (!panneau) return;
     const enonce = texteOuvert.trim();
     if (!enonce || enonce === panneau.enonce) {
-      setPanneau(null);
+      demarrerFermeture(fermer);
       return;
     }
     setEnregistrementEnCours(true);
@@ -330,7 +333,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
     try {
       const maj = await modifierExerciceChapitre(panneau.id, enonce);
       setExercices((prec) => (prec || []).map((e) => (e.id === panneau.id ? maj : e)));
-      setPanneau(null);
+      demarrerFermeture(fermer);
     } catch (e) {
       setErreurOuvert(messageErreur(e));
     } finally {
@@ -345,7 +348,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
     try {
       await supprimerExerciceChapitre(panneau.id);
       setExercices((prec) => (prec || []).filter((e) => e.id !== panneau.id));
-      setPanneau(null);
+      demarrerFermeture(fermer);
     } catch (e) {
       setErreurOuvert(messageErreur(e));
       setSuppressionEnCours(false);
@@ -442,13 +445,14 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
 
       {panneau && (
         <PanneauFlottant
-          onFerme={enregistrementEnCours || suppressionEnCours ? undefined : fermer}
+          onFerme={enregistrementEnCours || suppressionEnCours ? undefined : () => demarrerFermeture(fermer)}
           large
+          enSortie={enSortie}
           entete={
             <div className="flex items-center justify-between">
               <span className="text-sm text-dj-texte-muet">Modifier cet exercice</span>
               <button
-                onClick={fermer}
+                onClick={() => demarrerFermeture(fermer)}
                 disabled={enregistrementEnCours || suppressionEnCours}
                 className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute disabled:opacity-50"
               >
@@ -579,6 +583,7 @@ function SectionExamens({
   }
 
   const [panneau, setPanneau] = useState<Examen | null>(null);
+  const { enSortie, demarrerFermeture } = useFermetureAnimee();
 
   async function supprimer(id: string, titreExamen: string) {
     if (!window.confirm(`Supprimer « ${titreExamen} » ?`)) return;
@@ -696,12 +701,13 @@ function SectionExamens({
 
       {panneau && (
         <PanneauFlottant
-          onFerme={() => setPanneau(null)}
+          onFerme={() => demarrerFermeture(() => setPanneau(null))}
+          enSortie={enSortie}
           entete={
             <div className="flex items-center justify-between">
               <span className="truncate text-sm text-dj-texte-muet">{panneau.titre}</span>
               <button
-                onClick={() => setPanneau(null)}
+                onClick={() => demarrerFermeture(() => setPanneau(null))}
                 className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute"
               >
                 <X size={14} /> Fermer

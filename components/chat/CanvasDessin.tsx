@@ -20,7 +20,18 @@ import { PanneauFlottant } from "@/components/PanneauFlottant";
 const COULEURS = ["#111111", "#dc2626", "#2563eb", "#16a34a"];
 const EPAISSEURS = [2, 5, 10];
 
-export function CanvasDessin({ onValider, onFermer }: { onValider: (fichier: File) => void; onFermer: () => void }) {
+export function CanvasDessin({
+  onValider,
+  onFermer,
+  enSortie,
+}: {
+  onValider: (fichier: File) => void;
+  onFermer: () => void;
+  // 18/08/2026, voir lib/useFermetureAnimee.ts -- hook dans le parent
+  // (BarreDeSaisie.tsx), même raison que EditeurMathsRiche.tsx : onValider
+  // ferme aussi directement, en plus de onFermer/X.
+  enSortie?: boolean;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dessineRef = useRef(false);
   const dernierPointRef = useRef<{ x: number; y: number } | null>(null);
@@ -103,6 +114,7 @@ export function CanvasDessin({ onValider, onFermer }: { onValider: (fichier: Fil
     <PanneauFlottant
       onFerme={onFermer}
       pleine
+      enSortie={enSortie}
       entete={
         <div className="flex items-center justify-between">
           <span className="text-sm text-dj-texte-muet">Dessin, géométrie, graphe, croquis</span>

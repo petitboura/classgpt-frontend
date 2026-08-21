@@ -8,6 +8,7 @@ import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { PanneauAjoutPluginPublic } from "./PanneauAjoutPluginPublic";
 import { PanneauFlottant } from "./PanneauFlottant";
+import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 // Lot 5 (chantier programme étudiant) -- interface de recherche/téléchar-
 // gement des plugins (espaces de classe exportés en bloc, voir Partie 1 du
@@ -132,6 +133,7 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
   // documents/exercices), jamais un téléchargement -- endpoint public
   // GET /api/plugins/{id}/apercu, aucun compte requis pour juste voir.
   const [apercuOuvert, setApercuOuvert] = useState(false);
+  const { enSortie: apercuEnSortie, demarrerFermeture: fermerApercuAnime } = useFermetureAnimee();
   const [apercu, setApercu] = useState<ApercuPlugin | null>(null);
   const [chargementApercu, setChargementApercu] = useState(false);
   const [erreurApercu, setErreurApercu] = useState<string | null>(null);
@@ -252,7 +254,8 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
 
       {apercuOuvert && (
         <PanneauFlottant
-          onFerme={() => setApercuOuvert(false)}
+          onFerme={() => fermerApercuAnime(() => setApercuOuvert(false))}
+          enSortie={apercuEnSortie}
           entete={
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -263,7 +266,7 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
                 </p>
               </div>
               <button
-                onClick={() => setApercuOuvert(false)}
+                onClick={() => fermerApercuAnime(() => setApercuOuvert(false))}
                 className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute"
               >
                 <X size={14} /> Fermer
@@ -320,7 +323,7 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => {
-                    setApercuOuvert(false);
+                    fermerApercuAnime(() => setApercuOuvert(false));
                     setConfirmation(true);
                   }}
                   className="flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Copy, Check, Download, Maximize2, Minimize2, X } from "lucide-react";
 import hljs from "@/lib/coloration";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
+import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 
 // Rendu des blocs ```lang ... ``` "code réel" du markdown (les langages
 // spéciaux -- mermaid/chart/carte/html -- sont interceptés un niveau plus
@@ -36,6 +37,7 @@ const EXTENSION_PAR_LANGAGE: Record<string, string> = {
 export function BlocCode({ langage, code }: { langage: string; code: string }) {
   const [copie, setCopie] = useState(false);
   const [pleinEcran, setPleinEcran] = useState(false);
+  const { enSortie, demarrerFermeture } = useFermetureAnimee();
 
   const html = useMemo(() => {
     try {
@@ -68,6 +70,14 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
     URL.revokeObjectURL(url);
   }
 
+  // Bouton Agrandir/Rétrécir partagé entre vue inline et plein écran
+  // (boutonsActions, plus bas) -- seule la fermeture (Rétrécir depuis le
+  // plein écran) doit passer par l'animation, pas l'ouverture.
+  function basculerPleinEcran() {
+    if (pleinEcran) demarrerFermeture(() => setPleinEcran(false));
+    else setPleinEcran(true);
+  }
+
   const blocPre = (
     <pre className="overflow-x-auto px-4 py-3 font-mono text-[13px] leading-relaxed">
       <code
@@ -97,7 +107,7 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
         <Download size={12} /> Télécharger
       </button>
       <button
-        onClick={() => setPleinEcran((v) => !v)}
+        onClick={basculerPleinEcran}
         aria-label={pleinEcran ? "Rétrécir" : "Agrandir"}
         className={boutonClasse}
       >
@@ -110,8 +120,9 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
   if (pleinEcran) {
     return (
       <PanneauFlottant
-        onFerme={() => setPleinEcran(false)}
+        onFerme={() => demarrerFermeture(() => setPleinEcran(false))}
         pleine
+        enSortie={enSortie}
         entete={
           <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-[11px] uppercase tracking-wide text-dj-texte-muet">
@@ -120,7 +131,7 @@ export function BlocCode({ langage, code }: { langage: string; code: string }) {
             <div className="flex shrink-0 items-center gap-2">
               {boutonsActions}
               <button
-                onClick={() => setPleinEcran(false)}
+                onClick={() => demarrerFermeture(() => setPleinEcran(false))}
                 aria-label="Fermer"
                 className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-2.5 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
               >

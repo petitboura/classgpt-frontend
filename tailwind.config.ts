@@ -133,6 +133,17 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(12px) scale(.96)" },
           to: { opacity: "1", transform: "translateY(0) scale(1)" },
         },
+        // Fermeture d'un modal (18/08/2026, demande Bourama : "ton truc
+        // là s'affiche et se ferme brutement j'aime pas") -- PanneauFlottant
+        // n'avait qu'une animation d'entrée, le démontage React était
+        // instantané (aucune sortie possible sans garder le composant
+        // monté le temps de l'anim, voir useFermetureAnimee.ts). Inverse
+        // exact de cgpt-entree-modal, un peu plus rapide (fermer doit se
+        // sentir réactif, pas paresseux).
+        "cgpt-sortie-modal": {
+          from: { opacity: "1", transform: "translateY(0) scale(1)" },
+          to: { opacity: "0", transform: "translateY(8px) scale(.97)" },
+        },
         // Points de l'indicateur "{agent} réfléchit" (partie 5) : rythme
         // légèrement irrégulier plutôt que animate-bounce (délais
         // parfaitement réguliers) -- brief 4b.
@@ -158,6 +169,10 @@ const config: Config = {
         "dj-glow": "dj-glow 3.2s ease-in-out infinite",
         "cgpt-entree-message": "cgpt-entree-message 0.4s cubic-bezier(.25,.8,.35,1) both",
         "cgpt-entree-modal": "cgpt-entree-modal 0.35s cubic-bezier(.25,.8,.35,1) both",
+        // Durée alignée sur DUREE_FERMETURE_MS dans useFermetureAnimee.ts
+        // -- si l'une change, changer l'autre (le hook attend cette durée
+        // avant d'appeler le vrai démontage).
+        "cgpt-sortie-modal": "cgpt-sortie-modal 0.18s cubic-bezier(.4,0,1,1) both",
         "cgpt-point-reflexion": "cgpt-point-reflexion 1.3s cubic-bezier(.25,.8,.35,1) infinite",
         // ease-in-out (pas cgpt-doux) : le shimmer représente un balayage
         // de lumière continu, pas une transition d'UI ponctuelle -- la

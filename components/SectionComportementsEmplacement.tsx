@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, X, Link2, Unlink, Check } from "lucide-react";
+import { ScrollText, Sparkles, X, Link2, Unlink, Check } from "lucide-react";
 import {
   lireMesComportements,
   comportementsParLien,
@@ -144,7 +144,7 @@ export function SectionComportementsEmplacement({
               key={c.id}
               className="flex max-w-[240px] items-center gap-1.5 rounded-full border border-dj-bordure bg-dj-surface px-3 py-1.5 text-xs text-dj-texte"
             >
-              <Sparkles size={12} className="flex-shrink-0 text-dj-accent-1" />
+              <ScrollText size={12} className="flex-shrink-0 text-dj-accent-1" />
               <span className="min-w-0 truncate">{libelleCourt(c)}</span>
               <button
                 onClick={() => detacher(c.id)}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type MouseEvent } from "react";
 import {
-  Trash2, Plus, X, Check, Sparkles, FileCode2, Loader2, Link2, Unlink, Eye, Code2, Upload, ToggleLeft, ToggleRight,
+  Trash2, Plus, X, Check, ScrollText, FileCode2, Loader2, Link2, Unlink, Eye, Code2, Upload, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -400,7 +400,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
                 c.actif ? "" : "opacity-50"
               }`}
             >
-              <Sparkles size={14} className="flex-shrink-0 text-dj-accent-1" />
+              <ScrollText size={14} className="flex-shrink-0 text-dj-accent-1" />
               <span className="min-w-0 truncate text-sm text-dj-texte">{c.nom || c.description}</span>
               {c.lien_libelle && (
                 <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">

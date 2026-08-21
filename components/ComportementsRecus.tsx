@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import { listerMesRattachementsCodes, type RattachementCode } from "@/lib/api";
 
 /**
@@ -43,7 +43,7 @@ export function ComportementsRecus() {
           key={r.rattachement_id}
           className="flex items-start gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
         >
-          <Sparkles size={16} className="mt-0.5 flex-shrink-0 text-dj-accent-1" />
+          <ScrollText size={16} className="mt-0.5 flex-shrink-0 text-dj-accent-1" />
           <div className="min-w-0 flex-1">
             <p className="text-xs text-dj-texte-muet">Reçu de {r.proprietaire_nom}</p>
             <p className="mt-0.5 text-sm leading-relaxed text-dj-texte">

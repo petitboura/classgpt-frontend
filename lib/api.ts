@@ -1391,6 +1391,13 @@ export async function obtenirPage(pageId: string) {
   return (await appelerApi(`/api/pages/${pageId}`)) as PageDetail;
 }
 
+// Liste légère des sous-pages d'une page (sans les blocs), pour construire
+// l'arbre de la sidebar façon Notion sans recharger la page entière à
+// chaque dépliage d'un nœud.
+export async function listerSousPages(pageId: string) {
+  return (await appelerApi(`/api/pages/${pageId}/sous-pages`)) as PageEspace[];
+}
+
 export async function modifierPage(pageId: string, titre: string) {
   return (await appelerApi(`/api/pages/${pageId}`, { method: "PATCH", body: JSON.stringify({ titre }) })) as PageEspace;
 }

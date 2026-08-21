@@ -22,6 +22,7 @@ import {
   Star,
   Compass,
   Plug,
+  NotebookPen,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Logo } from "@/components/Logo";
@@ -62,6 +63,7 @@ export type OngletId =
   | "bureau"
   | "comportements"
   | "bibliotheque"
+  | "notes"
   | "memoire"
   | "programme"
   | "plugins"
@@ -72,6 +74,10 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
   { id: "bureau", href: "/bureau", label: "Bureau", Icone: Briefcase },
   { id: "comportements", href: "/comportements", label: "Mes comportements", Icone: Sparkles },
   { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
+  // Section "Notion-like" (Partie 2, lot 5/5, 20/08, demande Bourama) --
+  // juste après Bibliothèque, thématiquement proche (contenu personnel
+  // organisé par l'étudiant).
+  { id: "notes", href: "/notes", label: "Notes", Icone: NotebookPen },
   { id: "memoire", href: "/memoire", label: "Ma mémoire", Icone: Brain },
   { id: "programme", href: "/programme", label: "Mon programme", Icone: BookOpen },
   { id: "plugins", href: "/plugins", label: "Plugins", Icone: Puzzle },
@@ -91,6 +97,7 @@ const MOUVEMENTS_NAV = [
   "group-hover:scale-110", // Bureau
   "group-hover:rotate-12", // Mes comportements : bascule opposée
   "group-hover:-translate-y-0.5 group-hover:scale-105", // Bibliothèque : petit rebond
+  "group-hover:rotate-6 group-hover:-translate-y-0.5", // Notes : léger tilt
   "group-hover:-rotate-12", // Ma mémoire
   "group-hover:scale-110", // Mon programme
   "group-hover:rotate-12", // Plugins

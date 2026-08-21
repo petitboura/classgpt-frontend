@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, Plus, X, Link2, Unlink, Check } from "lucide-react";
+import { Sparkles, X, Link2, Unlink, Check } from "lucide-react";
 import {
   lireMesComportements,
   comportementsParLien,
@@ -123,13 +123,13 @@ export function SectionComportementsEmplacement({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-medium text-dj-texte">{titre}</p>
         <button
           onClick={ouvrirPanneau}
-          className="flex items-center gap-1 text-xs text-dj-texte-muet transition-colors hover:text-dj-texte"
+          className="flex items-center gap-1 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
         >
-          <Plus size={13} /> Ajouter
+          <Sparkles size={13} /> Attacher un skill
         </button>
       </div>
 

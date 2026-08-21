@@ -402,17 +402,23 @@ export function AppSidebar({
             <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
               <div className="flex flex-col gap-2">
                 {contexteChat &&
-                  ongletsDansActions.map((o) => (
-                    <Link
-                      key={o.href}
-                      href={o.href}
-                      onClick={() => setActionsDeplie(false)}
-                      className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                    >
-                      <o.Icone size={16} className="flex-shrink-0" />
-                      {o.label}
-                    </Link>
-                  ))}
+                  ongletsDansActions.map((o) => {
+                    const actif = pathname === o.href;
+                    return (
+                      <Link
+                        key={o.href}
+                        href={o.href}
+                        onClick={() => setActionsDeplie(false)}
+                        className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
+                          actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+                        }`}
+                      >
+                        <o.Icone size={16} className="flex-shrink-0" />
+                        {o.label}
+                        {actif && <TraitSignature className="absolute bottom-0.5 left-2" />}
+                      </Link>
+                    );
+                  })}
 
                 <button
                   onClick={partager}
@@ -560,20 +566,26 @@ export function AppSidebar({
             {actionsDeplie && (
               <div className="flex flex-col gap-2 pb-2">
                 {contexteChat &&
-                  ongletsDansActions.map((o) => (
-                    <Link
-                      key={o.href}
-                      href={o.href}
-                      onClick={() => {
-                        setActionsDeplie(false);
-                        setOuverte(false);
-                      }}
-                      className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                    >
-                      <o.Icone size={16} />
-                      {o.label}
-                    </Link>
-                  ))}
+                  ongletsDansActions.map((o) => {
+                    const actif = pathname === o.href;
+                    return (
+                      <Link
+                        key={o.href}
+                        href={o.href}
+                        onClick={() => {
+                          setActionsDeplie(false);
+                          setOuverte(false);
+                        }}
+                        className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
+                          actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+                        }`}
+                      >
+                        <o.Icone size={16} />
+                        {o.label}
+                        {actif && <TraitSignature className="absolute bottom-0.5 left-2" />}
+                      </Link>
+                    );
+                  })}
 
                 <button
                   onClick={partager}

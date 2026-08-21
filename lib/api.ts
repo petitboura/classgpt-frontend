@@ -326,14 +326,19 @@ export async function ajouterTexteBibliothequePersonnelle(contenu: string, titre
 
 // 21/08/2026, demande Bourama : "un bibliothèque publique dans la
 // section bibliothèque, tout le monde peut y ajouter des documents,
-// juste en le décrivant et en donnant un nom". Catalogue léger,
-// distinct de la bibliothèque personnelle -- nom + description
-// seulement, pas d'upload de fichier réel.
+// juste en le décrivant et en donnant un nom" -- CORRECTION le même
+// jour (malentendu de ma part) : nom + description accompagnent un VRAI
+// fichier uploadé, ils ne le remplacent pas. Catalogue distinct de la
+// bibliothèque personnelle (voir docstring backend), mais upload réel
+// comme elle.
 export type EntreeBibliothequePublique = {
   id: string;
   nom: string;
   description: string;
-  lien: string | null;
+  nom_fichier: string | null;
+  type_mime: string | null;
+  taille_octets: number | null;
+  url_publique: string | null;
   created_at: string;
 };
 
@@ -343,12 +348,31 @@ export async function listerBibliothequePublique(q?: string) {
   return resultat as EntreeBibliothequePublique[];
 }
 
-export async function ajouterABibliothequePublique(nom: string, description?: string, lien?: string) {
-  const resultat = await appelerApi("/api/bibliotheque-publique", {
+export async function ajouterABibliothequePublique(fichier: File, nom: string, description?: string) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Connecte-toi pour envoyer un fichier.");
+  }
+
+  const corps = new FormData();
+  corps.append("fichier", fichier);
+  corps.append("nom", nom.trim());
+  corps.append("description", description || "");
+
+  const reponse = await fetch(`${API_URL}/api/bibliotheque-publique`, {
     method: "POST",
-    body: JSON.stringify({ nom, description: description || "", lien: lien?.trim() || null }),
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body: corps,
   });
-  return resultat as EntreeBibliothequePublique;
+
+  if (!reponse.ok) {
+    throw await construireErreurApi(reponse, "/api/bibliotheque-publique");
+  }
+
+  return (await reponse.json()) as EntreeBibliothequePublique;
 }
 
 export async function supprimerDeBibliothequePublique(entreeId: string) {

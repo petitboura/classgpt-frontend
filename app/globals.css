@@ -189,10 +189,16 @@ body {
   color: #1a0d02;
 }
 
+/* 2026-08-20, Bourama : "tout mon dépôt les carrés j'aime pas, pas du
+   tout" -- ce rayon fixe de 4px était quasi invisible (donc visuellement
+   carré) sur tout élément plus grand qu'un petit bouton. `inherit` fait
+   que le contour de focus épouse toujours le rayon réel de l'élément
+   focus (rounded-cgpt-bouton, rounded-cgpt-carte, rounded-xl...) au lieu
+   d'un carré générique de 4px plaqué par-dessus. */
 :focus-visible {
   outline: 2px solid var(--dj-accent-1);
   outline-offset: 3px;
-  border-radius: 4px;
+  border-radius: inherit;
 }
 
 /* Corrige le cadre double repéré en conditions réelles (2026-07-12,

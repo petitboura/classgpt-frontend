@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Trash2, Plus, X, Check, Sparkles, FileCode2, Loader2, Link2, Unlink, Eye, Code2 } from "lucide-react";
+import { useEffect, useState, type MouseEvent } from "react";
+import {
+  Trash2, Plus, X, Check, Sparkles, FileCode2, Loader2, Link2, Unlink, Eye, Code2, Upload, ToggleLeft, ToggleRight,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
@@ -13,6 +15,8 @@ import {
   supprimerComportement,
   lireSkillComportement,
   modifierSkillComportement,
+  activerDesactiverComportement,
+  publierComportement,
   type Comportement,
 } from "@/lib/api";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
@@ -20,6 +24,7 @@ import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { useFermetureAnimee } from "@/lib/useFermetureAnimee";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { ComportementsRecus } from "@/components/ComportementsRecus";
+import { ComportementsPublics } from "@/components/ComportementsPublics";
 import { PanneauFlottant } from "@/components/PanneauFlottant";
 import { Skeleton } from "./Skeleton";
 
@@ -93,6 +98,24 @@ function extraireCorpsSkill(skillMd: string): string {
 export function MesComportements({ agentId }: { agentId: string }) {
   const [liste, setListe] = useState<Comportement[] | undefined>(undefined);
 
+  // 21/08/2026, demande Bourama : "je veux un onglet public" -- bascule
+  // entre la liste perso (comportement par défaut) et le catalogue
+  // public (nouveau composant ComportementsPublics.tsx, même esprit que
+  // EspacePlugins.tsx pour les plugins).
+  const [vue, setVue] = useState<"mes-comportements" | "public">("mes-comportements");
+
+  // Toggle actif/inactif par comportement (21/08, demande Bourama :
+  // "ajoute activer et désactiver aux comportements") -- suivi par id
+  // pour désactiver juste le bouton concerné pendant l'appel, sans
+  // bloquer toute la liste.
+  const [actifEnCours, setActifEnCours] = useState<string | null>(null);
+
+  // Publication vers le catalogue public (21/08) -- retour visuel bref
+  // sur le bouton du panneau, pas de redirection ni de fermeture auto.
+  const [publicationEnCours, setPublicationEnCours] = useState(false);
+  const [publie, setPublie] = useState(false);
+  const [erreurPublication, setErreurPublication] = useState<string | null>(null);
+
   // Panneau plein écran : soit édition d'un comportement existant, soit
   // création d'un nouveau (07/08/2026, demande Bourama : "le mode plein
   // écran ne doit pas être dispo que pour ceux qui existent -- en mode
@@ -165,6 +188,8 @@ export function MesComportements({ agentId }: { agentId: string }) {
     setSkillOuvert("");
     setErreurSkill(null);
     setSkillVue("texte");
+    setPublie(false);
+    setErreurPublication(null);
   }
 
   function ouvrirCreation() {
@@ -282,33 +307,85 @@ export function MesComportements({ agentId }: { agentId: string }) {
     }
   }
 
-  if (sansCompte) {
+  async function toggleActif(c: Comportement, e: MouseEvent) {
+    e.stopPropagation();
+    if (actifEnCours) return;
+    setActifEnCours(c.id);
+    try {
+      const maj = await activerDesactiverComportement(agentId, c.id, !c.actif);
+      setListe((prec) => (prec || []).map((x) => (x.id === maj.id ? maj : x)));
+    } catch {
+      // Silencieux -- le toggle est optionnel/secondaire, une erreur ici
+      // ne doit pas casser la liste ; l'état reste simplement inchangé.
+    } finally {
+      setActifEnCours(null);
+    }
+  }
+
+  async function publier() {
+    if (!panneau || panneau.type !== "edition") return;
+    setPublicationEnCours(true);
+    setErreurPublication(null);
+    try {
+      await publierComportement(agentId, panneau.c.id);
+      setPublie(true);
+    } catch (e) {
+      setErreurPublication(messageErreur(e));
+    } finally {
+      setPublicationEnCours(false);
+    }
+  }
+
+  if (sansCompte && vue === "mes-comportements") {
     return <CTACompteRequis texte="Crée un compte pour ajouter tes propres consignes perso à Clovis." />;
   }
 
-  if (liste === undefined) {
-    return (
-      <div className="flex flex-col gap-2" aria-hidden>
-        <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
-        <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
-      <p className="text-sm text-dj-texte-muet">
-        Tes consignes perso pour Clovis, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter
-        plusieurs, clique sur l&apos;une d&apos;elles pour l&apos;ouvrir en grand et la modifier tranquillement.
-      </p>
+    <div className="flex flex-col gap-4">
+      <div className="flex w-full gap-1 border-b border-dj-bordure">
+        <button
+          onClick={() => setVue("mes-comportements")}
+          className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            vue === "mes-comportements"
+              ? "border-dj-accent-1 text-dj-texte"
+              : "border-transparent text-dj-texte-muet hover:text-dj-texte"
+          }`}
+        >
+          Mes comportements
+        </button>
+        <button
+          onClick={() => setVue("public")}
+          className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            vue === "public"
+              ? "border-dj-accent-1 text-dj-texte"
+              : "border-transparent text-dj-texte-muet hover:text-dj-texte"
+          }`}
+        >
+          Public
+        </button>
+      </div>
 
-      <button
-        onClick={ouvrirCreation}
-        className="flex w-fit items-center gap-1.5 rounded-full border border-dj-bordure bg-dj-surface px-3 py-1.5 text-sm font-medium text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
-      >
-        <Plus size={14} />
-        Nouveau comportement
-      </button>
+      {vue === "public" ? (
+        <ComportementsPublics onActive={charger} />
+      ) : liste === undefined ? (
+        <div className="flex flex-col gap-2" aria-hidden>
+          <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
+          <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
+        </div>
+      ) : (
+        <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
+          <p className="text-sm text-dj-texte-muet">
+            Tes consignes perso pour Clovis, en plus de ce que ton enseignant a déjà mis en place. Tu peux en ajouter
+            plusieurs, clique sur l&apos;une d&apos;elles pour l&apos;ouvrir en grand et la modifier tranquillement.
+          </p>
+
+          <button
+            onClick={ouvrirCreation}
+            className="flex w-fit items-center gap-1.5 rounded-full border border-dj-bordure bg-dj-surface px-3 py-1.5 text-sm font-medium text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+          >
+            <Plus size={14} />
+            Nouveau comportement
+          </button>
 
       {liste.length === 0 && <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>}
 
@@ -319,7 +396,9 @@ export function MesComportements({ agentId }: { agentId: string }) {
               key={c.id}
               onClick={() => ouvrirEdition(c)}
               title="Ouvrir et modifier"
-              className="group flex max-w-[280px] items-center gap-2 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+              className={`group flex max-w-[280px] items-center gap-2 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute ${
+                c.actif ? "" : "opacity-50"
+              }`}
             >
               <Sparkles size={14} className="flex-shrink-0 text-dj-accent-1" />
               <span className="min-w-0 truncate text-sm text-dj-texte">{c.nom || c.description}</span>
@@ -328,12 +407,23 @@ export function MesComportements({ agentId }: { agentId: string }) {
                   <Link2 size={9} /> {c.lien_libelle}
                 </span>
               )}
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => toggleActif(c, e)}
+                title={c.actif ? "Désactiver (ne sera plus proposé à l'IA)" : "Activer"}
+                className="flex flex-shrink-0 items-center text-dj-texte-muet hover:text-dj-texte disabled:opacity-40"
+              >
+                {c.actif ? <ToggleRight size={18} className="text-dj-accent-1" /> : <ToggleLeft size={18} />}
+              </span>
             </button>
           ))}
         </div>
       )}
 
       <ComportementsRecus />
+        </div>
+      )}
 
       {panneau && (
         <PanneauFlottant
@@ -437,20 +527,30 @@ export function MesComportements({ agentId }: { agentId: string }) {
               />
 
               <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                {erreurOuvert ? (
-                  <p className="text-xs text-[var(--dj-erreur)]">{erreurOuvert}</p>
+                {erreurOuvert || erreurPublication ? (
+                  <p className="text-xs text-[var(--dj-erreur)]">{erreurOuvert || erreurPublication}</p>
                 ) : (
                   <span className="hidden sm:block" />
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {panneau.type === "edition" && (
-                    <button
-                      onClick={supprimer}
-                      disabled={enregistrementEnCours || suppressionEnCours}
-                      className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
-                    >
-                      <Trash2 size={14} /> Supprimer
-                    </button>
+                    <>
+                      <button
+                        onClick={publier}
+                        disabled={publicationEnCours || enregistrementEnCours || suppressionEnCours}
+                        title="Publier une copie dans le catalogue public -- n'importe qui pourra l'activer"
+                        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+                      >
+                        <Upload size={14} /> {publicationEnCours ? "Publication…" : publie ? "Publié !" : "Publier"}
+                      </button>
+                      <button
+                        onClick={supprimer}
+                        disabled={enregistrementEnCours || suppressionEnCours}
+                        className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
+                      >
+                        <Trash2 size={14} /> Supprimer
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={enregistrer}

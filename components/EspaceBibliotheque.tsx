@@ -12,6 +12,7 @@ import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { VisionneuseBibliotheque } from "./VisionneuseBibliotheque";
+import { BibliothequePublique } from "./BibliothequePublique";
 
 // Onglet "Bibliothèque" de Mon espace, porté de
 // djiguigne-frontend/app/dashboard/espace/page.tsx (même logique,
@@ -53,6 +54,11 @@ function typeDe(f: FichierBiblio): SousOngletBiblio {
 }
 
 export function EspaceBibliotheque() {
+  // 21/08/2026, demande Bourama : "un bibliothèque publique dans la
+  // section bibliothèque" -- bascule entre la bibliothèque perso
+  // (comportement par défaut, inchangé ci-dessous) et le catalogue
+  // public (nouveau composant BibliothequePublique.tsx).
+  const [vue, setVue] = useState<"perso" | "publique">("perso");
   const [sousOnglet, setSousOnglet] = useState<SousOngletBiblio>("tous");
   const [fichiers, setFichiers] = useState<FichierBiblio[] | null>(null);
   const [nouveauxFichiers, setNouveauxFichiers] = useState<File[]>([]);
@@ -128,12 +134,35 @@ export function EspaceBibliotheque() {
     }
   }
 
-  if (sansCompte) {
+  if (sansCompte && vue === "perso") {
     return <CTACompteRequis texte="Crée un compte pour avoir ta propre bibliothèque de documents." />;
   }
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex w-full gap-1 border-b border-dj-bordure">
+        <button
+          onClick={() => setVue("perso")}
+          className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            vue === "perso" ? "border-dj-accent-1 text-dj-texte" : "border-transparent text-dj-texte-muet hover:text-dj-texte"
+          }`}
+        >
+          Perso
+        </button>
+        <button
+          onClick={() => setVue("publique")}
+          className={`border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            vue === "publique" ? "border-dj-accent-1 text-dj-texte" : "border-transparent text-dj-texte-muet hover:text-dj-texte"
+          }`}
+        >
+          Publique
+        </button>
+      </div>
+
+      {vue === "publique" ? (
+        <BibliothequePublique />
+      ) : (
+        <>
       <p className="text-sm text-dj-texte-muet">
         Les documents ajoutés ici sont personnels : toi seul y as accès, et Clovis peut les consulter
         pendant une conversation.
@@ -238,6 +267,8 @@ export function EspaceBibliotheque() {
       )}
 
       <VisionneuseBibliotheque fichier={fichierOuvert} onFermer={() => setFichierOuvert(null)} />
+        </>
+      )}
     </div>
   );
 }

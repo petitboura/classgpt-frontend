@@ -324,6 +324,37 @@ export async function ajouterTexteBibliothequePersonnelle(contenu: string, titre
   });
 }
 
+// 21/08/2026, demande Bourama : "un bibliothèque publique dans la
+// section bibliothèque, tout le monde peut y ajouter des documents,
+// juste en le décrivant et en donnant un nom". Catalogue léger,
+// distinct de la bibliothèque personnelle -- nom + description
+// seulement, pas d'upload de fichier réel.
+export type EntreeBibliothequePublique = {
+  id: string;
+  nom: string;
+  description: string;
+  lien: string | null;
+  created_at: string;
+};
+
+export async function listerBibliothequePublique(q?: string) {
+  const suffixe = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
+  const resultat = await appelerApi(`/api/bibliotheque-publique${suffixe}`);
+  return resultat as EntreeBibliothequePublique[];
+}
+
+export async function ajouterABibliothequePublique(nom: string, description?: string, lien?: string) {
+  const resultat = await appelerApi("/api/bibliotheque-publique", {
+    method: "POST",
+    body: JSON.stringify({ nom, description: description || "", lien: lien?.trim() || null }),
+  });
+  return resultat as EntreeBibliothequePublique;
+}
+
+export async function supprimerDeBibliothequePublique(entreeId: string) {
+  return appelerApi(`/api/bibliotheque-publique/${entreeId}`, { method: "DELETE" });
+}
+
 /**
  * Upload de PLUSIEURS fichiers d'un coup vers la bibliothèque personnelle
  * (2026-08-01, demande Bourama : "plusieurs upload à la fois") -- simple
@@ -578,6 +609,7 @@ export type Comportement = {
   lien_type: string | null;
   lien_id: string | null;
   lien_libelle: string | null;
+  actif: boolean;
 };
 
 export async function lireMesComportements(agentId: string) {
@@ -591,6 +623,42 @@ export async function lireMesComportements(agentId: string) {
 export async function comportementsParLien(agentId: string, lienType: string, lienId: string) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/par-lien/${lienType}/${lienId}`);
   return resultat as Comportement[];
+}
+
+// 21/08/2026, demande Bourama : "ajoute activer et désactiver aux
+// comportements" -- désactiver n'efface rien, voir le backend.
+export async function activerDesactiverComportement(agentId: string, comportementId: string, actif: boolean) {
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/actif`, {
+    method: "PATCH",
+    body: JSON.stringify({ actif }),
+  });
+  return resultat as Comportement;
+}
+
+// 21/08/2026, demande Bourama : "je veux un onglet public... quelqu'un
+// peut l'uploader et l'activer". Publier prend une copie figée du
+// comportement (l'original ici n'est jamais modifié).
+export async function publierComportement(agentId: string, comportementId: string) {
+  return appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/publier`, { method: "POST" });
+}
+
+export type ComportementPublic = {
+  id: string;
+  nom: string;
+  description: string;
+  texte: string;
+  activations_count: number;
+};
+
+export async function rechercherComportementsPublics(q?: string) {
+  const suffixe = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
+  const resultat = await appelerApi(`/api/comportements-publics${suffixe}`);
+  return resultat as ComportementPublic[];
+}
+
+export async function activerComportementPublic(comportementPublicId: string) {
+  const resultat = await appelerApi(`/api/comportements-publics/${comportementPublicId}/activer`, { method: "POST" });
+  return resultat as Comportement;
 }
 
 // nom = null/undefined -> mode "auto" (nom généré côté serveur avec le

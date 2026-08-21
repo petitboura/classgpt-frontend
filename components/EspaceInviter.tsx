@@ -6,6 +6,7 @@ import { ecrireContenuMatiere, listerMesContenus, type ContenuMatiere } from "@/
 import { MATIERES } from "@/lib/matieres";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { SelectPersonnalise } from "./SelectPersonnalise";
 
 /**
  * Bloc "Écrire une matière" de l'espace Clovis (réécrit le 09/08,
@@ -84,17 +85,7 @@ export function EspaceInviter() {
 
       {!chargement && (
         <div className="mt-4 animate-dj-fade-in-rapide space-y-3">
-          <select
-            value={matiere}
-            onChange={(e) => setMatiere(e.target.value)}
-            className="w-full rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte"
-          >
-            {MATIERES.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+          <SelectPersonnalise valeur={matiere} onChange={setMatiere} options={MATIERES.map((m) => ({ id: m, label: m }))} />
 
           <textarea
             value={texte}

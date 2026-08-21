@@ -30,6 +30,7 @@ import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
 import { LinkPreview } from "./chat/LinkPreview";
 import { SectionDocumentsBibliotheque } from "./SectionDocumentsBibliotheque";
 import { SectionComportementsEmplacement } from "./SectionComportementsEmplacement";
+import { SelectPersonnalise } from "./SelectPersonnalise";
 import { PanneauFlottant } from "./PanneauFlottant";
 
 // Lot 5 (chantier programme étudiant) -- au moment où ce fichier a été
@@ -611,17 +612,13 @@ function SectionExamens({
               placeholder="Titre"
               className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
             />
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as TypeExamen)}
-              className="rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
-            >
-              {TYPES_EXAMEN.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+            <div className="sm:w-48">
+              <SelectPersonnalise
+                valeur={type}
+                onChange={(id) => setType(id as TypeExamen)}
+                options={TYPES_EXAMEN.map((t) => ({ id: t.id, label: t.label }))}
+              />
+            </div>
           </div>
 
           <div>

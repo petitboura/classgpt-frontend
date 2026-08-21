@@ -11,6 +11,7 @@ import {
   type CibleClassement,
 } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
+import { SelectPersonnalise } from "./SelectPersonnalise";
 
 // Petit bouton "+" à afficher à côté de n'importe quel élément existant
 // (matière/chapitre -- lot 4, ou document/exercice/examen -- lot 5) pour le
@@ -117,33 +118,24 @@ export function AjouterAClassementBouton({
           {classements === null ? (
             <p className="text-dj-texte-muet">Chargement…</p>
           ) : classements.length > 0 ? (
-            <select
-              value={selection}
-              onChange={(e) => setSelection(e.target.value)}
-              className="rounded-lg border border-dj-bordure bg-dj-surface-haute px-2 py-1.5 text-dj-texte outline-none focus:border-dj-accent-1"
-            >
-              <option value="">Nouveau classement</option>
-              {classements.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label} ({TYPES_CLASSEMENT.find((t) => t.id === c.type)?.label ?? c.type})
-                </option>
-              ))}
-            </select>
+            <SelectPersonnalise
+              valeur={selection}
+              onChange={setSelection}
+              placeholder="Nouveau classement"
+              options={classements.map((c) => ({
+                id: c.id,
+                label: `${c.label} (${TYPES_CLASSEMENT.find((t) => t.id === c.type)?.label ?? c.type})`,
+              }))}
+            />
           ) : null}
 
           {!selection && (
             <div className="flex gap-1.5">
-              <select
-                value={nouveauType}
-                onChange={(e) => setNouveauType(e.target.value as TypeClassement)}
-                className="rounded-lg border border-dj-bordure bg-dj-surface-haute px-2 py-1.5 text-dj-texte outline-none focus:border-dj-accent-1"
-              >
-                {TYPES_CLASSEMENT.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+              <SelectPersonnalise
+                valeur={nouveauType}
+                onChange={(id) => setNouveauType(id as TypeClassement)}
+                options={TYPES_CLASSEMENT.map((t) => ({ id: t.id, label: t.label }))}
+              />
               <input
                 value={nouveauLabel}
                 onChange={(e) => setNouveauLabel(e.target.value)}

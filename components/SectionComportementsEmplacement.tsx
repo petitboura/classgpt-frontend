@@ -12,8 +12,18 @@ import {
 import { messageErreur } from "@/lib/erreurs";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { Skeleton } from "./Skeleton";
+import { SelectPersonnalise } from "./SelectPersonnalise";
 
 const AGENT_ID = "clovis";
+
+// Libellé court pour une option de menu -- un comportement sans "nom"
+// retombe sur sa description, qui peut être une phrase entière ; jamais
+// l'afficher en entier dans un menu (20/08, corrige un débordement
+// visible en prod : le texte complet cassait la mise en page).
+function libelleCourt(c: Comportement): string {
+  const texte = c.nom || c.description || "";
+  return texte.length > 50 ? texte.slice(0, 50).trimEnd() + "…" : texte;
+}
 
 // Section "Comportements" générique (20/08, demande Bourama : "attacher
 // un comportement à un programme, une matière, un chapitre... créés
@@ -135,7 +145,7 @@ export function SectionComportementsEmplacement({
               className="flex max-w-[240px] items-center gap-1.5 rounded-full border border-dj-bordure bg-dj-surface px-3 py-1.5 text-xs text-dj-texte"
             >
               <Sparkles size={12} className="flex-shrink-0 text-dj-accent-1" />
-              <span className="min-w-0 truncate">{c.nom || c.description}</span>
+              <span className="min-w-0 truncate">{libelleCourt(c)}</span>
               <button
                 onClick={() => detacher(c.id)}
                 title="Détacher"
@@ -187,19 +197,16 @@ export function SectionComportementsEmplacement({
           ) : candidats.length === 0 ? (
             <p className="text-xs text-dj-texte-muet">Aucun autre comportement disponible à attacher ici.</p>
           ) : (
-            <select
-              value={existantChoisi}
-              onChange={(e) => setExistantChoisi(e.target.value)}
-              className="w-full rounded-lg border border-dj-bordure bg-dj-surface px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
-            >
-              <option value="">Choisir un comportement…</option>
-              {candidats.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nom || c.description}
-                  {c.lien_libelle ? ` (déplacé depuis : ${c.lien_libelle})` : ""}
-                </option>
-              ))}
-            </select>
+            <SelectPersonnalise
+              valeur={existantChoisi}
+              onChange={setExistantChoisi}
+              placeholder="Choisir un comportement…"
+              options={candidats.map((c) => ({
+                id: c.id,
+                label: c.nom || c.description,
+                sousLabel: c.lien_libelle ? `dans : ${c.lien_libelle}` : undefined,
+              }))}
+            />
           )}
 
           {erreur && <p className="mt-2 text-xs text-[var(--dj-erreur)]">{erreur}</p>}

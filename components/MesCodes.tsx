@@ -17,6 +17,7 @@ import {
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
+import { SelectPersonnalise } from "./SelectPersonnalise";
 
 // Même agent générique que MesComportements.tsx (app/(app)/comportements/page.tsx)
 // -- "Mes comportements" n'a jamais eu de notion de rôle, un seul agentId
@@ -311,18 +312,14 @@ function ChampProgramme({
   return (
     <div>
       <label className="text-xs font-semibold text-dj-texte-muet">Programme</label>
-      <select
-        value={c.programme_id || ""}
-        onChange={(e) => onSauver(e.target.value || null)}
-        className="mt-1 w-full rounded-lg border border-dj-bordure bg-dj-surface px-2.5 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
-      >
-        <option value="">Aucun</option>
-        {programmes.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.nom || p.niveau}
-          </option>
-        ))}
-      </select>
+      <div className="mt-1">
+        <SelectPersonnalise
+          valeur={c.programme_id || ""}
+          onChange={(id) => onSauver(id || null)}
+          placeholder="Aucun"
+          options={[{ id: "", label: "Aucun" }, ...programmes.map((p) => ({ id: p.id, label: p.nom || p.niveau }))]}
+        />
+      </div>
     </div>
   );
 }

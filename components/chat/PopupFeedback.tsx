@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { appelerApi } from "@/lib/api";
+import { SelectPersonnalise } from "../SelectPersonnalise";
 
 interface Categorie {
   id: string;
@@ -81,18 +82,12 @@ export function PopupFeedback({
             <label className="mb-1.5 block text-sm text-dj-texte-muet">
               Quel type de problème souhaitez-vous signaler ? (facultatif)
             </label>
-            <select
-              value={categorie}
-              onChange={(e) => setCategorie(e.target.value)}
-              className="w-full rounded-lg border border-dj-bordure bg-dj-fond px-3 py-2 text-sm text-dj-texte focus:border-dj-accent-1"
-            >
-              <option value="">Sélectionner...</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.libelle}
-                </option>
-              ))}
-            </select>
+            <SelectPersonnalise
+              valeur={categorie}
+              onChange={setCategorie}
+              placeholder="Sélectionner…"
+              options={categories.map((c) => ({ id: c.id, label: c.libelle }))}
+            />
           </div>
         )}
 

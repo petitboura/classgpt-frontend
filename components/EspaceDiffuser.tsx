@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
+import { SelectPersonnalise } from "./SelectPersonnalise";
 
 /**
  * "Diffuser" (réécrit le 09/08, demande Bourama : plus de "toute
@@ -94,17 +95,11 @@ export function EspaceDiffuser() {
 
       {!chargementContenus && contenus.length > 0 && (
         <div className="mt-4 animate-dj-fade-in-rapide">
-          <select
-            value={contenuId}
-            onChange={(e) => setContenuId(e.target.value)}
-            className="w-full rounded-xl border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte"
-          >
-            {contenus.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.matiere} ({c.code})
-              </option>
-            ))}
-          </select>
+          <SelectPersonnalise
+            valeur={contenuId}
+            onChange={setContenuId}
+            options={contenus.map((c) => ({ id: c.id, label: `${c.matiere} (${c.code})` }))}
+          />
 
           <div className="mt-3 grid grid-cols-2 gap-2 rounded-cgpt-bouton border border-dj-bordure bg-dj-surface-haute p-1">
             <button

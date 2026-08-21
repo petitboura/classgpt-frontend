@@ -15,9 +15,17 @@ import {
   creerChapitreMatiere,
   modifierChapitreMatiere,
   supprimerChapitreMatiere,
+  lireClassements,
+  listerItemsClassement,
+  supprimerClassement,
+  supprimerItemClassement,
   type Programme,
   type MatiereDuProgramme,
   type ChapitreDeLaMatiere,
+  type Classement,
+  type ItemClassement,
+  type TypeClassement,
+  type CibleClassement,
 } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
@@ -30,6 +38,7 @@ import { CTACompteRequis } from "./CTACompteRequis";
 // branchés ici a posteriori sans reprendre la navigation elle-même.
 import { VueChapitreContenu, VueProgrammeContenu } from "./EspaceProgrammeContenu";
 import { SectionDocumentsBibliotheque } from "./SectionDocumentsBibliotheque";
+import { SectionComportementsEmplacement } from "./SectionComportementsEmplacement";
 import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
 
 // Onglet "Mon programme" (lot 4/5, chantier programme étudiant, brief
@@ -47,8 +56,18 @@ type Vue =
   | { niveau: "chapitres"; programme: Programme; matiere: MatiereDuProgramme }
   | { niveau: "chapitre"; programme: Programme; matiere: MatiereDuProgramme; chapitre: ChapitreDeLaMatiere };
 
+// Onglet parallèle "Classements" (20/08/2026, demande Bourama : jusqu'ici
+// AjouterAClassementBouton permettait d'AJOUTER un élément à un
+// classement (semestre/année/section) depuis n'importe où, mais rien ne
+// permettait de consulter un classement lui-même -- ni sa liste, ni son
+// contenu. Onglet séparé de la navigation programme/matière/chapitre
+// ci-dessus (un classement transverse par nature, pas rattaché à un
+// point précis de cette hiérarchie).
+type OngletHaut = "programme" | "classements";
+
 export function EspaceProgramme() {
   const [vue, setVue] = useState<Vue>({ niveau: "programmes" });
+  const [ongletHaut, setOngletHaut] = useState<OngletHaut>("programme");
 
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
@@ -57,6 +76,29 @@ export function EspaceProgramme() {
         il génère du contenu pour toi, jamais hors programme, jamais hors niveau.
       </p>
 
+      <div className="flex gap-1 self-start rounded-lg border border-dj-bordure bg-dj-surface p-1 text-sm">
+        <button
+          onClick={() => setOngletHaut("programme")}
+          className={`rounded-md px-3 py-1.5 transition-colors ${
+            ongletHaut === "programme" ? "bg-dj-accent-1 text-[#1A0D02] font-semibold" : "text-dj-texte-muet hover:text-dj-texte"
+          }`}
+        >
+          Programme
+        </button>
+        <button
+          onClick={() => setOngletHaut("classements")}
+          className={`rounded-md px-3 py-1.5 transition-colors ${
+            ongletHaut === "classements" ? "bg-dj-accent-1 text-[#1A0D02] font-semibold" : "text-dj-texte-muet hover:text-dj-texte"
+          }`}
+        >
+          Classements
+        </button>
+      </div>
+
+      {ongletHaut === "classements" && <VueClassements />}
+
+      {ongletHaut === "programme" && (
+        <>
       {vue.niveau === "programmes" && <ListeProgrammes onOuvrir={(programme) => setVue({ niveau: "matieres", programme })} />}
 
       {vue.niveau === "matieres" && (
@@ -87,6 +129,194 @@ export function EspaceProgramme() {
             onRetour={() => setVue({ niveau: "chapitres", programme: vue.programme, matiere: vue.matiere })}
           />
           <VueChapitreContenu chapitreId={vue.chapitre.id} />
+        </div>
+      )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------- Classements ------------------------------ */
+
+function VueClassements() {
+  const [classements, setClassements] = useState<Classement[] | null>(null);
+  const [ouvert, setOuvert] = useState<Classement | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  function charger() {
+    lireClassements()
+      .then(setClassements)
+      .catch((e) => setErreur(messageErreur(e)));
+  }
+
+  useEffect(() => {
+    charger();
+  }, []);
+
+  useEffect(() => ecouterDonneesModifiees("programme", charger), []);
+
+  async function supprimer(c: Classement) {
+    if (!window.confirm(`Supprimer le classement « ${c.label} » ? Les éléments qu'il contenait ne seront pas supprimés.`)) return;
+    try {
+      await supprimerClassement(c.id);
+      setClassements((prec) => (prec || []).filter((x) => x.id !== c.id));
+      if (ouvert?.id === c.id) setOuvert(null);
+    } catch (e) {
+      window.alert(messageErreur(e));
+    }
+  }
+
+  if (ouvert) {
+    return <VueClassementContenu classement={ouvert} onRetour={() => setOuvert(null)} onSupprime={() => supprimer(ouvert)} />;
+  }
+
+  const LABELS_TYPE: Record<TypeClassement, string> = { semestre: "Semestre", annee: "Année", section: "Section" };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-dj-texte-muet">
+        Un classement (semestre, année, section libre) regroupe des matières, chapitres, documents, exercices ou
+        examens venant de n&apos;importe où dans ton programme -- utile pour organiser une révision transverse.
+        Ajoute-les depuis le bouton « + » à côté de chaque élément.
+      </p>
+
+      {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
+
+      {classements === null && (
+        <div className="flex flex-col gap-2" aria-hidden>
+          <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
+        </div>
+      )}
+
+      {classements?.length === 0 && (
+        <p className="text-sm text-dj-texte-muet">
+          Aucun classement pour l&apos;instant -- crée-en un depuis le bouton « + » à côté d&apos;une matière, d&apos;un
+          chapitre, d&apos;un document, d&apos;un exercice ou d&apos;un examen.
+        </p>
+      )}
+
+      {classements && classements.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {classements.map((c) => (
+            <div
+              key={c.id}
+              onClick={() => setOuvert(c)}
+              className="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex-shrink-0 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
+                  {LABELS_TYPE[c.type]}
+                </span>
+                <span className="truncate text-sm font-semibold text-dj-texte">{c.label}</span>
+              </div>
+              <div className="flex flex-shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => supprimer(c)}
+                  title="Supprimer"
+                  className="rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[var(--dj-erreur)]/10 hover:text-[var(--dj-erreur)]"
+                >
+                  <Trash2 size={14} />
+                </button>
+                <ChevronRight size={16} className="text-dj-texte-muet" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VueClassementContenu({
+  classement,
+  onRetour,
+  onSupprime,
+}: {
+  classement: Classement;
+  onRetour: () => void;
+  onSupprime: () => void;
+}) {
+  const [items, setItems] = useState<ItemClassement[] | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  function charger() {
+    listerItemsClassement(classement.id)
+      .then(setItems)
+      .catch((e) => setErreur(messageErreur(e)));
+  }
+
+  useEffect(() => {
+    charger();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classement.id]);
+
+  useEffect(() => ecouterDonneesModifiees("programme", charger), [classement.id]);
+
+  async function retirer(item: ItemClassement) {
+    try {
+      await supprimerItemClassement(classement.id, item.id);
+      setItems((prec) => (prec || []).filter((i) => i.id !== item.id));
+    } catch (e) {
+      setErreur(messageErreur(e));
+    }
+  }
+
+  const LABELS_CIBLE: Record<CibleClassement, string> = {
+    matiere: "Matière",
+    chapitre: "Chapitre",
+    document: "Document",
+    exercice: "Exercice",
+    examen: "Examen",
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <FilAriane elements={[{ label: classement.label }]} onRetour={onRetour} />
+
+      <SectionComportementsEmplacement typeCible="section" cibleId={classement.id} titre="Comportements" />
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-dj-texte">Contenu</p>
+        <button
+          onClick={onSupprime}
+          className="flex items-center gap-1 text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
+        >
+          <Trash2 size={12} /> Supprimer ce classement
+        </button>
+      </div>
+
+      {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
+
+      {items === null && <Skeleton className="h-12 w-full rounded-xl border border-dj-bordure" />}
+      {items?.length === 0 && (
+        <p className="text-sm text-dj-texte-muet">
+          Rien ici pour l&apos;instant -- ajoute des éléments depuis le bouton « + » à côté d&apos;une matière, d&apos;un
+          chapitre, d&apos;un document, d&apos;un exercice ou d&apos;un examen.
+        </p>
+      )}
+      {items && items.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-2.5"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex-shrink-0 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
+                  {LABELS_CIBLE[item.cible_type]}
+                </span>
+                <span className="truncate text-sm text-dj-texte">{item.libelle || "(introuvable)"}</span>
+              </div>
+              <button
+                onClick={() => retirer(item)}
+                title="Retirer de ce classement"
+                className="flex-shrink-0 rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-[var(--dj-erreur)]/10 hover:text-[var(--dj-erreur)]"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -473,6 +703,7 @@ function ListeMatieres({
                   className="rounded-lg border border-dj-bordure bg-dj-fond px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
                 />
                 <ChampLimites valeur={edition.limites} onChange={(v) => setEdition({ ...edition, limites: v })} />
+                <SectionComportementsEmplacement typeCible="matiere" cibleId={m.id} titre="Comportements" />
                 <div className="flex items-center justify-end gap-2">
                   <button
                     onClick={() => setEdition(null)}

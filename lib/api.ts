@@ -1135,9 +1135,19 @@ export type CibleClassement = "matiere" | "chapitre" | "document" | "exercice" |
 
 export type Classement = { id: string; type: TypeClassement; label: string; created_at: string };
 
+export type ItemClassement = { id: string; cible_type: CibleClassement; cible_id: string; libelle: string | null };
+
 export async function lireClassements() {
   const resultat = await appelerApi(`/api/classements`);
   return resultat as Classement[];
+}
+
+// 20/08/2026 : jusqu'ici on pouvait seulement AJOUTER un élément à un
+// classement (AjouterAClassementBouton) -- rien pour consulter son
+// contenu. Voir VueClassementContenu dans EspaceProgramme.tsx.
+export async function listerItemsClassement(classementId: string) {
+  const resultat = await appelerApi(`/api/classements/${classementId}/items`);
+  return resultat as ItemClassement[];
 }
 
 export async function creerClassement(type: TypeClassement, label: string) {

@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Search, Plus, Link as IconLien, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo, Download,
+} from "lucide-react";
 import {
   listerBibliothequePublique,
   ajouterABibliothequePublique,
@@ -12,22 +14,33 @@ import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
 import { Skeleton } from "./Skeleton";
 
+function iconePourType(typeMime: string | null) {
+  if (!typeMime) return Paperclip;
+  if (typeMime === "text/plain") return FileText;
+  if (typeMime.startsWith("image/")) return IconImage;
+  if (typeMime.startsWith("audio/")) return IconAudio;
+  if (typeMime.startsWith("video/")) return IconVideo;
+  return Paperclip;
+}
+
 // Onglet "Bibliothèque publique" (21/08/2026, demande Bourama : "un
 // bibliothèque publique dans la section bibliothèque, tout le monde
 // peut y ajouter des documents, juste en le décrivant et en donnant un
-// nom"). Catalogue léger, distinct de la bibliothèque personnelle : pas
-// d'upload de fichier réel, seulement nom + description (+ lien
-// optionnel) -- voir api/bibliotheque_publique.py.
+// nom"). CORRECTION le même jour (malentendu de ma part sur cette
+// phrase) : "nom" et "description" accompagnent un VRAI fichier
+// uploadé -- ce n'est pas un catalogue de simples liens/notes. Voir
+// api/bibliotheque_publique.py côté backend.
 export function BibliothequePublique() {
   const [liste, setListe] = useState<EntreeBibliothequePublique[] | undefined>(undefined);
   const [recherche, setRecherche] = useState("");
   const [formulaireOuvert, setFormulaireOuvert] = useState(false);
+  const [fichier, setFichier] = useState<File | null>(null);
   const [nom, setNom] = useState("");
   const [description, setDescription] = useState("");
-  const [lien, setLien] = useState("");
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
+  const inputFichierRef = useRef<HTMLInputElement>(null);
 
   function charger(q?: string) {
     listerBibliothequePublique(q)
@@ -45,15 +58,20 @@ export function BibliothequePublique() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recherche]);
 
+  function choisirFichier(f: File) {
+    setFichier(f);
+    if (!nom.trim()) setNom(f.name.replace(/\.[^/.]+$/, "")); // nom du fichier sans extension comme point de départ, modifiable
+  }
+
   async function ajouter() {
-    if (!nom.trim()) return;
+    if (!fichier || !nom.trim()) return;
     setEnvoi(true);
     setErreur(null);
     try {
-      await ajouterABibliothequePublique(nom, description, lien);
+      await ajouterABibliothequePublique(fichier, nom, description);
+      setFichier(null);
       setNom("");
       setDescription("");
-      setLien("");
       setFormulaireOuvert(false);
       charger(recherche);
     } catch (e) {
@@ -84,8 +102,8 @@ export function BibliothequePublique() {
   return (
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
       <p className="text-sm text-dj-texte-muet">
-        Un catalogue partagé par tout le monde : un nom, une description, et éventuellement un lien -- pas besoin
-        d&apos;uploader un fichier.
+        Un catalogue de documents partagé par tout le monde : uploade un fichier avec un nom et une description
+        pour que les autres le retrouvent facilement.
       </p>
 
       <div className="relative">
@@ -103,10 +121,23 @@ export function BibliothequePublique() {
           onClick={() => setFormulaireOuvert(true)}
           className="flex items-center justify-center gap-2 rounded-2xl border border-dj-bordure bg-dj-surface px-4 py-3 text-sm font-semibold text-dj-texte transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
         >
-          <Plus size={16} /> Ajouter à la bibliothèque publique
+          <Plus size={16} /> Ajouter un document
         </button>
       ) : (
         <div className="flex flex-col gap-2 rounded-2xl border border-dj-bordure bg-dj-surface p-4">
+          <input
+            ref={inputFichierRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && choisirFichier(e.target.files[0])}
+          />
+          <button
+            onClick={() => inputFichierRef.current?.click()}
+            className="flex items-center gap-2 rounded-cgpt-bouton border border-dashed border-dj-bordure px-4 py-3 text-sm text-dj-texte-muet transition-colors hover:border-dj-bordure-forte hover:text-dj-texte"
+          >
+            <Paperclip size={15} />
+            {fichier ? fichier.name : "Choisir un fichier..."}
+          </button>
           <input
             value={nom}
             onChange={(e) => setNom(e.target.value)}
@@ -120,26 +151,23 @@ export function BibliothequePublique() {
             rows={3}
             className="resize-none rounded-xl border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
           />
-          <input
-            value={lien}
-            onChange={(e) => setLien(e.target.value)}
-            placeholder="Lien (optionnel)"
-            className="rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-4 py-2 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
-          />
           {erreur && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
           <div className="flex justify-end gap-2 pt-1">
             <button
-              onClick={() => setFormulaireOuvert(false)}
+              onClick={() => {
+                setFormulaireOuvert(false);
+                setFichier(null);
+              }}
               className="rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte-muet hover:text-dj-texte"
             >
               Annuler
             </button>
             <button
               onClick={ajouter}
-              disabled={!nom.trim() || envoi}
+              disabled={!fichier || !nom.trim() || envoi}
               className="rounded-cgpt-bouton bg-dj-accent-1 px-4 py-1.5 text-xs font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
             >
-              {envoi ? "Ajout…" : "Ajouter"}
+              {envoi ? "Envoi…" : "Ajouter"}
             </button>
           </div>
         </div>
@@ -158,38 +186,45 @@ export function BibliothequePublique() {
       )}
       {liste && liste.length > 0 && (
         <div className="flex flex-col gap-2">
-          {liste.map((entree) => (
-            <div
-              key={entree.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
-            >
-              <div className="min-w-0 flex-1">
-                {entree.lien ? (
-                  <a
-                    href={entree.lien}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-w-0 items-center gap-2 text-sm text-dj-accent-1 hover:text-dj-accent-2"
-                  >
-                    <IconLien size={14} className="flex-shrink-0" />
-                    <span className="truncate">{entree.nom}</span>
-                  </a>
-                ) : (
-                  <p className="truncate text-sm text-dj-texte">{entree.nom}</p>
-                )}
-                {entree.description && (
-                  <p className="truncate text-xs text-dj-texte-muet">{entree.description}</p>
-                )}
-              </div>
-              <button
-                onClick={() => supprimer(entree.id, entree.nom)}
-                title="Retirer (uniquement si c'est toi qui l'as ajouté)"
-                className="flex-shrink-0 text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
+          {liste.map((entree) => {
+            const Icone = iconePourType(entree.type_mime);
+            return (
+              <div
+                key={entree.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
               >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <Icone size={16} className="flex-shrink-0 text-dj-accent-1" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-dj-texte">{entree.nom}</p>
+                    {entree.description && (
+                      <p className="truncate text-xs text-dj-texte-muet">{entree.description}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-shrink-0 items-center gap-3">
+                  {entree.url_publique && (
+                    <a
+                      href={entree.url_publique}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Ouvrir / télécharger"
+                      className="text-dj-texte-muet transition-colors hover:text-dj-accent-1"
+                    >
+                      <Download size={15} />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => supprimer(entree.id, entree.nom)}
+                    title="Retirer (uniquement si c'est toi qui l'as ajouté)"
+                    className="text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

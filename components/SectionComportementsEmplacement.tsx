@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ScrollText, Sparkles, X, Link2, Unlink, Check } from "lucide-react";
+import { ScrollText, X, Link2, Unlink, Check } from "lucide-react";
 import {
   lireMesComportements,
   comportementsParLien,
@@ -129,7 +129,7 @@ export function SectionComportementsEmplacement({
           onClick={ouvrirPanneau}
           className="flex items-center gap-1 rounded-cgpt-bouton border border-dj-bordure px-3 py-1.5 text-xs text-dj-texte transition-colors hover:border-dj-bordure-forte"
         >
-          <Sparkles size={13} /> Attacher un skill
+          <ScrollText size={13} /> Attacher un skill
         </button>
       </div>
 

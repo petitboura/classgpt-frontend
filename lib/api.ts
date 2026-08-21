@@ -570,19 +570,54 @@ export async function creerPageNotion(titre: string, contenu: string) {
 // mettre plusieurs hein, pas juste un") : plusieurs instructions perso
 // écrites par l'étudiant, chacune ajoutée EN PLUS du system_prompt déjà
 // résolu (voir core/main.py::_construire_system_prompt côté backend).
-export type Comportement = { id: string; texte: string; description: string; nom: string };
+export type Comportement = {
+  id: string;
+  texte: string;
+  description: string;
+  nom: string;
+  lien_type: string | null;
+  lien_id: string | null;
+  lien_libelle: string | null;
+};
 
 export async function lireMesComportements(agentId: string) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`);
   return resultat as Comportement[];
 }
 
+// 20/08/2026, demande Bourama : comportements déjà attachés à un
+// emplacement précis du programme (chapitre, matière, examen, section…)
+// -- pour les afficher directement sur l'écran correspondant.
+export async function comportementsParLien(agentId: string, lienType: string, lienId: string) {
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/par-lien/${lienType}/${lienId}`);
+  return resultat as Comportement[];
+}
+
 // nom = null/undefined -> mode "auto" (nom généré côté serveur avec le
-// skill) ; sinon nom choisi par l'étudiant, gardé tel quel.
-export async function ajouterComportement(agentId: string, texte: string, nom?: string | null) {
+// skill) ; sinon nom choisi par l'étudiant, gardé tel quel. lienType/
+// lienId optionnels (20/08) : rattache dès la création à un emplacement
+// du programme.
+export async function ajouterComportement(
+  agentId: string,
+  texte: string,
+  nom?: string | null,
+  lienType?: string | null,
+  lienId?: string | null
+) {
   const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements`, {
     method: "POST",
-    body: JSON.stringify({ texte, nom: nom || null }),
+    body: JSON.stringify({ texte, nom: nom || null, lien_type: lienType || null, lien_id: lienId || null }),
+  });
+  return resultat as Comportement;
+}
+
+// Attache (lienType+lienId fournis) ou détache (les deux null) un
+// comportement DÉJÀ EXISTANT -- séparé de modifierComportement exprès,
+// un seul emplacement à la fois (20/08/2026, demande Bourama).
+export async function attacherComportement(agentId: string, comportementId: string, lienType: string | null, lienId: string | null) {
+  const resultat = await appelerApi(`/api/agents/${agentId}/mes-comportements/${comportementId}/lien`, {
+    method: "PATCH",
+    body: JSON.stringify({ lien_type: lienType, lien_id: lienId }),
   });
   return resultat as Comportement;
 }

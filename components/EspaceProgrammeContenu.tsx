@@ -29,6 +29,7 @@ import { Skeleton } from "./Skeleton";
 import { AjouterAClassementBouton } from "./AjouterAClassementBouton";
 import { LinkPreview } from "./chat/LinkPreview";
 import { SectionDocumentsBibliotheque } from "./SectionDocumentsBibliotheque";
+import { SectionComportementsEmplacement } from "./SectionComportementsEmplacement";
 import { PanneauFlottant } from "./PanneauFlottant";
 
 // Lot 5 (chantier programme étudiant) -- au moment où ce fichier a été
@@ -48,6 +49,7 @@ export function VueChapitreContenu({ chapitreId }: { chapitreId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <SectionDocumentsBibliotheque typeCible="chapitre" cibleId={chapitreId} titre="Documents" />
+      <SectionComportementsEmplacement typeCible="chapitre" cibleId={chapitreId} titre="Comportements" />
       <SectionDocuments chapitreId={chapitreId} />
       <SectionExercices chapitreId={chapitreId} />
     </div>
@@ -464,6 +466,7 @@ function SectionExercices({ chapitreId }: { chapitreId: string }) {
 
           <div className="w-full pt-4">
             <SectionDocumentsBibliotheque typeCible="exercice" cibleId={panneau.id} titre="Pièces jointes" />
+            <SectionComportementsEmplacement typeCible="exercice" cibleId={panneau.id} titre="Comportements" />
           </div>
 
           <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -516,6 +519,7 @@ export function VueProgrammeContenu({
 }) {
   return (
     <div className="flex flex-col gap-6">
+      <SectionComportementsEmplacement typeCible="programme" cibleId={programmeId} titre="Comportements" />
       <SectionExamens programmeId={programmeId} chapitres={chapitres} />
       <SectionPublierPlugin programmeId={programmeId} />
     </div>
@@ -709,6 +713,7 @@ function SectionExamens({
           }
         >
           <SectionDocumentsBibliotheque typeCible="examen" cibleId={panneau.id} titre="Sujet / pièces jointes" />
+          <SectionComportementsEmplacement typeCible="examen" cibleId={panneau.id} titre="Comportements" />
         </PanneauFlottant>
       )}
     </div>

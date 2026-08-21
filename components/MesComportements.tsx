@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Plus, X, Check, Sparkles, FileCode2, Loader2 } from "lucide-react";
+import { Trash2, Plus, X, Check, Sparkles, FileCode2, Loader2, Link2, Unlink } from "lucide-react";
 import {
   lireMesComportements,
   ajouterComportement,
   modifierComportement,
+  attacherComportement,
   supprimerComportement,
   lireSkillComportement,
   modifierSkillComportement,
@@ -98,6 +99,11 @@ export function MesComportements({ agentId }: { agentId: string }) {
   const [skillEnregistrementEnCours, setSkillEnregistrementEnCours] = useState(false);
   const [erreurSkill, setErreurSkill] = useState<string | null>(null);
 
+  // Détachement (20/08, demande Bourama : "au moment de la création ou
+  // après tu peux l'attacher" -- l'inverse, détacher, doit être possible
+  // aussi, depuis ce même panneau).
+  const [detachementEnCours, setDetachementEnCours] = useState(false);
+
   function charger() {
     lireMesComportements(agentId)
       .then(setListe)
@@ -176,8 +182,23 @@ export function MesComportements({ agentId }: { agentId: string }) {
   }
 
   function fermer() {
-    if (enregistrementEnCours || suppressionEnCours || skillEnregistrementEnCours) return;
+    if (enregistrementEnCours || suppressionEnCours || skillEnregistrementEnCours || detachementEnCours) return;
     setPanneau(null);
+  }
+
+  async function detacher() {
+    if (!panneau || panneau.type !== "edition") return;
+    setDetachementEnCours(true);
+    setErreurOuvert(null);
+    try {
+      const maj = await attacherComportement(agentId, panneau.c.id, null, null);
+      setListe((prec) => (prec || []).map((c) => (c.id === maj.id ? maj : c)));
+      setPanneau({ type: "edition", c: maj });
+    } catch (e) {
+      setErreurOuvert(messageErreur(e));
+    } finally {
+      setDetachementEnCours(false);
+    }
   }
 
   async function enregistrer() {
@@ -270,10 +291,15 @@ export function MesComportements({ agentId }: { agentId: string }) {
               key={c.id}
               onClick={() => ouvrirEdition(c)}
               title="Ouvrir et modifier"
-              className="group flex max-w-[240px] items-center gap-2 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
+              className="group flex max-w-[280px] items-center gap-2 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute"
             >
               <Sparkles size={14} className="flex-shrink-0 text-dj-accent-1" />
               <span className="min-w-0 truncate text-sm text-dj-texte">{c.nom || c.description}</span>
+              {c.lien_libelle && (
+                <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
+                  <Link2 size={9} /> {c.lien_libelle}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -327,6 +353,20 @@ export function MesComportements({ agentId }: { agentId: string }) {
 
           {onglet === "texte" ? (
             <>
+              {panneau.type === "edition" && panneau.c.lien_libelle && (
+                <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-xs text-dj-texte-muet">
+                  <span className="flex items-center gap-1.5">
+                    <Link2 size={12} /> Attaché à : <span className="text-dj-texte">{panneau.c.lien_libelle}</span>
+                  </span>
+                  <button
+                    onClick={detacher}
+                    disabled={detachementEnCours}
+                    className="flex flex-shrink-0 items-center gap-1 text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)] disabled:opacity-50"
+                  >
+                    <Unlink size={12} /> {detachementEnCours ? "…" : "Détacher"}
+                  </button>
+                </div>
+              )}
               <div className="flex w-full flex-col gap-1.5 pb-3 sm:flex-row sm:items-center">
                 <input
                   value={nomAuto ? "" : nomOuvert}

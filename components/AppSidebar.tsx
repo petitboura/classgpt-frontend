@@ -11,7 +11,7 @@ import {
   LogIn,
   Home,
   Briefcase,
-  Sparkles,
+  StickyNote,
   Library,
   Brain,
   BookOpen,
@@ -75,7 +75,7 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
   // Texte affiché "Mes skills" (21/08/2026, demande Bourama) -- en
   // interne (route, code, BDD, outils MCP) ça reste "comportement",
   // voir la note dans lib/api.ts. Seul le mot vu par l'utilisateur change.
-  { id: "comportements", href: "/comportements", label: "Mes skills", Icone: Sparkles },
+  { id: "comportements", href: "/comportements", label: "Mes skills", Icone: StickyNote },
   { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
   // Section "Notion-like" (Partie 2, lot 5/5, 20/08, demande Bourama) --
   // juste après Bibliothèque, thématiquement proche (contenu personnel

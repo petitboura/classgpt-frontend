@@ -601,6 +601,13 @@ export async function creerPageNotion(titre: string, contenu: string) {
 // mettre plusieurs hein, pas juste un") : plusieurs instructions perso
 // écrites par l'étudiant, chacune ajoutée EN PLUS du system_prompt déjà
 // résolu (voir core/main.py::_construire_system_prompt côté backend).
+//
+// NOTE (21/08/2026, demande Bourama) : le mot affiché à l'utilisateur
+// est désormais "skill" ("plus connu, plus simple à expliquer et à
+// reconnaître") -- mais UNIQUEMENT le texte visible. En interne (ce
+// type, les fonctions ci-dessous, les routes /api/.../mes-comportements,
+// les tables Supabase, les outils MCP) tout reste nommé "comportement".
+// Ne pas renommer les identifiants techniques à partir de cette demande.
 export type Comportement = {
   id: string;
   texte: string;

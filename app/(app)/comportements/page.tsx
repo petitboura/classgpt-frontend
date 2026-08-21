@@ -7,7 +7,7 @@ const AGENT_ID = "clovis";
 
 export default function PageComportements() {
   return (
-    <SectionPage title="Mes comportements">
+    <SectionPage title="Mes skills">
       <MesComportements agentId={AGENT_ID} />
     </SectionPage>
   );

@@ -127,7 +127,7 @@ export function EspaceEntrerCode() {
                 <span className="text-dj-texte">{r.nom_code || r.code}</span>
                 <span className="text-dj-texte-muet"> · reçu de {r.proprietaire_nom}</span>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {r.a_comportement && <Badge>Comportement</Badge>}
+                  {r.a_comportement && <Badge>Skill</Badge>}
                   {r.a_programme && <Badge>Programme</Badge>}
                   {r.partage_bibliotheque && <Badge>Bibliothèque</Badge>}
                   {r.texte_libre && <Badge>Texte</Badge>}

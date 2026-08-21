@@ -24,7 +24,7 @@ export function EspaceConnecterClaude() {
     <div className="flex flex-col gap-4">
       <p className="text-sm text-dj-texte-muet">
         Connecte ton compte Clovis à Claude pour que Claude puisse utiliser ce que tu as dans Clovis (ta mémoire,
-        tes comportements, ta bibliothèque) directement dans vos conversations. Ça se fait une seule fois.
+        tes skills, ta bibliothèque) directement dans vos conversations. Ça se fait une seule fois.
       </p>
 
       <EtapeGuide numero={1} titre="Ouvre le menu à côté de la zone de texte">

@@ -40,7 +40,7 @@ type TypeLienComportement = "programme" | "matiere" | "chapitre" | "document" | 
 export function SectionComportementsEmplacement({
   typeCible,
   cibleId,
-  titre = "Comportements",
+  titre = "Skills",
 }: {
   typeCible: TypeLienComportement;
   cibleId: string;
@@ -136,7 +136,7 @@ export function SectionComportementsEmplacement({
       {erreur && !panneauOuvert && <p className="text-xs text-[var(--dj-erreur)]">{erreur}</p>}
 
       {attaches === null && <Skeleton className="h-9 w-full rounded-lg" />}
-      {attaches?.length === 0 && <p className="text-xs text-dj-texte-muet">Aucun comportement attaché ici.</p>}
+      {attaches?.length === 0 && <p className="text-xs text-dj-texte-muet">Aucun skill attaché ici.</p>}
       {attaches && attaches.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {attaches.map((c) => (
@@ -195,12 +195,12 @@ export function SectionComportementsEmplacement({
           ) : existants === null ? (
             <Skeleton className="h-9 w-full rounded-lg" />
           ) : candidats.length === 0 ? (
-            <p className="text-xs text-dj-texte-muet">Aucun autre comportement disponible à attacher ici.</p>
+            <p className="text-xs text-dj-texte-muet">Aucun autre skill disponible à attacher ici.</p>
           ) : (
             <SelectPersonnalise
               valeur={existantChoisi}
               onChange={setExistantChoisi}
-              placeholder="Choisir un comportement…"
+              placeholder="Choisir un skill…"
               options={candidats.map((c) => ({
                 id: c.id,
                 label: c.nom || c.description,

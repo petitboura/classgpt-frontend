@@ -437,7 +437,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
           entete={
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-dj-texte">
-                {panneau.type === "creation" ? "Nouveau comportement" : "Modifier ce comportement"}
+                {panneau.type === "creation" ? "Nouveau skill" : "Modifier ce skill"}
               </span>
               <button
                 onClick={() => demarrerFermeture(fermer)}

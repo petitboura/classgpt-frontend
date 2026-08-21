@@ -274,7 +274,7 @@ function VueClassementContenu({
     <div className="flex flex-col gap-3">
       <FilAriane elements={[{ label: classement.label }]} onRetour={onRetour} />
 
-      <SectionComportementsEmplacement typeCible="section" cibleId={classement.id} titre="Comportements" />
+      <SectionComportementsEmplacement typeCible="section" cibleId={classement.id} titre="Skills" />
 
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-dj-texte">Contenu</p>
@@ -703,7 +703,7 @@ function ListeMatieres({
                   className="rounded-lg border border-dj-bordure bg-dj-fond px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
                 />
                 <ChampLimites valeur={edition.limites} onChange={(v) => setEdition({ ...edition, limites: v })} />
-                <SectionComportementsEmplacement typeCible="matiere" cibleId={m.id} titre="Comportements" />
+                <SectionComportementsEmplacement typeCible="matiere" cibleId={m.id} titre="Skills" />
                 <div className="flex items-center justify-end gap-2">
                   <button
                     onClick={() => setEdition(null)}

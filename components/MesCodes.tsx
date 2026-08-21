@@ -275,7 +275,7 @@ function ChampComportement({
 
   return (
     <div>
-      <label className="text-xs font-semibold text-dj-texte-muet">Comportements</label>
+      <label className="text-xs font-semibold text-dj-texte-muet">Skills</label>
       {mesComportements.length === 0 ? (
         <p className="mt-1 text-xs text-dj-texte-muet">
           Aucun comportement créé pour l&apos;instant. Crées-en un dans &quot;Mes comportements&quot; pour pouvoir

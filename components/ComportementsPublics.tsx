@@ -57,7 +57,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
   }
 
   if (sansCompte) {
-    return <CTACompteRequis texte="Crée un compte pour activer un comportement publié par la communauté." />;
+    return <CTACompteRequis texte="Crée un compte pour activer un skill publié par la communauté." />;
   }
 
   return (
@@ -72,7 +72,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
         <input
           value={recherche}
           onChange={(e) => setRecherche(e.target.value)}
-          placeholder="Rechercher un comportement public..."
+          placeholder="Rechercher un skill public..."
           className="w-full rounded-cgpt-bouton border border-dj-bordure bg-dj-surface py-2 pl-9 pr-3 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
         />
       </div>

@@ -73,7 +73,7 @@ const FONCTIONNALITES: Fonctionnalite[] = [
     Icone: Share2,
     titre: "Partage en un code",
     description:
-      "Partage ta bibliothèque, tes comportements ou ton programme entier via un simple code ; tout se propage automatiquement chez celui qui le reçoit.",
+      "Partage ta bibliothèque, tes skills ou ton programme entier via un simple code ; tout se propage automatiquement chez celui qui le reçoit.",
   },
   {
     Icone: Plug,

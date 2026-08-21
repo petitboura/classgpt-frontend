@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Plus, X, Check, Sparkles, FileCode2, Loader2, Link2, Unlink } from "lucide-react";
+import { Trash2, Plus, X, Check, Sparkles, FileCode2, Loader2, Link2, Unlink, Eye, Code2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import {
   lireMesComportements,
   ajouterComportement,
@@ -68,6 +71,24 @@ import { Skeleton } from "./Skeleton";
 // haut) -- éditer directement le skill l'écrase sans toucher au texte
 // ni au nom ; si le texte est réédité ensuite, le skill regénéré
 // écrasera à son tour cette édition manuelle (voulu, pas un bug).
+//
+// Sous-bascule Texte/Aperçu (18/08, avec capture d'écran, demande
+// Bourama : "il faut les deux, comme ici, un bouton qui affiche le
+// texte et un autre qui affiche le skill") : "Aperçu" rend le CORPS
+// seul (frontmatter technique masqué, pas fait pour l'étudiant) en vrai
+// Markdown -- mêmes plugins/classes dj-markdown que le chat (voir
+// BulleMessage.tsx), pour un rendu cohérent avec le reste de l'app.
+// Même découpage que _RE_FRONTMATTER côté backend
+// (core/comportements_etudiants.py) : un skill_md valide est
+// "---\n<frontmatter>\n---\n<corps>". Si le format est invalide
+// (skill_md vide, pas encore chargé, ou édition manuelle cassée avant
+// enregistrement), on retombe sur le texte brut plutôt que de planter
+// le rendu.
+function extraireCorpsSkill(skillMd: string): string {
+  const correspondance = skillMd.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$/);
+  return correspondance ? correspondance[1].trim() : skillMd;
+}
+
 export function MesComportements({ agentId }: { agentId: string }) {
   const [liste, setListe] = useState<Comportement[] | undefined>(undefined);
 
@@ -98,6 +119,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
   const [skillChargement, setSkillChargement] = useState(false);
   const [skillEnregistrementEnCours, setSkillEnregistrementEnCours] = useState(false);
   const [erreurSkill, setErreurSkill] = useState<string | null>(null);
+  const [skillVue, setSkillVue] = useState<"texte" | "apercu">("texte");
 
   // Détachement (20/08, demande Bourama : "au moment de la création ou
   // après tu peux l'attacher" -- l'inverse, détacher, doit être possible
@@ -137,6 +159,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
     setOnglet("texte");
     setSkillOuvert("");
     setErreurSkill(null);
+    setSkillVue("texte");
   }
 
   function ouvrirCreation() {
@@ -148,6 +171,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
     setOnglet("texte");
     setSkillOuvert("");
     setErreurSkill(null);
+    setSkillVue("texte");
   }
 
   async function ouvrirOngletSkill() {
@@ -309,7 +333,12 @@ export function MesComportements({ agentId }: { agentId: string }) {
 
       {panneau && (
         <PanneauFlottant
-          onFerme={enregistrementEnCours || suppressionEnCours ? undefined : fermer}
+          large
+          onFerme={
+            enregistrementEnCours || suppressionEnCours || skillEnregistrementEnCours || detachementEnCours
+              ? undefined
+              : fermer
+          }
           entete={
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-dj-texte">
@@ -391,7 +420,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
                 value={texteOuvert}
                 onChange={(e) => setTexteOuvert(e.target.value)}
                 placeholder="Ex : réponds-moi toujours en langage simple"
-                rows={10}
+                rows={16}
                 className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
               />
 
@@ -424,23 +453,50 @@ export function MesComportements({ agentId }: { agentId: string }) {
             </>
           ) : (
             <>
-              <p className="pb-2 text-xs text-dj-texte-muet">
-                Ce que l&apos;IA lit vraiment quand elle consulte ce comportement (frontmatter + instructions). Tu
-                peux le corriger directement ici -- si tu réédites le texte brut plus tard, il sera régénéré et
-                remplacera ce que tu écris ici.
-              </p>
+              <div className="flex items-center justify-between gap-2 pb-2">
+                <p className="text-xs text-dj-texte-muet">
+                  Ce que l&apos;IA lit vraiment quand elle consulte ce comportement. Tu peux le corriger directement
+                  ici -- si tu réédites le texte brut plus tard, il sera régénéré et remplacera ce que tu écris ici.
+                </p>
+                <div className="flex flex-shrink-0 gap-1 rounded-lg border border-dj-bordure p-0.5">
+                  <button
+                    onClick={() => setSkillVue("texte")}
+                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                      skillVue === "texte" ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"
+                    }`}
+                  >
+                    <Code2 size={13} /> Texte
+                  </button>
+                  <button
+                    onClick={() => setSkillVue("apercu")}
+                    className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                      skillVue === "apercu" ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:text-dj-texte"
+                    }`}
+                  >
+                    <Eye size={13} /> Aperçu
+                  </button>
+                </div>
+              </div>
               {skillChargement ? (
                 <div className="flex flex-1 items-center justify-center text-dj-texte-muet">
                   <Loader2 size={20} className="animate-spin" />
                 </div>
-              ) : (
+              ) : skillVue === "texte" ? (
                 <textarea
                   value={skillOuvert}
                   onChange={(e) => setSkillOuvert(e.target.value)}
-                  rows={10}
+                  rows={16}
                   spellCheck={false}
                   className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 font-mono text-sm text-dj-texte outline-none focus:border-dj-accent-1"
                 />
+              ) : (
+                <div className="w-full flex-1 overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface-haute px-5 py-4">
+                  <div className="dj-markdown [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2 last:[&_p]:mb-0 [&_hr]:my-4 [&_hr]:border-dj-bordure [&_strong]:text-dj-texte [&_h1]:font-lecture [&_h1]:font-semibold [&_h1]:tracking-[-0.01em] [&_h1]:text-dj-texte [&_h1]:text-xl [&_h1]:mb-2 [&_h1]:mt-3 [&_h2]:font-lecture [&_h2]:font-semibold [&_h2]:tracking-[-0.01em] [&_h2]:text-dj-texte [&_h2]:text-lg [&_h2]:mb-2 [&_h2]:mt-3 [&_h3]:font-lecture [&_h3]:font-semibold [&_h3]:tracking-[-0.01em] [&_h3]:text-dj-texte [&_h3]:text-base [&_h3]:mb-1.5 [&_h3]:mt-2">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[[rehypeSanitize, defaultSchema]]}>
+                      {extraireCorpsSkill(skillOuvert)}
+                    </ReactMarkdown>
+                  </div>
+                </div>
               )}
               <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 {erreurSkill ? (

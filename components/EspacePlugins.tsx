@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Download, Trophy, Check, Users, FilePlus } from "lucide-react";
-import { listerPlugins, telechargerPlugin, type Plugin } from "@/lib/api";
+import { Search, Download, Trophy, Check, Users, FilePlus, X, BookOpen, FileText, PenSquare } from "lucide-react";
+import { listerPlugins, telechargerPlugin, apercuPlugin, type Plugin, type ApercuPlugin } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { PanneauAjoutPluginPublic } from "./PanneauAjoutPluginPublic";
+import { PanneauFlottant } from "./PanneauFlottant";
 
 // Lot 5 (chantier programme étudiant) -- interface de recherche/téléchar-
 // gement des plugins (espaces de classe exportés en bloc, voir Partie 1 du
@@ -125,6 +126,30 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
   // contribution_libre -- panneau replié par défaut (20/08).
   const [panneauOuvert, setPanneauOuvert] = useState(false);
 
+  // Aperçu (21/08, demande Bourama : "on ne peut pas le voir sans le
+  // télécharger, la carte n'est pas cliquable") : clic sur la carte =
+  // consultation en lecture seule (matières/chapitres + compteurs
+  // documents/exercices), jamais un téléchargement -- endpoint public
+  // GET /api/plugins/{id}/apercu, aucun compte requis pour juste voir.
+  const [apercuOuvert, setApercuOuvert] = useState(false);
+  const [apercu, setApercu] = useState<ApercuPlugin | null>(null);
+  const [chargementApercu, setChargementApercu] = useState(false);
+  const [erreurApercu, setErreurApercu] = useState<string | null>(null);
+
+  async function ouvrirApercu() {
+    setApercuOuvert(true);
+    if (apercu) return; // déjà chargé, pas besoin de refaire l'appel
+    setChargementApercu(true);
+    setErreurApercu(null);
+    try {
+      setApercu(await apercuPlugin(plugin.id));
+    } catch (e) {
+      setErreurApercu(messageErreur(e));
+    } finally {
+      setChargementApercu(false);
+    }
+  }
+
   async function telecharger() {
     setEnvoi(true);
     setErreur(null);
@@ -145,7 +170,13 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors">
+      <div
+        onClick={ouvrirApercu}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === "Enter" && ouvrirApercu()}
+        className="flex cursor-pointer flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3 transition-colors hover:border-dj-bordure-forte"
+      >
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex w-6 flex-shrink-0 items-center justify-center text-sm font-bold text-dj-texte-muet">
             {rang === 0 ? <Trophy size={16} className="text-dj-accent-1" /> : `#${rang + 1}`}
@@ -166,7 +197,7 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
           </div>
         </div>
 
-        <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
+        <div className="flex flex-shrink-0 flex-wrap items-center gap-2" onClick={(e) => e.stopPropagation()}>
           {plugin.contribution_libre && (
             <button
               onClick={() => setPanneauOuvert((v) => !v)}
@@ -217,6 +248,89 @@ function LignePlugin({ plugin, rang }: { plugin: Plugin; rang: number }) {
           nomPlugin={plugin.nom}
           onFermer={() => setPanneauOuvert(false)}
         />
+      )}
+
+      {apercuOuvert && (
+        <PanneauFlottant
+          onFerme={() => setApercuOuvert(false)}
+          entete={
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-dj-texte">{plugin.nom}</p>
+                <p className="text-xs text-dj-texte-muet">
+                  {plugin.niveau}
+                  {apercu?.auteur_nom ? ` · par ${apercu.auteur_nom}` : ""}
+                </p>
+              </div>
+              <button
+                onClick={() => setApercuOuvert(false)}
+                className="flex flex-shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs text-dj-texte-muet transition-colors hover:bg-dj-surface-haute"
+              >
+                <X size={14} /> Fermer
+              </button>
+            </div>
+          }
+        >
+          {chargementApercu && (
+            <div className="flex flex-col gap-2" aria-hidden>
+              <Skeleton className="h-12 rounded-xl border border-dj-bordure" />
+              <Skeleton className="h-12 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
+              <Skeleton className="h-12 rounded-xl border border-dj-bordure" style={{ animationDelay: "200ms" }} />
+            </div>
+          )}
+
+          {erreurApercu && <p className="text-sm text-[var(--dj-erreur)]">{erreurApercu}</p>}
+
+          {apercu && !chargementApercu && (
+            <div className="flex flex-col gap-4">
+              {apercu.matieres.length === 0 && (
+                <p className="text-sm text-dj-texte-muet">Ce programme ne contient pas encore de matière.</p>
+              )}
+              {apercu.matieres.map((matiere) => (
+                <div key={matiere.id} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={15} className="flex-shrink-0 text-dj-accent-1" />
+                    <h4 className="text-sm font-semibold text-dj-texte">{matiere.nom}</h4>
+                  </div>
+                  {matiere.chapitres.length === 0 ? (
+                    <p className="pl-6 text-xs text-dj-texte-muet">Aucun chapitre pour l&apos;instant.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-1.5 pl-6">
+                      {matiere.chapitres.map((chapitre) => (
+                        <li
+                          key={chapitre.id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte"
+                        >
+                          <span className="truncate">{chapitre.nom}</span>
+                          <span className="flex flex-shrink-0 items-center gap-3 text-xs text-dj-texte-muet">
+                            <span className="flex items-center gap-1">
+                              <FileText size={12} /> {chapitre.documents_count}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <PenSquare size={12} /> {chapitre.exercices_count}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => {
+                    setApercuOuvert(false);
+                    setConfirmation(true);
+                  }}
+                  className="flex items-center gap-1.5 rounded-cgpt-bouton bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
+                >
+                  <Download size={14} /> Télécharger ce plugin
+                </button>
+              </div>
+            </div>
+          )}
+        </PanneauFlottant>
       )}
     </div>
   );

@@ -1172,3 +1172,29 @@ export async function telechargerPlugin(pluginId: string) {
   const resultat = await appelerApi(`/api/plugins/${pluginId}/telecharger`, { method: "POST" });
   return resultat as { programme_id: string };
 }
+
+export type ChapitreApercuPlugin = {
+  id: string;
+  nom: string;
+  documents_count: number;
+  exercices_count: number;
+};
+
+export type MatiereApercuPlugin = {
+  id: string;
+  nom: string;
+  chapitres: ChapitreApercuPlugin[];
+};
+
+export type ApercuPlugin = {
+  id: string;
+  nom: string;
+  niveau: string;
+  auteur_nom: string | null;
+  matieres: MatiereApercuPlugin[];
+};
+
+export async function apercuPlugin(pluginId: string) {
+  const resultat = await appelerApi(`/api/plugins/${pluginId}/apercu`);
+  return resultat as ApercuPlugin;
+}

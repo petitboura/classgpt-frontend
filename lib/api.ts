@@ -1182,6 +1182,56 @@ export async function declasserDocumentEmplacement(type: TypeEmplacementProgramm
   return appelerApi(`/api/emplacements/${type}/${cibleId}/documents/${fichierId}`, { method: "DELETE" });
 }
 
+// ---------------------------------------------------------------------------
+// Dossiers de la bibliothèque personnelle (22/08, demande Bourama) -- voir
+// api/dossiers_bibliotheque.py côté backend. Un fichier peut être rangé dans
+// plusieurs dossiers à la fois (fichier_ids ci-dessous est un tableau).
+// Distinct du classement ci-dessus (emplacements du Programme) : deux
+// systèmes séparés, celui-ci concerne l'organisation interne de la
+// bibliothèque elle-même.
+
+export type DossierBibliotheque = {
+  id: string;
+  nom: string;
+  dossier_parent_id: string | null;
+  created_at: string;
+  fichier_ids: string[];
+};
+
+export async function listerDossiersBibliotheque() {
+  const resultat = await appelerApi("/api/bibliotheque/dossiers");
+  return resultat as DossierBibliotheque[];
+}
+
+export async function creerDossierBibliotheque(nom: string, dossierParentId?: string) {
+  return appelerApi("/api/bibliotheque/dossiers", {
+    method: "POST",
+    body: JSON.stringify({ nom, dossier_parent_id: dossierParentId ?? null }),
+  });
+}
+
+export async function renommerDossierBibliotheque(dossierId: string, nom: string) {
+  return appelerApi(`/api/bibliotheque/dossiers/${dossierId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ nom }),
+  });
+}
+
+export async function supprimerDossierBibliotheque(dossierId: string) {
+  return appelerApi(`/api/bibliotheque/dossiers/${dossierId}`, { method: "DELETE" });
+}
+
+export async function rangerFichierDansDossier(dossierId: string, fichierId: string) {
+  return appelerApi(`/api/bibliotheque/dossiers/${dossierId}/fichiers`, {
+    method: "POST",
+    body: JSON.stringify({ fichier_id: fichierId }),
+  });
+}
+
+export async function retirerFichierDuDossier(dossierId: string, fichierId: string) {
+  return appelerApi(`/api/bibliotheque/dossiers/${dossierId}/fichiers/${fichierId}`, { method: "DELETE" });
+}
+
 export type DocumentChapitre = { id: string; titre: string; url_ou_contenu: string; created_at: string };
 
 export async function lireDocumentsChapitre(chapitreId: string) {

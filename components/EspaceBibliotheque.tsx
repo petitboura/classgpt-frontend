@@ -1,12 +1,33 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Link as IconLien, FileText, Paperclip, Image as IconImage, AudioLines as IconAudio, Video as IconVideo } from "lucide-react";
+import {
+  Link as IconLien,
+  FileText,
+  Paperclip,
+  Image as IconImage,
+  AudioLines as IconAudio,
+  Video as IconVideo,
+  Folder as IconDossier,
+  FolderOpen as IconDossierOuvert,
+  FolderPlus,
+  FolderX,
+  ChevronRight,
+  Pencil,
+  X,
+} from "lucide-react";
 import {
   appelerApi,
   ajouterFichiersBibliothequePersonnelle,
   ajouterLienBibliothequePersonnelle,
   ajouterTexteBibliothequePersonnelle,
+  listerDossiersBibliotheque,
+  creerDossierBibliotheque,
+  renommerDossierBibliotheque,
+  supprimerDossierBibliotheque,
+  rangerFichierDansDossier,
+  retirerFichierDuDossier,
+  type DossierBibliotheque,
 } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { Skeleton } from "./Skeleton";
@@ -20,6 +41,17 @@ import { BibliothequePublique } from "./BibliothequePublique";
 // d'autres ici plutôt que toute la page). Personnel à chaque
 // utilisateur : n'importe laquelle de ses IA peut consulter ces
 // documents pendant une conversation (outil consulter_bibliotheque).
+//
+// Dossiers/sous-dossiers (22/08/2026, demande explicite de Bourama) :
+// couche PAR DESSUS le listing plat existant, jamais un prérequis --
+// un fichier ajouté reste "libre" (aucun dossier) tant qu'on ne le
+// range pas explicitement quelque part, exactement comme avant. Un
+// fichier peut être rangé dans PLUSIEURS dossiers à la fois (voir
+// api/dossiers_bibliotheque.py). Le même arbre de dossiers est
+// disponible dans chaque sous-onglet (Tous/Documents/Images/...) :
+// dans un sous-onglet filtré par type, un dossier qui ne contient
+// aucun fichier de ce type (lui ou ses sous-dossiers) est simplement
+// masqué, jamais montré vide.
 
 const URL_REGEX = /^https?:\/\/\S+$/i;
 
@@ -61,6 +93,7 @@ export function EspaceBibliotheque() {
   const [vue, setVue] = useState<"perso" | "publique">("perso");
   const [sousOnglet, setSousOnglet] = useState<SousOngletBiblio>("tous");
   const [fichiers, setFichiers] = useState<FichierBiblio[] | null>(null);
+  const [dossiers, setDossiers] = useState<DossierBibliotheque[] | null>(null);
   const [nouveauxFichiers, setNouveauxFichiers] = useState<File[]>([]);
   const [texteOuLien, setTexteOuLien] = useState("");
   const [envoi, setEnvoi] = useState(false);
@@ -73,8 +106,17 @@ export function EspaceBibliotheque() {
   // chaque type dans l'app") -- remplace l'ouverture en nouvel onglet.
   const [fichierOuvert, setFichierOuvert] = useState<FichierBiblio | null>(null);
 
+  // Navigation par dossier : pile du fil d'ariane, null = racine.
+  const [pileDossiers, setPileDossiers] = useState<{ id: string; nom: string }[]>([]);
+  const dossierCourantId = pileDossiers.length > 0 ? pileDossiers[pileDossiers.length - 1].id : null;
+  const [nouveauNomDossier, setNouveauNomDossier] = useState("");
+  const [creationDossierOuverte, setCreationDossierOuverte] = useState(false);
+  const [dossierEnRenommage, setDossierEnRenommage] = useState<string | null>(null);
+  const [fichierARanger, setFichierARanger] = useState<FichierBiblio | null>(null);
+
   useEffect(() => {
     chargerFichiers();
+    chargerDossiers();
   }, []);
 
   function chargerFichiers() {
@@ -88,11 +130,72 @@ export function EspaceBibliotheque() {
       });
   }
 
+  function chargerDossiers() {
+    listerDossiersBibliotheque()
+      .then((r) => setDossiers(r))
+      .catch(() => setDossiers([]));
+  }
+
+  const fichiersParId = useMemo(() => {
+    const m = new Map<string, FichierBiblio>();
+    (fichiers ?? []).forEach((f) => m.set(f.id, f));
+    return m;
+  }, [fichiers]);
+
+  // Un fichier est "libre" s'il n'est rangé dans aucun dossier -- il
+  // n'apparaît alors qu'à la racine, jamais dans un dossier.
+  const idsFichiersRanges = useMemo(() => {
+    const s = new Set<string>();
+    (dossiers ?? []).forEach((d) => d.fichier_ids.forEach((id) => s.add(id)));
+    return s;
+  }, [dossiers]);
+
+  const enfantsDe = useMemo(() => {
+    const m = new Map<string | null, DossierBibliotheque[]>();
+    (dossiers ?? []).forEach((d) => {
+      const cle = d.dossier_parent_id;
+      if (!m.has(cle)) m.set(cle, []);
+      m.get(cle)!.push(d);
+    });
+    return m;
+  }, [dossiers]);
+
+  // Un dossier contient un fichier du type filtré s'il en a un
+  // directement, OU si un de ses sous-dossiers (récursivement) en a un
+  // -- sinon il est masqué dans ce sous-onglet (confirmé par Bourama :
+  // jamais affiché vide).
+  function dossierContientType(dossierId: string, type: SousOngletBiblio): boolean {
+    if (type === "tous") return true;
+    const dossier = (dossiers ?? []).find((d) => d.id === dossierId);
+    if (!dossier) return false;
+    const aUnFichierDuType = dossier.fichier_ids.some((fid) => {
+      const f = fichiersParId.get(fid);
+      return f && typeDe(f) === type;
+    });
+    if (aUnFichierDuType) return true;
+    const enfants = enfantsDe.get(dossierId) ?? [];
+    return enfants.some((e) => dossierContientType(e.id, type));
+  }
+
+  const sousDossiersAffiches = useMemo(() => {
+    const enfants = enfantsDe.get(dossierCourantId) ?? [];
+    return enfants.filter((d) => dossierContientType(d.id, sousOnglet));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enfantsDe, dossierCourantId, sousOnglet, fichiersParId]);
+
   const fichiersAffiches = useMemo(() => {
     if (!fichiers) return null;
-    if (sousOnglet === "tous") return fichiers;
-    return fichiers.filter((f) => typeDe(f) === sousOnglet);
-  }, [fichiers, sousOnglet]);
+    let base: FichierBiblio[];
+    if (dossierCourantId === null) {
+      base = fichiers.filter((f) => !idsFichiersRanges.has(f.id));
+    } else {
+      const dossier = (dossiers ?? []).find((d) => d.id === dossierCourantId);
+      const ids = new Set(dossier?.fichier_ids ?? []);
+      base = fichiers.filter((f) => ids.has(f.id));
+    }
+    if (sousOnglet === "tous") return base;
+    return base.filter((f) => typeDe(f) === sousOnglet);
+  }, [fichiers, dossiers, dossierCourantId, idsFichiersRanges, sousOnglet]);
 
   async function ajouter() {
     const texte = texteOuLien.trim();
@@ -129,6 +232,65 @@ export function EspaceBibliotheque() {
     try {
       await appelerApi(`/api/bibliotheque/${id}`, { method: "DELETE" });
       chargerFichiers();
+      chargerDossiers();
+    } catch (e) {
+      window.alert(messageErreur(e));
+    }
+  }
+
+  async function creerDossier() {
+    const nom = nouveauNomDossier.trim();
+    if (!nom) return;
+    try {
+      await creerDossierBibliotheque(nom, dossierCourantId ?? undefined);
+      setNouveauNomDossier("");
+      setCreationDossierOuverte(false);
+      chargerDossiers();
+    } catch (e) {
+      window.alert(messageErreur(e));
+    }
+  }
+
+  async function renommerDossier(dossierId: string, nom: string) {
+    const nouveauNom = nom.trim();
+    if (!nouveauNom) return;
+    try {
+      await renommerDossierBibliotheque(dossierId, nouveauNom);
+      setDossierEnRenommage(null);
+      chargerDossiers();
+    } catch (e) {
+      window.alert(messageErreur(e));
+    }
+  }
+
+  async function supprimerDossier(dossierId: string, nom: string) {
+    if (
+      !window.confirm(
+        `Supprimer le dossier « ${nom} » ? Les fichiers qu'il contient et qui ne sont dans aucun autre dossier seront supprimés avec lui.`
+      )
+    )
+      return;
+    try {
+      await supprimerDossierBibliotheque(dossierId);
+      if (pileDossiers.some((d) => d.id === dossierId)) {
+        setPileDossiers((p) => p.slice(0, p.findIndex((d) => d.id === dossierId)));
+      }
+      chargerDossiers();
+      chargerFichiers();
+    } catch (e) {
+      window.alert(messageErreur(e));
+    }
+  }
+
+  async function basculerRangement(dossierId: string, dejaRange: boolean) {
+    if (!fichierARanger) return;
+    try {
+      if (dejaRange) {
+        await retirerFichierDuDossier(dossierId, fichierARanger.id);
+      } else {
+        await rangerFichierDansDossier(dossierId, fichierARanger.id);
+      }
+      chargerDossiers();
     } catch (e) {
       window.alert(messageErreur(e));
     }
@@ -224,13 +386,120 @@ export function EspaceBibliotheque() {
         ))}
       </div>
 
-      {fichiersAffiches === null && (
+      {/* Fil d'ariane + actions dossier (22/08) : navigation dans
+          l'arborescence, la même pour chaque sous-onglet. */}
+      <div className="flex flex-wrap items-center gap-1 text-xs text-dj-texte-muet">
+        <button
+          onClick={() => setPileDossiers([])}
+          className={`rounded-cgpt-bouton px-2 py-1 font-medium transition-colors hover:text-dj-texte ${
+            dossierCourantId === null ? "text-dj-texte" : ""
+          }`}
+        >
+          Bibliothèque
+        </button>
+        {pileDossiers.map((d, i) => (
+          <span key={d.id} className="flex items-center gap-1">
+            <ChevronRight size={12} className="flex-shrink-0" />
+            <button
+              onClick={() => setPileDossiers((p) => p.slice(0, i + 1))}
+              className={`rounded-cgpt-bouton px-2 py-1 font-medium transition-colors hover:text-dj-texte ${
+                i === pileDossiers.length - 1 ? "text-dj-texte" : ""
+              }`}
+            >
+              {d.nom}
+            </button>
+          </span>
+        ))}
+        <button
+          onClick={() => setCreationDossierOuverte((v) => !v)}
+          className="ml-auto flex items-center gap-1 rounded-cgpt-bouton px-2 py-1 font-semibold text-dj-accent-1 transition-colors hover:text-dj-accent-2"
+        >
+          <FolderPlus size={14} />
+          Nouveau dossier
+        </button>
+      </div>
+
+      {creationDossierOuverte && (
+        <div className="flex animate-dj-fade-in-rapide items-center gap-2">
+          <input
+            autoFocus
+            type="text"
+            value={nouveauNomDossier}
+            onChange={(e) => setNouveauNomDossier(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && creerDossier()}
+            placeholder="Nom du dossier…"
+            className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-bordure-forte"
+          />
+          <button
+            onClick={creerDossier}
+            className="rounded-cgpt-bouton bg-dj-accent-1 px-3 py-1.5 text-xs font-bold text-[#1A0D02] hover:bg-dj-accent-2"
+          >
+            Créer
+          </button>
+          <button
+            onClick={() => {
+              setCreationDossierOuverte(false);
+              setNouveauNomDossier("");
+            }}
+            className="text-dj-texte-muet hover:text-dj-texte"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {dossiers === null && fichiersAffiches === null && (
         <div className="flex flex-col gap-2" aria-hidden>
           <Skeleton className="h-14 rounded-xl border border-dj-bordure" />
           <Skeleton className="h-14 rounded-xl border border-dj-bordure" style={{ animationDelay: "100ms" }} />
         </div>
       )}
-      {fichiersAffiches?.length === 0 && <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>}
+
+      {sousDossiersAffiches.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {sousDossiersAffiches.map((d) => (
+            <div
+              key={d.id}
+              className="flex items-center justify-between gap-3 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
+            >
+              {dossierEnRenommage === d.id ? (
+                <input
+                  autoFocus
+                  type="text"
+                  defaultValue={d.nom}
+                  onKeyDown={(e) => e.key === "Enter" && renommerDossier(d.id, (e.target as HTMLInputElement).value)}
+                  onBlur={(e) => renommerDossier(d.id, e.target.value)}
+                  className="flex-1 rounded-cgpt-bouton border border-dj-bordure bg-dj-fond px-2 py-1 text-sm text-dj-texte outline-none"
+                />
+              ) : (
+                <button
+                  onClick={() => setPileDossiers((p) => [...p, { id: d.id, nom: d.nom }])}
+                  className="flex min-w-0 items-center gap-2 text-sm text-dj-texte hover:text-dj-accent-1"
+                >
+                  <IconDossier size={16} className="flex-shrink-0 text-dj-accent-1" />
+                  <span className="truncate font-medium">{d.nom}</span>
+                </button>
+              )}
+              <div className="flex flex-shrink-0 items-center gap-3 text-xs text-dj-texte-muet">
+                <button onClick={() => setDossierEnRenommage(d.id)} className="hover:text-dj-texte" title="Renommer">
+                  <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => supprimerDossier(d.id, d.nom)}
+                  className="hover:text-[var(--dj-erreur)]"
+                  title="Supprimer le dossier"
+                >
+                  <FolderX size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {fichiersAffiches?.length === 0 && sousDossiersAffiches.length === 0 && (
+        <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>
+      )}
       {fichiersAffiches && fichiersAffiches.length > 0 && (
         <div className="flex flex-col gap-2">
           {fichiersAffiches.map((f) => {
@@ -254,15 +523,70 @@ export function EspaceBibliotheque() {
                   <Icone size={14} className="flex-shrink-0" />
                   <span className="truncate">{f.description || f.nom_fichier}</span>
                 </button>
-                <button
-                  onClick={() => supprimer(f.id, f.description || f.nom_fichier)}
-                  className="flex-shrink-0 text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
-                >
-                  Supprimer
-                </button>
+                <div className="flex flex-shrink-0 items-center gap-3 text-xs text-dj-texte-muet">
+                  <button
+                    onClick={() => setFichierARanger(f)}
+                    className="hover:text-dj-texte"
+                    title="Ranger dans un dossier"
+                  >
+                    <IconDossierOuvert size={14} />
+                  </button>
+                  <button
+                    onClick={() => supprimer(f.id, f.description || f.nom_fichier)}
+                    className="transition-colors hover:text-[var(--dj-erreur)]"
+                  >
+                    Supprimer
+                  </button>
+                </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Panneau "ranger dans un dossier" (22/08) : liste tous les
+          dossiers de l'utilisateur avec une case à cocher -- un fichier
+          peut être rattaché à plusieurs dossiers à la fois. */}
+      {fichierARanger && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 animate-dj-fade-in-rapide sm:items-center"
+          onClick={() => setFichierARanger(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-dj-bordure bg-dj-surface p-4"
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-dj-texte">
+                Ranger « {fichierARanger.description || fichierARanger.nom_fichier} »
+              </p>
+              <button onClick={() => setFichierARanger(null)} className="text-dj-texte-muet hover:text-dj-texte">
+                <X size={16} />
+              </button>
+            </div>
+            {(dossiers ?? []).length === 0 && (
+              <p className="text-xs text-dj-texte-muet">Aucun dossier pour l&apos;instant. Crée-en un d&apos;abord.</p>
+            )}
+            <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+              {(dossiers ?? []).map((d) => {
+                const dejaRange = d.fichier_ids.includes(fichierARanger.id);
+                return (
+                  <label
+                    key={d.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-cgpt-bouton px-2 py-1.5 text-sm text-dj-texte hover:bg-dj-surface-haute"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={dejaRange}
+                      onChange={() => basculerRangement(d.id, dejaRange)}
+                    />
+                    <IconDossier size={14} className="text-dj-accent-1" />
+                    {d.nom}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -272,3 +596,4 @@ export function EspaceBibliotheque() {
     </div>
   );
 }
+

@@ -11,7 +11,7 @@ import {
   LogIn,
   Home,
   Briefcase,
-  Sparkles,
+  ScrollText,
   Library,
   Brain,
   BookOpen,
@@ -23,6 +23,8 @@ import {
   Compass,
   Plug,
   NotebookPen,
+  MessageSquarePlus,
+  History,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Logo } from "@/components/Logo";
@@ -59,6 +61,15 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 
 const AGENT_ID = "clovis";
 
+// Type repris à l'identique de ChatFlottant.tsx (même convention que le
+// reste du projet : pas de type partagé pour ça, chaque fichier qui en
+// a besoin le redéclare localement).
+type FilConversation = {
+  conversation_id: string | null;
+  titre: string;
+  derniere_activite: string;
+};
+
 export type OngletId =
   | "bureau"
   | "comportements"
@@ -75,7 +86,7 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
   // Texte affiché "Mes skills" (21/08/2026, demande Bourama) -- en
   // interne (route, code, BDD, outils MCP) ça reste "comportement",
   // voir la note dans lib/api.ts. Seul le mot vu par l'utilisateur change.
-  { id: "comportements", href: "/comportements", label: "Mes skills", Icone: Sparkles },
+  { id: "comportements", href: "/comportements", label: "Mes skills", Icone: ScrollText },
   { id: "bibliotheque", href: "/bibliotheque", label: "Bibliothèque", Icone: Library },
   // Section "Notion-like" (Partie 2, lot 5/5, 20/08, demande Bourama) --
   // juste après Bibliothèque, thématiquement proche (contenu personnel
@@ -123,18 +134,42 @@ function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.
 export function AppSidebar({
   connecte,
   onOuvrirCatalogue,
+  contexteChat = false,
+  historique = [],
+  conversationActiveId = null,
+  aDesMessages = false,
+  onNouvelleConversation,
+  onSelectionnerConversation,
 }: {
   connecte: boolean;
   // "Pourquoi Clovis ?" -- géré au niveau du layout (AppShell.tsx), pas
   // ici, pour pouvoir s'ouvrir aussi automatiquement à la première
   // visite (même logique que l'ancien app/page.tsx, 14/08).
   onOuvrirCatalogue: () => void;
+  // Contexte "chat en plein écran" (21/08/2026, demande Bourama : "il
+  // faut qu'il soit la barre latérale de l'app avec les deux nouveaux
+  // boutons rien d'autre" -- remplace RailChatPleinEcran.tsx, supprimé).
+  // Cette même AppSidebar est montée une 2e fois (instance dupliquée,
+  // demande explicite) DANS ChatFlottant.tsx quand le chat est en plein
+  // écran, avec contexteChat=true : ajoute Nouvelle conversation +
+  // Historique sur le rail, et déplace Ma mémoire + Audits (les moins
+  // utiles en plein milieu d'une conversation) dans le dropdown Actions
+  // pour compenser la place prise -- rien d'autre ne change. Hors chat
+  // (contexteChat=false, valeur par défaut), AppSidebar reste identique
+  // à avant.
+  contexteChat?: boolean;
+  historique?: FilConversation[];
+  conversationActiveId?: string | null;
+  aDesMessages?: boolean;
+  onNouvelleConversation?: () => void;
+  onSelectionnerConversation?: (fil: FilConversation) => void;
 }) {
   const pathname = usePathname();
   const [ouverte, setOuverte] = useState(false);
   const [actionsDeplie, setActionsDeplie] = useState(false);
   const [avisDeplie, setAvisDeplie] = useState(false);
   const [copie, setCopie] = useState(false);
+  const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
   const asideRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -234,7 +269,12 @@ export function AppSidebar({
     );
   }
 
-  const navComplete = [{ href: "/", label: "Accueil", Icone: Home }, ...ONGLETS];
+  // En contexte chat plein écran : Ma mémoire + Audits quittent le rail
+  // principal pour le dropdown Actions (place prise par Nouvelle
+  // conversation + Historique, voir prop contexteChat ci-dessus).
+  const ongletsRail = contexteChat ? ONGLETS.filter((o) => o.id !== "memoire" && o.id !== "audits") : ONGLETS;
+  const ongletsDansActions = contexteChat ? ONGLETS.filter((o) => o.id === "memoire" || o.id === "audits") : [];
+  const navComplete = [{ href: "/", label: "Accueil", Icone: Home }, ...ongletsRail];
 
   return (
     <>
@@ -281,6 +321,60 @@ export function AppSidebar({
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
 
+        {contexteChat && (
+          <>
+            {aDesMessages && (
+              <button
+                onClick={onNouvelleConversation}
+                className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+              >
+                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                  <MessageSquarePlus size={18} className="transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:rotate-6" />
+                </span>
+                <LibelleRail ouverte={ouverte}>Nouvelle conversation</LibelleRail>
+              </button>
+            )}
+
+            {historique.length > 0 && (
+              <div className="mt-1 min-h-0 overflow-hidden rounded-xl">
+                <button
+                  onClick={() => setHistoriqueDeplie((v) => !v)}
+                  className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${
+                    historiqueDeplie ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+                  }`}
+                >
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                    <History size={18} className="transition-transform duration-300 group-hover:rotate-45" />
+                  </span>
+                  <LibelleRail ouverte={ouverte}>Historique</LibelleRail>
+                </button>
+                {ouverte && historiqueDeplie && (
+                  <div className="flex max-h-56 flex-col overflow-y-auto px-1 pb-1">
+                    {historique.map((fil) => {
+                      const estActive = fil.conversation_id === conversationActiveId;
+                      return (
+                        <button
+                          key={fil.conversation_id ?? "legacy"}
+                          onClick={() => !estActive && onSelectionnerConversation?.(fil)}
+                          disabled={estActive}
+                          className={`truncate border-b border-white/[0.06] px-2 py-2 text-left text-sm last:border-b-0 ${
+                            estActive ? "text-dj-accent-1" : "text-dj-texte hover:text-dj-accent-1"
+                          }`}
+                        >
+                          {estActive ? "● " : ""}
+                          {fil.titre}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="my-2 h-px w-full bg-dj-bordure" />
+          </>
+        )}
+
         {navComplete.map((o, i) => (
           <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENTS_NAV[i % MOUVEMENTS_NAV.length]} />
         ))}
@@ -307,6 +401,25 @@ export function AppSidebar({
           {actionsDeplie && (
             <div className="absolute bottom-full left-0 z-50 mb-2 w-64 animate-dj-fade-in-rapide rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-2 shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
               <div className="flex flex-col gap-2">
+                {contexteChat &&
+                  ongletsDansActions.map((o) => {
+                    const actif = pathname === o.href;
+                    return (
+                      <Link
+                        key={o.href}
+                        href={o.href}
+                        onClick={() => setActionsDeplie(false)}
+                        className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
+                          actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+                        }`}
+                      >
+                        <o.Icone size={16} className="flex-shrink-0" />
+                        {o.label}
+                        {actif && <TraitSignature className="absolute bottom-0.5 left-2" />}
+                      </Link>
+                    );
+                  })}
+
                 <button
                   onClick={partager}
                   className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -381,6 +494,56 @@ export function AppSidebar({
       {ouverte && (
         <div className="fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto overflow-x-hidden border-r border-dj-bordure bg-dj-fond px-2 py-3 md:hidden">
           <div className="mt-8">
+            {contexteChat && (
+              <>
+                {aDesMessages && (
+                  <button
+                    onClick={onNouvelleConversation}
+                    className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+                  >
+                    <MessageSquarePlus size={18} className="flex-shrink-0" />
+                    <span className="text-sm">Nouvelle conversation</span>
+                  </button>
+                )}
+
+                {historique.length > 0 && (
+                  <div className="mt-1">
+                    <button
+                      onClick={() => setHistoriqueDeplie((v) => !v)}
+                      className={`group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-sm transition-colors ${
+                        historiqueDeplie ? "text-dj-accent-1" : "text-dj-texte-muet"
+                      }`}
+                    >
+                      <History size={18} className="flex-shrink-0" />
+                      Historique
+                    </button>
+                    {historiqueDeplie && (
+                      <div className="flex max-h-56 flex-col overflow-y-auto px-1 pb-1">
+                        {historique.map((fil) => {
+                          const estActive = fil.conversation_id === conversationActiveId;
+                          return (
+                            <button
+                              key={fil.conversation_id ?? "legacy"}
+                              onClick={() => !estActive && onSelectionnerConversation?.(fil)}
+                              disabled={estActive}
+                              className={`truncate border-b border-white/[0.06] px-2 py-2 text-left text-sm last:border-b-0 ${
+                                estActive ? "text-dj-accent-1" : "text-dj-texte hover:text-dj-accent-1"
+                              }`}
+                            >
+                              {estActive ? "● " : ""}
+                              {fil.titre}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="my-2 h-px w-full bg-dj-bordure" />
+              </>
+            )}
+
             {navComplete.map((o, i) => (
               <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENTS_NAV[i % MOUVEMENTS_NAV.length]} mobile />
             ))}
@@ -402,6 +565,28 @@ export function AppSidebar({
             </button>
             {actionsDeplie && (
               <div className="flex flex-col gap-2 pb-2">
+                {contexteChat &&
+                  ongletsDansActions.map((o) => {
+                    const actif = pathname === o.href;
+                    return (
+                      <Link
+                        key={o.href}
+                        href={o.href}
+                        onClick={() => {
+                          setActionsDeplie(false);
+                          setOuverte(false);
+                        }}
+                        className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
+                          actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
+                        }`}
+                      >
+                        <o.Icone size={16} />
+                        {o.label}
+                        {actif && <TraitSignature className="absolute bottom-0.5 left-2" />}
+                      </Link>
+                    );
+                  })}
+
                 <button
                   onClick={partager}
                   className="group flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"

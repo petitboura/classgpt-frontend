@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Sparkles, Download, Check } from "lucide-react";
+import { Search, ScrollText, Download, Check } from "lucide-react";
 import { rechercherComportementsPublics, activerComportementPublic, type ComportementPublic } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
@@ -102,7 +102,7 @@ export function ComportementsPublics({ onActive }: { onActive: () => void }) {
                 className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dj-bordure bg-dj-surface px-4 py-3"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <Sparkles size={16} className="flex-shrink-0 text-dj-accent-1" />
+                  <ScrollText size={16} className="flex-shrink-0 text-dj-accent-1" />
                   <div className="min-w-0">
                     <p className="truncate text-sm text-dj-texte">{c.nom}</p>
                     <p className="truncate text-xs text-dj-texte-muet">

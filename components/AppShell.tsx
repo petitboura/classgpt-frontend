@@ -45,7 +45,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex h-dvh">
         <AppSidebar connecte={connecte} onOuvrirCatalogue={() => setCatalogueOuvert(true)} />
         <main className="flex-1 overflow-y-auto">{children}</main>
-        <ChatFlottant connecte={connecte} etat={etatChat} setEtat={setEtatChat} />
+        <ChatFlottant
+          connecte={connecte}
+          etat={etatChat}
+          setEtat={setEtatChat}
+          onOuvrirCatalogue={() => setCatalogueOuvert(true)}
+        />
         {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
       </div>
     </ContexteChat.Provider>

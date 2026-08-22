@@ -5,7 +5,7 @@ import { Bird, X, Maximize2, Minimize2, MessageSquarePlus, History } from "lucid
 import { appelerApi, lireOutilsChatAgent } from "@/lib/api";
 import { messageErreur } from "@/lib/erreurs";
 import { ChatIA } from "./ChatIA";
-import { RailChatPleinEcran } from "./RailChatPleinEcran";
+import { AppSidebar } from "@/components/AppSidebar";
 import { MessageAffiche, nettoyerMessageHistorique } from "./BulleMessage";
 import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
@@ -56,10 +56,15 @@ export function ChatFlottant({
   connecte,
   etat,
   setEtat,
+  onOuvrirCatalogue,
 }: {
   connecte: boolean;
   etat: EtatChat;
   setEtat: (etat: EtatChat) => void;
+  // Transmise à AppSidebar en mode plein écran (voir plus bas) -- "Pourquoi
+  // Clovis ?" vit dans le dropdown Actions de la sidebar, mais l'état
+  // catalogueOuvert lui-même reste au niveau du layout (AppShell.tsx).
+  onOuvrirCatalogue: () => void;
 }) {
   const [chargement, setChargement] = useState<"chargement" | "pret" | "erreur">("chargement");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -216,10 +221,13 @@ export function ChatFlottant({
     >
       {/* En-tête compact. En mode mini : nouvelle conversation +
           historique en dropdown, faute de place pour un vrai rail. En
-          mode plein écran, ces deux-là vivent dans RailChatPleinEcran
-          juste en dessous -- pas de doublon ici. Partager / Avis /
-          Pourquoi Clovis vivent dans la nav principale de l'app (voir
-          AppSidebar.tsx), jamais dupliqués dans le chat. */}
+          mode plein écran, ces deux-là vivent désormais dans AppSidebar
+          (contexteChat=true) juste en dessous, RailChatPleinEcran.tsx
+          supprimé le 21/08/2026 (demande Bourama : "il faut qu'il soit
+          la barre latérale de l'app avec les deux nouveaux boutons rien
+          d'autre") -- pas de doublon ici. Partager / Avis / Pourquoi
+          Clovis restent dans le dropdown Actions de cette même
+          AppSidebar, jamais dupliqués dans l'en-tête du chat. */}
       <div className="flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 py-2.5">
         <Logo taille={20} />
         <span className="font-display text-sm font-bold text-dj-texte">Clovis</span>
@@ -283,7 +291,10 @@ export function ChatFlottant({
 
       <div className="flex min-h-0 flex-1">
         {pleinEcran && (
-          <RailChatPleinEcran
+          <AppSidebar
+            connecte={connecte}
+            onOuvrirCatalogue={onOuvrirCatalogue}
+            contexteChat
             aDesMessages={nbMessages > 0}
             conversationActiveId={cle}
             historique={historique}

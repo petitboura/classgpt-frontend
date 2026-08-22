@@ -630,18 +630,28 @@ export function MesComportements({ agentId }: { agentId: string }) {
                 </div>
               )}
               <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                {erreurSkill ? (
-                  <p className="text-xs text-[var(--dj-erreur)]">{erreurSkill}</p>
+                {erreurSkill || erreurPublication ? (
+                  <p className="text-xs text-[var(--dj-erreur)]">{erreurSkill || erreurPublication}</p>
                 ) : (
                   <span className="hidden sm:block" />
                 )}
-                <button
-                  onClick={enregistrerSkill}
-                  disabled={skillEnregistrementEnCours || skillChargement || !skillOuvert.trim()}
-                  className="flex items-center gap-1.5 self-end rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50 sm:self-auto"
-                >
-                  <Check size={14} /> {skillEnregistrementEnCours ? "Enregistrement…" : "Enregistrer le skill"}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={publier}
+                    disabled={publicationEnCours || skillEnregistrementEnCours || skillChargement}
+                    title="Publier une copie dans le catalogue public -- n'importe qui pourra l'activer"
+                    className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+                  >
+                    <Upload size={14} /> {publicationEnCours ? "Publication…" : publie ? "Publié !" : "Publier"}
+                  </button>
+                  <button
+                    onClick={enregistrerSkill}
+                    disabled={skillEnregistrementEnCours || skillChargement || !skillOuvert.trim()}
+                    className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                  >
+                    <Check size={14} /> {skillEnregistrementEnCours ? "Enregistrement…" : "Enregistrer le skill"}
+                  </button>
+                </div>
               </div>
             </>
           )}

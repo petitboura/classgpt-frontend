@@ -57,6 +57,7 @@ export function ChatFlottant({
   etat,
   setEtat,
   onOuvrirCatalogue,
+  nouvelleConversationRef,
 }: {
   connecte: boolean;
   etat: EtatChat;
@@ -65,6 +66,11 @@ export function ChatFlottant({
   // Clovis ?" vit dans le dropdown Actions de la sidebar, mais l'état
   // catalogueOuvert lui-même reste au niveau du layout (AppShell.tsx).
   onOuvrirCatalogue: () => void;
+  // Ref pont vers PaletteCommandes.tsx (22/08/2026, chantier "grandes
+  // applis" -- Cmd+K version complète) : composant frère monté dans
+  // AppShell.tsx, pas un enfant, donc il ne peut pas appeler directement
+  // nouvelleConversation() ci-dessous. Voir l'effet plus bas.
+  nouvelleConversationRef?: React.MutableRefObject<(() => void) | null>;
 }) {
   const [chargement, setChargement] = useState<"chargement" | "pret" | "erreur">("chargement");
   const [erreur, setErreur] = useState<string | null>(null);
@@ -134,6 +140,13 @@ export function ChatFlottant({
     setNbMessages(0);
     setHistoriqueOuvert(false);
   }
+
+  // Pont vers PaletteCommandes.tsx (voir la prop ci-dessus) -- placé
+  // avant le early return de la bulle fermée pour que les hooks
+  // s'exécutent dans le même ordre à chaque rendu, peu importe `etat`.
+  useEffect(() => {
+    if (nouvelleConversationRef) nouvelleConversationRef.current = nouvelleConversation;
+  });
 
   async function selectionnerConversation(fil: FilConversation) {
     if (!agent) return;

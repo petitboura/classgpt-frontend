@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ChatFlottant } from "@/components/chat/ChatFlottant";
 import { CatalogueClovis } from "@/components/CatalogueClovis";
+import { PaletteCommandes } from "@/components/PaletteCommandes";
 import { ContexteChat, type EtatChat } from "@/lib/contexteChat";
 
 // Coquille de l'app entière (refonte "Mon espace = l'app", 15/08/2026).
@@ -23,6 +24,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // ouvert depuis d'autres écrans -- voir lib/contexteChat.tsx et le
   // bouton "Ouvrir le chat" de l'écran d'accueil.
   const [etatChat, setEtatChat] = useState<EtatChat>("fermee");
+  // Ref pont entre ChatFlottant (propriétaire de nouvelleConversation) et
+  // PaletteCommandes (composant frère, 22/08/2026, chantier "grandes
+  // applis") -- voir les deux fichiers.
+  const nouvelleConversationRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     let annule = false;
@@ -50,6 +55,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           etat={etatChat}
           setEtat={setEtatChat}
           onOuvrirCatalogue={() => setCatalogueOuvert(true)}
+          nouvelleConversationRef={nouvelleConversationRef}
+        />
+        <PaletteCommandes
+          connecte={connecte}
+          etatChat={etatChat}
+          setEtatChat={setEtatChat}
+          onOuvrirCatalogue={() => setCatalogueOuvert(true)}
+          nouvelleConversationRef={nouvelleConversationRef}
         />
         {catalogueOuvert && <CatalogueClovis onFerme={() => setCatalogueOuvert(false)} />}
       </div>

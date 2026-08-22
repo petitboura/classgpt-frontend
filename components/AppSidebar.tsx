@@ -1,9 +1,9 @@
 "use client";
 
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ContexteChat } from "@/lib/contexteChat";
+import { useFenetres } from "@/lib/contexteFenetres";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   LogOut,
@@ -165,17 +165,14 @@ export function AppSidebar({
   onSelectionnerConversation?: (fil: FilConversation) => void;
 }) {
   const pathname = usePathname();
-  // Bug (22/08/2026, demande Bourama : "en mode plein écran du chat,
-  // quand tu clique sur une section, ça bascule mais le chat est par
-  // dessus donc on ne voit rien") : cette AppSidebar montée en
-  // contexteChat=true vit DANS l'overlay plein écran de ChatFlottant.tsx
-  // (fixed inset-0 z-[110]). Ce dernier ne se referme que via ses boutons
-  // dédiés (Réduire/Fermer) -- jamais au clic d'un lien de nav, qui ne
-  // fait que changer la route derrière l'overlay, toujours affiché
-  // par-dessus. D'où setEtat("fermee") ajouté dans LienOnglet ci-dessous,
-  // seulement quand contexteChat=true (l'autre instance, hors chat,
-  // n'a aucune raison d'y toucher).
-  const ctxChat = useContext(ContexteChat);
+  // 22/08/2026, demande Bourama : remplace le comportement précédent
+  // (fermer le chat plein écran au clic sur une section, cf. commit du
+  // même jour) -- désormais le clic ouvre la section dans une fenêtre
+  // flottante PAR-DESSUS le chat plein écran, qui reste ouvert. Voir
+  // lib/contexteFenetres.tsx + components/chat/FenetresSections.tsx.
+  // Seulement en contexteChat=true (l'autre instance, hors chat, garde
+  // sa vraie navigation classique par route).
+  const { ouvrir: ouvrirFenetre } = useFenetres();
   const [ouverte, setOuverte] = useState(false);
   const [actionsDeplie, setActionsDeplie] = useState(false);
   const [avisDeplie, setAvisDeplie] = useState(false);
@@ -238,7 +235,7 @@ export function AppSidebar({
     mouvement,
     mobile = false,
   }: {
-    onglet: { href: string; label: string; Icone: typeof Briefcase };
+    onglet: { id?: OngletId; href: string; label: string; Icone: typeof Briefcase };
     mouvement: string;
     mobile?: boolean;
   }) {
@@ -246,9 +243,16 @@ export function AppSidebar({
     return (
       <Link
         href={onglet.href}
-        onClick={() => {
+        onClick={(e) => {
           if (mobile) setOuverte(false);
-          if (contexteChat) ctxChat?.setEtat("fermee");
+          // En contexteChat=true, une vraie "section" (id présent --
+          // "Accueil" n'en a pas, cf. navComplete plus bas, et garde sa
+          // navigation classique) s'ouvre en fenêtre flottante par-dessus
+          // le chat au lieu de naviguer.
+          if (contexteChat && onglet.id) {
+            e.preventDefault();
+            ouvrirFenetre(onglet.id);
+          }
         }}
         className={`group relative mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -421,9 +425,10 @@ export function AppSidebar({
                       <Link
                         key={o.href}
                         href={o.href}
-                        onClick={() => {
+                        onClick={(e) => {
                           setActionsDeplie(false);
-                          ctxChat?.setEtat("fermee");
+                          e.preventDefault();
+                          ouvrirFenetre(o.id);
                         }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
                           actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
@@ -588,10 +593,11 @@ export function AppSidebar({
                       <Link
                         key={o.href}
                         href={o.href}
-                        onClick={() => {
+                        onClick={(e) => {
                           setActionsDeplie(false);
                           setOuverte(false);
-                          ctxChat?.setEtat("fermee");
+                          e.preventDefault();
+                          ouvrirFenetre(o.id);
                         }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
                           actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"

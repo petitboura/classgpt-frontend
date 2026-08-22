@@ -1358,6 +1358,7 @@ export type PageEspace = {
   titre: string;
   ordre: number;
   est_carrefour: boolean;
+  icone: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -1398,8 +1399,9 @@ export async function listerSousPages(pageId: string) {
   return (await appelerApi(`/api/pages/${pageId}/sous-pages`)) as PageEspace[];
 }
 
-export async function modifierPage(pageId: string, titre: string) {
-  return (await appelerApi(`/api/pages/${pageId}`, { method: "PATCH", body: JSON.stringify({ titre }) })) as PageEspace;
+export async function modifierPage(pageId: string, patch: string | { titre?: string; ordre?: number; icone?: string | null }) {
+  const corps = typeof patch === "string" ? { titre: patch } : patch;
+  return (await appelerApi(`/api/pages/${pageId}`, { method: "PATCH", body: JSON.stringify(corps) })) as PageEspace;
 }
 
 export async function supprimerPage(pageId: string) {

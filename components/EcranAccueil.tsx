@@ -9,6 +9,7 @@ import { useOuvrirChat } from "@/lib/contexteChat";
 import { texteAccueilTableauDeBordSelonHeure } from "@/lib/salutations";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/Skeleton";
+import { Carte } from "@/components/Carte";
 import { ONGLETS } from "@/components/AppSidebar";
 
 // Écran d'accueil réel de l'app (16/08/2026, demande Bourama : "faut une
@@ -30,18 +31,14 @@ type ActiviteItem = {
   href: string;
 };
 
-// Mouvements variés au survol des cartes de raccourcis (16/08, demande
-// Bourama : pas un scale-110 uniforme -- même esprit que MOUVEMENTS_NAV
-// dans AppSidebar.tsx, ici alterné sur les 7 cartes du tableau de bord.
-const MOUVEMENTS_CARTE = [
-  "group-hover:scale-110",
-  "group-hover:-rotate-6",
-  "group-hover:rotate-6",
-  "group-hover:-translate-y-1",
-  "group-hover:rotate-6",
-  "group-hover:-rotate-6",
-  "group-hover:scale-110",
-];
+// Un seul mouvement de survol, appliqué à toutes les cartes (refonte
+// accueil/sidebar, 22/08/2026, demande Bourama : "corrige tout, même la
+// logique d'affichage si besoin"). Remplace les 7 mouvements différents
+// d'origine (16/08) -- chacun était raisonnable pris isolément, mais
+// juxtaposés sur la même grille ça se lisait comme 7 décisions séparées
+// plutôt qu'une navigation pensée comme un tout. Un léger soulèvement,
+// cohérent avec le "lift" déjà utilisé sur les boutons de la sidebar.
+const MOUVEMENT_CARTE = "group-hover:-translate-y-1";
 
 export function EcranAccueil() {
   const ouvrirChat = useOuvrirChat();
@@ -164,40 +161,57 @@ export function EcranAccueil() {
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-3xl animate-dj-fade-in space-y-8 px-4 pb-24 pt-8 md:pt-12">
-      {/* Bienvenue */}
-      <div className="flex flex-col items-start gap-4">
-        <Logo taille={40} />
-        <div>
-          <h1 className="font-display text-2xl font-bold text-dj-texte">{titreRevele}</h1>
-          <p className="mt-1 text-sm text-dj-texte-muet">Ton compagnon d&apos;études, à tes côtés.</p>
+    <div className="mx-auto w-full max-w-3xl animate-dj-fade-in space-y-10 px-4 pb-24 pt-8 md:pt-12">
+      {/* Bienvenue -- vrai moment d'entrée (refonte 22/08/2026, demande
+          Bourama : "faut une vraie hiérarchie, pas 8 cartes à plat").
+          Avant : logo/titre/bouton empilés au même niveau visuel que le
+          reste de la page, aucun repère ne disait "tu es à l'entrée de
+          l'appli". dj-hero-glow existait déjà dans le système de tokens
+          (utilisé ailleurs, ex. Logo/GraphiqueDonnees) mais n'était
+          jamais posé ici -- un seul repère lumineux, discret, pas une
+          bannière décorative. */}
+      <div className="relative overflow-hidden pb-2 pt-2">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-dj-hero-glow" aria-hidden="true" />
+        <div className="flex flex-col items-start gap-5">
+          <Logo taille={52} />
+          <div>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-dj-texte md:text-4xl">
+              {titreRevele}
+            </h1>
+            <p className="mt-2 text-base text-dj-texte-muet">Ton compagnon d&apos;études, à tes côtés.</p>
+          </div>
+          <button
+            onClick={ouvrirChat}
+            className="group flex items-center gap-2 rounded-xl bg-dj-gradient px-5 py-3 text-sm font-bold text-[#1A0D02] shadow-[0_4px_20px_rgba(184,134,11,0.25)] transition-transform duration-200 ease-cgpt-geste hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Bird size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
+            Ouvrir le chat
+          </button>
         </div>
-        <button
-          onClick={ouvrirChat}
-          className="group flex items-center gap-2 rounded-xl bg-dj-accent-1 px-4 py-2.5 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2"
-        >
-          <Bird size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
-          Ouvrir le chat
-        </button>
       </div>
 
-      {/* Raccourcis vers chaque section */}
+      {/* Raccourcis vers chaque section -- utilise désormais le composant
+          Carte partagé (rayon signature cgpt-carte, easing cgpt-doux,
+          bordure qui se renforce au survol) au lieu de div ad hoc en
+          rounded-xl : c'était la seule zone de l'app à ne pas suivre ce
+          standard déjà en place partout ailleurs. Icône dans une puce
+          teintée pour donner du poids visuel à chaque raccourci plutôt
+          qu'une icône flottant seule dans la carte. */}
       <div>
         <h2 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-dj-texte-muet">
           Mon espace
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {ONGLETS.map((o, i) => (
-            <Link
-              key={o.id}
-              href={o.href}
-              className="group flex flex-col items-start gap-2 rounded-xl border border-dj-bordure bg-dj-surface p-4 transition-colors hover:bg-dj-surface-haute"
-            >
-              <o.Icone
-                size={20}
-                className={`text-dj-accent-1 transition-transform duration-200 ${MOUVEMENTS_CARTE[i % MOUVEMENTS_CARTE.length]}`}
-              />
-              <span className="text-sm font-semibold text-dj-texte">{o.label}</span>
+          {ONGLETS.map((o) => (
+            <Link key={o.id} href={o.href} className="group">
+              <Carte className="flex h-full flex-col items-start gap-3 !p-4 hover:bg-dj-surface-haute">
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-full bg-dj-accent-1/10 text-dj-accent-1 transition-transform duration-200 ${MOUVEMENT_CARTE}`}
+                >
+                  <o.Icone size={18} />
+                </span>
+                <span className="text-sm font-semibold text-dj-texte">{o.label}</span>
+              </Carte>
             </Link>
           ))}
         </div>

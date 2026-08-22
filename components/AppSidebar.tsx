@@ -53,13 +53,19 @@ import { BoutonInstaller } from "@/components/BoutonInstaller";
 // sur Mon espace comme un compte connecté, avec limitations" (demande
 // explicite Bourama).
 //
-// Animations d'icônes au survol (16/08, demande Bourama : "d'autres
-// bougent même, d'autres se penchent sur le côté, comme sur claude.ai")
-// -- volontairement PAS un scale-110 uniforme partout. Chaque icône a un
-// mouvement qui lui correspond : les chevrons glissent dans leur sens,
-// les icônes de nav alternent bascule gauche/droite/rebond/agrandissement
-// selon leur position, la boussole "Pourquoi Clovis ?" tourne comme une
-// vraie aiguille, etc.
+// Un seul mouvement de survol pour toute la nav principale (refonte
+// accueil/sidebar, 22/08/2026, demande Bourama : "corrige tout, même la
+// logique d'affichage si besoin"). Remplace les 9 mouvements différents
+// d'origine (16/08, "d'autres bougent même, d'autres se penchent sur le
+// côté") -- avec 9 sections dans le rail, 9 gestes différents ne se
+// lisaient plus comme de la personnalité mais comme du bruit : l'oeil ne
+// peut pas retenir "quelle icône fait quel mouvement", donc l'effet
+// perçu était juste de l'agitation. Un seul geste cohérent laisse le
+// trait signature (TraitSignature, sous l'onglet actif) faire le travail
+// de repère distinctif -- lui seul mérite d'être unique. Les icônes
+// contextuelles avec un sens propre (chevrons, boussole "Pourquoi
+// Clovis ?") gardent leur mouvement dédié, gardé tel quel plus bas --
+// seule la nav principale (accueil + 8 onglets) est uniformisée ici.
 
 const AGENT_ID = "clovis";
 
@@ -108,18 +114,7 @@ export const ONGLETS: { id: OngletId; href: string; label: string; Icone: typeof
 // onglets) -- volontairement variés pour ne pas retomber sur un effet
 // uniforme. Même assignation utilisée en desktop et mobile (calculée par
 // index) pour que chaque section garde toujours le même mouvement.
-const MOUVEMENTS_NAV = [
-  "group-hover:-rotate-12", // Accueil : légère bascule
-  "group-hover:scale-110", // Bureau
-  "group-hover:rotate-12", // Mes comportements : bascule opposée
-  "group-hover:-translate-y-0.5 group-hover:scale-105", // Bibliothèque : petit rebond
-  "group-hover:rotate-6 group-hover:-translate-y-0.5", // Notes : léger tilt
-  "group-hover:-rotate-12", // Ma mémoire
-  "group-hover:scale-110", // Mon programme
-  "group-hover:rotate-12", // Plugins
-  "group-hover:-translate-y-0.5 group-hover:scale-105", // Audits : petit rebond
-  "group-hover:-rotate-12 group-hover:scale-110", // Utiliser Clovis dans Claude
-];
+const MOUVEMENT_NAV = "group-hover:translate-x-0.5";
 
 function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.ReactNode }) {
   return (
@@ -541,8 +536,8 @@ export function AppSidebar({
           </>
         )}
 
-        {navComplete.map((o, i) => (
-          <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENTS_NAV[i % MOUVEMENTS_NAV.length]} />
+        {navComplete.map((o) => (
+          <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENT_NAV} />
         ))}
 
         {ouverte && (
@@ -725,8 +720,8 @@ export function AppSidebar({
               </>
             )}
 
-            {navComplete.map((o, i) => (
-              <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENTS_NAV[i % MOUVEMENTS_NAV.length]} mobile />
+            {navComplete.map((o) => (
+              <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENT_NAV} mobile />
             ))}
           </div>
 

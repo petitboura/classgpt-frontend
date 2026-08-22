@@ -1102,6 +1102,39 @@ export async function listerAuditsProgramme(programmeId: string) {
   return appelerApi(`/api/programmes/${programmeId}/audits`) as Promise<AuditMatiere[]>;
 }
 
+// 26/08/2026, chantier "Audits" complet (récap Bourama) : la cascade
+// couvre désormais aussi le chapitre (le plus détaillé) et le programme
+// entier (le plus large), en plus de la matière déjà existante.
+
+export type AuditChapitre = {
+  chapitre_id: string;
+  chapitre_nom: string;
+  matiere_id: string;
+  texte: string | null;
+  derniere_execution: string | null;
+};
+
+export type AuditProgrammeGlobal = {
+  texte: string | null;
+  derniere_execution: string | null;
+};
+
+export async function listerAuditsChapitres(programmeId: string) {
+  return appelerApi(`/api/programmes/${programmeId}/audits/chapitres`) as Promise<AuditChapitre[]>;
+}
+
+export async function lireAuditProgrammeGlobal(programmeId: string) {
+  return appelerApi(`/api/programmes/${programmeId}/audits/programme`) as Promise<AuditProgrammeGlobal>;
+}
+
+// Déclenchement manuel de la cascade pour CE programme -- pensé pour
+// tester sans attendre le lundi suivant (voir core/audit_programme.py).
+export async function executerAuditsProgramme(programmeId: string) {
+  return appelerApi(`/api/programmes/${programmeId}/audits/executer`, { method: "POST" }) as Promise<{
+    statut: string;
+  }>;
+}
+
 // ---------------------------------------------------------------------------
 // Programme étudiant (classe -> matière -> chapitre), lot 5 -- documents et
 // exercices d'un chapitre, examens/devoirs multi-chapitres d'un programme,

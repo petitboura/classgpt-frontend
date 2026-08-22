@@ -10,6 +10,7 @@ import {
   Video as IconVideo,
   X,
   Library,
+  Flag,
 } from "lucide-react";
 import {
   listerDocumentsEmplacement,
@@ -25,6 +26,7 @@ import { messageErreur } from "@/lib/erreurs";
 import { ecouterDonneesModifiees } from "@/lib/evenementsDonnees";
 import { Skeleton } from "./Skeleton";
 import { VisionneuseBibliotheque } from "./VisionneuseBibliotheque";
+import { SignalerContenuModal } from "./SignalerContenuModal";
 
 // Section "Documents" générique (17/08, chantier "bibliothèque partout
 // dans le programme" -- demande Bourama : "bibliothèque et classement
@@ -63,6 +65,7 @@ export function SectionDocumentsBibliotheque({
   const [erreurPicker, setErreurPicker] = useState<string | null>(null);
 
   const [fichierOuvert, setFichierOuvert] = useState<FichierEmplacementProgramme | null>(null);
+  const [fichierSignale, setFichierSignale] = useState<FichierEmplacementProgramme | null>(null);
 
   useEffect(() => {
     setDocuments(null);
@@ -187,15 +190,29 @@ export function SectionDocumentsBibliotheque({
                   <Icone size={14} className="flex-shrink-0" />
                   <span className="truncate">{d.description || d.nom_fichier}</span>
                 </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    retirer(d.id, d.description || d.nom_fichier);
-                  }}
-                  className="flex-shrink-0 text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
-                >
-                  Retirer
-                </button>
+                <span className="flex flex-shrink-0 items-center gap-3">
+                  {d.emplacement_public && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFichierSignale(d);
+                      }}
+                      title="Signaler ce contenu"
+                      className="text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
+                    >
+                      <Flag size={13} />
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      retirer(d.id, d.description || d.nom_fichier);
+                    }}
+                    className="text-xs text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
+                  >
+                    Retirer
+                  </button>
+                </span>
               </div>
             );
           })}
@@ -255,6 +272,19 @@ export function SectionDocumentsBibliotheque({
       )}
 
       <VisionneuseBibliotheque fichier={fichierOuvert} onFermer={() => setFichierOuvert(null)} />
+
+      {fichierSignale && (
+        <SignalerContenuModal
+          cible={{
+            typeSignalement: "document_programme",
+            fichierId: fichierSignale.id,
+            typeEmplacement: typeCible,
+            emplacementId: cibleId,
+            libelle: fichierSignale.description || fichierSignale.nom_fichier,
+          }}
+          onFermer={() => setFichierSignale(null)}
+        />
+      )}
     </div>
   );
 }

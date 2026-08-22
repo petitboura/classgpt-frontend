@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo, Download,
+  Search, Plus, Trash2, Paperclip, FileText, Image as IconImage, Music as IconAudio, Video as IconVideo, Download, Flag,
 } from "lucide-react";
+import Link from "next/link";
 import {
   listerBibliothequePublique,
   ajouterABibliothequePublique,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "@/components/CTACompteRequis";
+import { SignalerContenuModal } from "@/components/SignalerContenuModal";
 import { Skeleton } from "./Skeleton";
 
 function iconePourType(typeMime: string | null) {
@@ -30,6 +32,13 @@ function iconePourType(typeMime: string | null) {
 // phrase) : "nom" et "description" accompagnent un VRAI fichier
 // uploadé -- ce n'est pas un catalogue de simples liens/notes. Voir
 // api/bibliotheque_publique.py côté backend.
+//
+// Passée d'une fonctionnalité légère à un composant à part entière le
+// 22/08 (demande Bourama : "rendre la section bibliothèque plus
+// sérieuse, notamment la version publique") -- ajout du signalement
+// par contenu (SignalerContenuModal, voir aussi le guide Notion "Guide
+// pour droit d'auteur") et des liens vers les CGU/politique de
+// copyright (api/contenu_legal.py, pages /cgu et /copyright).
 export function BibliothequePublique() {
   const [liste, setListe] = useState<EntreeBibliothequePublique[] | undefined>(undefined);
   const [recherche, setRecherche] = useState("");
@@ -40,6 +49,7 @@ export function BibliothequePublique() {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
+  const [entreeSignalee, setEntreeSignalee] = useState<EntreeBibliothequePublique | null>(null);
   const inputFichierRef = useRef<HTMLInputElement>(null);
 
   function charger(q?: string) {
@@ -103,7 +113,16 @@ export function BibliothequePublique() {
     <div className="flex animate-dj-fade-in-rapide flex-col gap-4">
       <p className="text-sm text-dj-texte-muet">
         Un catalogue de documents partagé par tout le monde : uploade un fichier avec un nom et une description
-        pour que les autres le retrouvent facilement.
+        pour que les autres le retrouvent facilement. En publiant, tu garantis détenir les droits sur ce contenu
+        -- voir les{" "}
+        <Link href="/cgu" className="text-dj-accent-1 hover:underline">
+          CGU
+        </Link>{" "}
+        et la{" "}
+        <Link href="/copyright" className="text-dj-accent-1 hover:underline">
+          politique de copyright
+        </Link>
+        .
       </p>
 
       <div className="relative">
@@ -215,6 +234,13 @@ export function BibliothequePublique() {
                     </a>
                   )}
                   <button
+                    onClick={() => setEntreeSignalee(entree)}
+                    title="Signaler ce contenu"
+                    className="text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
+                  >
+                    <Flag size={14} />
+                  </button>
+                  <button
                     onClick={() => supprimer(entree.id, entree.nom)}
                     title="Retirer (uniquement si c'est toi qui l'as ajouté)"
                     className="text-dj-texte-muet transition-colors hover:text-[var(--dj-erreur)]"
@@ -226,6 +252,17 @@ export function BibliothequePublique() {
             );
           })}
         </div>
+      )}
+
+      {entreeSignalee && (
+        <SignalerContenuModal
+          cible={{
+            typeSignalement: "bibliotheque_publique",
+            bibliothequePubliqueId: entreeSignalee.id,
+            libelle: entreeSignalee.nom,
+          }}
+          onFermer={() => setEntreeSignalee(null)}
+        />
       )}
     </div>
   );

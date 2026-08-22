@@ -1205,6 +1205,9 @@ export type FichierEmplacementProgramme = {
   description: string | null;
   url_publique: string;
   created_at: string;
+  // 22/08, chantier signalements : voir api/emplacements_bibliotheque_programme.py.
+  ajoute_par: string | null;
+  emplacement_public: boolean;
 };
 
 export async function listerDocumentsEmplacement(type: TypeEmplacementProgramme, cibleId: string) {
@@ -1271,6 +1274,75 @@ export async function rangerFichierDansDossier(dossierId: string, fichierId: str
 
 export async function retirerFichierDuDossier(dossierId: string, fichierId: string) {
   return appelerApi(`/api/bibliotheque/dossiers/${dossierId}/fichiers/${fichierId}`, { method: "DELETE" });
+}
+
+// Signalements (bibliothèque publique + documents publics de programme)
+// et contenu légal (CGU / copyright) -- 22/08, chantier "rendre la
+// bibliothèque plus sérieuse" (guide Notion "Guide pour droit d'auteur").
+
+export type TypeSignalement = "bibliotheque_publique" | "document_programme";
+
+export type Signalement = {
+  id: string;
+  type_signalement: TypeSignalement;
+  bibliotheque_publique_id: string | null;
+  fichier_id: string | null;
+  type_emplacement: string | null;
+  emplacement_id: string | null;
+  lien_document: string;
+  motif: string;
+  plaignant_nom: string;
+  plaignant_email: string;
+  plaignant_organisation: string | null;
+  declaration_honneur: boolean;
+  statut: "en_attente" | "traite";
+  action: "retire" | "rejete" | null;
+  notes_admin: string | null;
+  created_at: string;
+  traite_le: string | null;
+};
+
+export type NouveauSignalement = {
+  type_signalement: TypeSignalement;
+  bibliotheque_publique_id?: string;
+  fichier_id?: string;
+  type_emplacement?: string;
+  emplacement_id?: string;
+  lien_document: string;
+  motif: string;
+  plaignant_nom: string;
+  plaignant_email: string;
+  plaignant_organisation?: string;
+  declaration_honneur: boolean;
+};
+
+export async function creerSignalement(payload: NouveauSignalement) {
+  const resultat = await appelerApi("/api/signalements", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return resultat as Signalement;
+}
+
+export async function listerSignalements(statut?: "en_attente" | "traite") {
+  const suffixe = statut ? `?statut=${statut}` : "";
+  const resultat = await appelerApi(`/api/signalements${suffixe}`);
+  return resultat as Signalement[];
+}
+
+export async function traiterSignalement(id: string, action: "retire" | "rejete", notesAdmin?: string) {
+  const resultat = await appelerApi(`/api/signalements/${id}/traiter`, {
+    method: "POST",
+    body: JSON.stringify({ action, notes_admin: notesAdmin }),
+  });
+  return resultat as Signalement;
+}
+
+export type ContenuLegal = { cle: string; titre: string; contenu_markdown: string; updated_at: string };
+
+export async function lireContenuLegal(cle: "cgu" | "copyright") {
+  const resultat = await appelerApi(`/api/legal/${cle}`);
+  return resultat as ContenuLegal;
 }
 
 export type DocumentChapitre = { id: string; titre: string; url_ou_contenu: string; created_at: string };

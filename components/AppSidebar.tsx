@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ContexteChat } from "@/lib/contexteChat";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   LogOut,
@@ -164,6 +165,17 @@ export function AppSidebar({
   onSelectionnerConversation?: (fil: FilConversation) => void;
 }) {
   const pathname = usePathname();
+  // Bug (22/08/2026, demande Bourama : "en mode plein écran du chat,
+  // quand tu clique sur une section, ça bascule mais le chat est par
+  // dessus donc on ne voit rien") : cette AppSidebar montée en
+  // contexteChat=true vit DANS l'overlay plein écran de ChatFlottant.tsx
+  // (fixed inset-0 z-[110]). Ce dernier ne se referme que via ses boutons
+  // dédiés (Réduire/Fermer) -- jamais au clic d'un lien de nav, qui ne
+  // fait que changer la route derrière l'overlay, toujours affiché
+  // par-dessus. D'où setEtat("fermee") ajouté dans LienOnglet ci-dessous,
+  // seulement quand contexteChat=true (l'autre instance, hors chat,
+  // n'a aucune raison d'y toucher).
+  const ctxChat = useContext(ContexteChat);
   const [ouverte, setOuverte] = useState(false);
   const [actionsDeplie, setActionsDeplie] = useState(false);
   const [avisDeplie, setAvisDeplie] = useState(false);
@@ -234,7 +246,10 @@ export function AppSidebar({
     return (
       <Link
         href={onglet.href}
-        onClick={() => mobile && setOuverte(false)}
+        onClick={() => {
+          if (mobile) setOuverte(false);
+          if (contexteChat) ctxChat?.setEtat("fermee");
+        }}
         className={`group relative mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         } ${mobile ? "px-2" : ""}`}
@@ -406,7 +421,10 @@ export function AppSidebar({
                       <Link
                         key={o.href}
                         href={o.href}
-                        onClick={() => setActionsDeplie(false)}
+                        onClick={() => {
+                          setActionsDeplie(false);
+                          ctxChat?.setEtat("fermee");
+                        }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
                           actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
                         }`}
@@ -573,6 +591,7 @@ export function AppSidebar({
                         onClick={() => {
                           setActionsDeplie(false);
                           setOuverte(false);
+                          ctxChat?.setEtat("fermee");
                         }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
                           actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"

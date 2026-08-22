@@ -268,11 +268,18 @@ export function AppSidebar({
     );
   }
 
-  // En contexte chat plein écran : Ma mémoire + Audits quittent le rail
-  // principal pour le dropdown Actions (place prise par Nouvelle
-  // conversation + Historique, voir prop contexteChat ci-dessus).
-  const ongletsRail = contexteChat ? ONGLETS.filter((o) => o.id !== "memoire" && o.id !== "audits") : ONGLETS;
-  const ongletsDansActions = contexteChat ? ONGLETS.filter((o) => o.id === "memoire" || o.id === "audits") : [];
+  // En contexte chat plein écran : Ma mémoire, Audits, Bureau, Plugins et
+  // Utiliser Clovis dans Claude quittent le rail principal pour le
+  // dropdown Actions (place prise par Nouvelle conversation + Historique,
+  // voir prop contexteChat ci-dessus -- élargi le 22/08/2026, demande
+  // Bourama).
+  const ID_ONGLETS_DANS_ACTIONS: OngletId[] = ["memoire", "audits", "bureau", "plugins", "claude"];
+  const ongletsRail = contexteChat
+    ? ONGLETS.filter((o) => !ID_ONGLETS_DANS_ACTIONS.includes(o.id))
+    : ONGLETS;
+  const ongletsDansActions = contexteChat
+    ? ONGLETS.filter((o) => ID_ONGLETS_DANS_ACTIONS.includes(o.id))
+    : [];
   const navComplete = [{ href: "/", label: "Accueil", Icone: Home }, ...ongletsRail];
 
   return (

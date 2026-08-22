@@ -102,6 +102,16 @@ const EMOJIS_COURANTS = [
   "🧪", "🖊️", "📅", "🏆", "💻", "🔑", "🚀", "❤️",
 ];
 
+// Types qui restent dans le même type à l'Entrée (comme Notion : une
+// case à cocher suivie d'Entrée reste une case à cocher, etc.). Absent
+// de cette table -> nouveau bloc "texte" (ex : un titre suivi d'Entrée
+// redescend en texte normal, comme Notion).
+const TYPES_CONTINUATION: Record<string, string> = {
+  liste_puces: "liste_puces",
+  liste_numerotee: "liste_numerotee",
+  case_a_cocher: "case_a_cocher",
+};
+
 export function EspaceNotes() {
   const [racines, setRacines] = useState<PageEspace[] | null>(null);
   const [sansCompte, setSansCompte] = useState(false);
@@ -877,11 +887,6 @@ function ListeBlocs({
       {freres.map((b, i) => (
         <div key={b.id}>
           <div
-            draggable
-            onDragStart={(e) => {
-              e.dataTransfer.setData("text/plain", b.id);
-              e.dataTransfer.effectAllowed = "move";
-            }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
@@ -891,6 +896,11 @@ function ListeBlocs({
             className="group/ligne flex items-start gap-1"
           >
             <span
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("text/plain", b.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
               className="mt-1.5 hidden shrink-0 cursor-grab text-dj-texte-muet group-hover/ligne:block"
               title="Glisser pour réordonner"
             >
@@ -901,7 +911,7 @@ function ListeBlocs({
                 bloc={b}
                 basesDeLaPage={basesDeLaPage}
                 onChange={onChange}
-                onNouveauBlocApres={() => onAjouterA(i + 1, parentBlocId, "texte")}
+                onNouveauBlocApres={(type) => onAjouterA(i + 1, parentBlocId, type ?? "texte")}
                 onNaviguer={onNaviguer}
                 autoFocus={b.id === nouveauBlocId}
                 onAutoFocusConsomme={onAutoFocusConsomme}
@@ -1052,7 +1062,7 @@ function LigneBloc({
   bloc: BlocEspace;
   basesDeLaPage: { blocId: string; baseId: string }[];
   onChange: () => void;
-  onNouveauBlocApres: () => void;
+  onNouveauBlocApres: (type?: string) => void;
   onNaviguer: (id: string) => void;
   autoFocus: boolean;
   onAutoFocusConsomme: () => void;
@@ -1157,10 +1167,19 @@ function LigneBloc({
       }
       return;
     }
-    if (e.key === "Enter" && !e.shiftKey) {
+    // Ctrl/Cmd+Entrée, comme Shift+Entrée : saut de ligne DANS le bloc,
+    // ne le quitte pas -- ne pas intercepter, laisser le textarea gérer.
+    if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
+      const continuation = TYPES_CONTINUATION[bloc.type];
+      if (continuation && valeur.trim() === "") {
+        // Ligne vide dans une liste/case à cocher -> en sort (devient
+        // texte) au lieu de créer un nouveau bloc, comme Notion.
+        convertirEnType("texte");
+        return;
+      }
       enregistrer();
-      onNouveauBlocApres();
+      onNouveauBlocApres(continuation);
     }
     if (e.key === "Escape") {
       setEnEdition(false);
@@ -1209,6 +1228,13 @@ function LigneBloc({
             if (valeur === ((bloc.contenu?.texte as string) ?? "")) return;
             await modifierBloc(bloc.id, { contenu: { ...bloc.contenu, texte: valeur } });
             onChange();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+              e.preventDefault();
+              e.currentTarget.blur();
+              onNouveauBlocApres();
+            }
           }}
           placeholder="Bascule sans titre"
           className="flex-1 bg-transparent text-sm font-medium text-dj-texte outline-none placeholder:text-dj-texte-muet/50"

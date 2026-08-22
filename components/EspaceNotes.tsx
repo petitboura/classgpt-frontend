@@ -15,6 +15,8 @@ import {
   ChevronRight,
   ChevronDown,
   GripVertical,
+  Search,
+  File as IconFichier,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -22,6 +24,7 @@ import rehypeKatex from "rehype-katex";
 import {
   listerPagesRacines,
   listerSousPages,
+  rechercherPages,
   creerPage,
   obtenirPage,
   modifierPage,
@@ -29,6 +32,7 @@ import {
   creerBloc,
   modifierBloc,
   supprimerBloc,
+  uploaderBlocFichier,
   listerCarrefour,
   ajouterCarrefour,
   supprimerCarrefour,
@@ -52,30 +56,28 @@ import { ErreurApi } from "@/lib/erreurs";
 import { CTACompteRequis } from "./CTACompteRequis";
 import { Skeleton } from "./Skeleton";
 
-// Section "Notion-like" -- Partie 1/2 de la refonte "vraiment comme
-// Notion" (21/08/2026, demande explicite de Bourama, deux fois répétée
-// après frustration : "tout"). Ajoute, PAR RAPPORT À LA REFONTE VISUELLE
-// PRÉCÉDENTE (qui ne changeait rien à part l'affichage) :
-//   - "/" : menu de conversion de type sur un bloc vide (tape "/" en
-//     début de bloc), + Entrée crée un nouveau bloc juste après (pas de
-//     document unique éditable comme Notion en interne -- notre modèle
-//     reste "un bloc = une ligne en base", donc "/" convertit le bloc
-//     courant plutôt que d'insérer au milieu d'un texte continu)
-//   - mise en forme inline : **gras**, *italique*, __souligné__, `code`
-//     -- syntaxe maison légère (pas de nouvelle dépendance npm), barre
-//     flottante au survol d'une sélection de texte
-//   - glisser-déposer : blocs (dans une page) et pages (mêmes parents
-//     seulement -- pas de déplacement vers un autre parent par glisser)
-//   - icône emoji de page (colonne `icone`, migration
-//     2026_08_21_pages_icone.sql -- à exécuter côté Supabase avant que
-//     ça fonctionne)
-//   - vraie grille de calendrier (mois, navigation) au lieu d'une liste
-//   - filtres + tri sur les vues tableau/liste/kanban
-// Partie 2 (pas fait ici) : blocs image/vidéo/fichier/embed,
-// imbrication bloc-dans-bloc, recherche globale, liens @/[[ ]],
-// propriétés avancées de base de données (relation/rollup/formule).
-// Bug corrigé au passage (api/pages_notion.py) : "base_donnees" manquait
-// de la liste de types validés côté REST, rétrogradé en "texte".
+// Section "Notion-like" -- Partie 2/2 de la refonte "vraiment comme
+// Notion" (22/08/2026, demande explicite de Bourama : "go la partie 2,
+// tout, go non stop"). Ajoute, PAR-DESSUS LA PARTIE 1 :
+//   - blocs image / fichier (upload réel, POST /api/blocs/upload) et
+//     vidéo / intégration (lien externe, YouTube détecté automatiquement)
+//   - imbrication bloc-dans-bloc via le bloc "bascule" (toggle) --
+//     schéma : blocs.parent_bloc_id (migration 2026_08_22_...)
+//   - recherche globale (Ctrl/Cmd+K) sur le titre des pages
+//   - liens entre pages via "[[" ou "@" dans un bloc texte, avec
+//     autocomplete -- stocké en clair comme [[Titre|pageId]], rendu
+//     comme lien cliquable (le titre affiché se fige à l'insertion ;
+//     si la page cible est renommée ensuite, le lien reste correct
+//     (id) mais le texte affiché ne se met pas à jour tout seul --
+//     simplification assumée)
+//   - propriétés avancées de base de données : relation (vers une AUTRE
+//     base de données de LA MÊME PAGE seulement), rollup (agrège une
+//     propriété via une relation : nombre/somme/liste texte), formule
+//     (opération à deux opérandes entre deux propriétés de la même
+//     ligne -- pas un langage d'expression complet)
+// Portée volontairement limitée sur plusieurs points (voir commentaires
+// ci-dessous) -- "simple et fiable", principe déjà établi ailleurs dans
+// cette section par Bourama lui-même.
 
 const TYPES_BLOCS: { id: string; label: string }[] = [
   { id: "texte", label: "Texte" },
@@ -86,6 +88,11 @@ const TYPES_BLOCS: { id: string; label: string }[] = [
   { id: "citation", label: "Citation" },
   { id: "separateur", label: "Séparateur" },
   { id: "equation", label: "Équation (LaTeX)" },
+  { id: "bascule", label: "Bascule (toggle)" },
+  { id: "image", label: "Image" },
+  { id: "fichier", label: "Fichier" },
+  { id: "video", label: "Vidéo (lien)" },
+  { id: "embed", label: "Intégration (lien)" },
   { id: "base_donnees", label: "Base de données" },
 ];
 
@@ -103,10 +110,23 @@ export function EspaceNotes() {
   const [enfants, setEnfants] = useState<Record<string, PageEspace[]>>({});
   const [ouverts, setOuverts] = useState<Record<string, boolean>>({});
   const [sidebarMobileOuverte, setSidebarMobileOuverte] = useState(false);
+  const [rechercheOuverte, setRechercheOuverte] = useState(false);
 
   useEffect(() => {
     chargerRacines();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Recherche globale : Ctrl/Cmd+K depuis n'importe où dans la section.
+  useEffect(() => {
+    function surTouche(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setRechercheOuverte(true);
+      }
+    }
+    window.addEventListener("keydown", surTouche);
+    return () => window.removeEventListener("keydown", surTouche);
   }, []);
 
   function chargerRacines() {
@@ -142,8 +162,6 @@ export function EspaceNotes() {
     setOuverts((prev) => ({ ...prev, [parentId]: true }));
   }
 
-  // Patch générique d'une page dans l'arbre (titre et/ou icône), sans
-  // tout recharger -- reflet immédiat sidebar <-> canevas.
   function patcherPageDansArbre(pageId: string, champs: Partial<PageEspace>) {
     setRacines((prev) => prev?.map((p) => (p.id === pageId ? { ...p, ...champs } : p)) ?? prev);
     setEnfants((prev) => {
@@ -153,9 +171,6 @@ export function EspaceNotes() {
     });
   }
 
-  // Glisser-déposer entre pages de MÊME parent (racines entre elles, ou
-  // sous-pages d'une même page entre elles). Pas de changement de
-  // parent par glisser -- hors scope de cette partie.
   async function reordonnerFreres(parentId: string | null, depuisId: string, versId: string) {
     const liste = parentId === null ? racines : enfants[parentId];
     if (!liste) return;
@@ -194,6 +209,8 @@ export function EspaceNotes() {
 
   return (
     <div className="flex h-full min-h-0">
+      {rechercheOuverte && <ModaleRecherche onFermer={() => setRechercheOuverte(false)} onNaviguer={naviguer} />}
+
       {sidebarMobileOuverte && (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
@@ -212,6 +229,7 @@ export function EspaceNotes() {
             setOngletDroit("revision");
             setSidebarMobileOuverte(false);
           }}
+          onRechercher={() => setRechercheOuverte(true)}
           onCreerRacine={creerPageRacine}
           enfants={enfants}
           ouverts={ouverts}
@@ -257,8 +275,64 @@ export function EspaceNotes() {
 }
 
 // ---------------------------------------------------------------------
-// Sidebar façon Notion -- arbre de pages, dépliable, chargement paresseux
-// des sous-pages, glisser-déposer entre pages de même parent.
+// Recherche globale (Ctrl/Cmd+K) -- titre des pages uniquement.
+// ---------------------------------------------------------------------
+
+function ModaleRecherche({ onFermer, onNaviguer }: { onFermer: () => void; onNaviguer: (id: string) => void }) {
+  const [q, setQ] = useState("");
+  const [resultats, setResultats] = useState<PageEspace[]>([]);
+  const refInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    refInput.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      rechercherPages(q).then(setResultats);
+    }, 150);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-24" onClick={onFermer}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-lg border border-dj-bordure bg-dj-surface shadow-xl">
+        <div className="flex items-center gap-2 border-b border-dj-bordure px-3">
+          <Search size={14} className="shrink-0 text-dj-texte-muet" />
+          <input
+            ref={refInput}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") onFermer();
+            }}
+            placeholder="Rechercher une page…"
+            className="w-full bg-transparent py-3 text-sm outline-none"
+          />
+        </div>
+        <div className="max-h-80 overflow-y-auto p-1.5">
+          {q.trim() && resultats.length === 0 && <p className="px-2.5 py-2 text-xs text-dj-texte-muet">Aucun résultat.</p>}
+          {resultats.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => {
+                onNaviguer(p.id);
+                onFermer();
+              }}
+              className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm text-dj-texte hover:bg-dj-surface-haute"
+            >
+              {p.icone ? <span className="text-sm">{p.icone}</span> : <FileText size={14} className="text-dj-texte-muet" />}
+              <span className="truncate">{p.titre || "Sans titre"}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Sidebar façon Notion -- arbre de pages, dépliable, glisser-déposer.
 // ---------------------------------------------------------------------
 
 function SidebarArbre({
@@ -267,6 +341,7 @@ function SidebarArbre({
   revisionActive,
   onNaviguer,
   onRevision,
+  onRechercher,
   onCreerRacine,
   enfants,
   ouverts,
@@ -278,6 +353,7 @@ function SidebarArbre({
   revisionActive: boolean;
   onNaviguer: (id: string) => void;
   onRevision: () => void;
+  onRechercher: () => void;
   onCreerRacine: () => void;
   enfants: Record<string, PageEspace[]>;
   ouverts: Record<string, boolean>;
@@ -286,6 +362,15 @@ function SidebarArbre({
 }) {
   return (
     <nav className="flex h-full w-64 shrink-0 flex-col overflow-y-auto border-r border-dj-bordure bg-dj-fond px-2 py-4">
+      <button
+        onClick={onRechercher}
+        className="mb-1 flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm text-dj-texte hover:bg-dj-surface-haute"
+      >
+        <span className="flex items-center gap-2">
+          <Search size={14} /> Rechercher
+        </span>
+        <span className="text-[10px] text-dj-texte-muet">Ctrl+K</span>
+      </button>
       <button
         onClick={onRevision}
         className={`mb-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
@@ -482,7 +567,41 @@ function SelecteurIcone({ icone, onChoisir }: { icone: string | null; onChoisir:
 }
 
 // ---------------------------------------------------------------------
-// Panneau d'une page (icône, titre, blocs, sous-pages, carrefour)
+// Menu "+" réutilisable (page et bascules) -- liste des types de blocs.
+// ---------------------------------------------------------------------
+
+function MenuAjouterBloc({
+  onChoisir,
+  onSousPage,
+}: {
+  onChoisir: (type: string) => void;
+  onSousPage?: () => void;
+}) {
+  return (
+    <div className="absolute left-0 top-full z-10 mt-1 w-56 space-y-0.5 rounded-lg border border-dj-bordure bg-dj-surface p-1.5 shadow-lg">
+      {TYPES_BLOCS.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => onChoisir(t.id)}
+          className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-dj-texte hover:bg-dj-surface-haute"
+        >
+          {t.label}
+        </button>
+      ))}
+      {onSousPage && (
+        <button
+          onClick={onSousPage}
+          className="mt-0.5 block w-full rounded-md border-t border-dj-bordure px-2 py-1.5 pt-2 text-left text-xs text-dj-accent-2 hover:bg-dj-surface-haute"
+        >
+          + Sous-page
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Panneau d'une page (icône, titre, blocs imbriqués, sous-pages, carrefour)
 // ---------------------------------------------------------------------
 
 function PanneauPage({
@@ -534,16 +653,17 @@ function PanneauPage({
     onPageChange(pageId, { icone: maj.icone });
   }
 
-  // Insère un bloc de `type` à la position `index` (0 = tout en haut),
-  // en renumérotant proprement le champ `ordre` des autres blocs -- sert
-  // à la fois pour "Ajouter" (index = fin) et pour Entrée-crée-un-bloc
-  // (index = juste après le bloc courant).
-  async function inserterBlocA(index: number, type: string) {
+  // Insère un bloc de `type` à la position `indexDansFreres` PARMI LES
+  // BLOCS DE MÊME PARENT (parentBlocId) -- l'imbrication donne à chaque
+  // niveau sa propre séquence d'ordre indépendante, pas besoin
+  // d'interclasser avec les autres niveaux.
+  async function inserterBlocA(indexDansFreres: number, type: string, parentBlocId: string | null) {
     if (!page) return;
-    const nouveau = await creerBloc(pageId, type, {}, page.blocs.length);
-    const idsOrdonnes = page.blocs.map((b) => b.id);
-    idsOrdonnes.splice(index, 0, nouveau.id);
-    const parId = new Map<string, BlocEspace>(page.blocs.map((b) => [b.id, b]));
+    const freres = page.blocs.filter((b) => (b.parent_bloc_id ?? null) === parentBlocId);
+    const nouveau = await creerBloc(pageId, type, {}, freres.length, parentBlocId);
+    const idsOrdonnes = freres.map((b) => b.id);
+    idsOrdonnes.splice(indexDansFreres, 0, nouveau.id);
+    const parId = new Map<string, BlocEspace>(freres.map((b) => [b.id, b]));
     parId.set(nouveau.id, nouveau);
     await Promise.all(
       idsOrdonnes.map((id, i) => {
@@ -555,16 +675,43 @@ function PanneauPage({
     setNouveauBlocId(nouveau.id);
   }
 
+  // Choix dans le menu "+" : image/fichier passent par un vrai upload
+  // (pas de bloc coquille créé avant que le fichier soit choisi), tout
+  // le reste passe par inserterBlocA classique.
+  function choisirTypeBloc(indexDansFreres: number, parentBlocId: string | null, type: string) {
+    setMenuAjoutOuvert(false);
+    if (type === "image" || type === "fichier") {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = type === "image" ? "image/*" : "*/*";
+      input.onchange = async () => {
+        const f = input.files?.[0];
+        if (!f || !page) return;
+        const freres = page.blocs.filter((b) => (b.parent_bloc_id ?? null) === parentBlocId);
+        const nouveau = await uploaderBlocFichier(pageId, type, f, freres.length, parentBlocId);
+        await recharger();
+        setNouveauBlocId(nouveau.id);
+      };
+      input.click();
+      return;
+    }
+    inserterBlocA(indexDansFreres, type, parentBlocId);
+  }
+
   async function deplacerBloc(idSource: string, idCible: string) {
     if (!page || idSource === idCible) return;
-    const ids = page.blocs.map((b) => b.id);
+    const cible = page.blocs.find((b) => b.id === idCible);
+    if (!cible) return;
+    const parentBlocId = cible.parent_bloc_id ?? null;
+    const freres = page.blocs.filter((b) => (b.parent_bloc_id ?? null) === parentBlocId);
+    const ids = freres.map((b) => b.id);
     const depuisIndex = ids.indexOf(idSource);
     const versIndex = ids.indexOf(idCible);
-    if (depuisIndex === -1 || versIndex === -1) return;
+    if (depuisIndex === -1 || versIndex === -1) return; // niveaux différents -- pas de déplacement inter-niveaux par glisser
     const nouveauxIds = [...ids];
     const [retire] = nouveauxIds.splice(depuisIndex, 1);
     nouveauxIds.splice(versIndex, 0, retire);
-    const parId = new Map(page.blocs.map((b) => [b.id, b]));
+    const parId = new Map(freres.map((b) => [b.id, b]));
     await Promise.all(
       nouveauxIds.map((id, i) => (parId.get(id)!.ordre === i ? null : modifierBloc(id, { ordre: i })))
         .filter((p): p is Promise<BlocEspace> => p !== null)
@@ -588,6 +735,10 @@ function PanneauPage({
       </div>
     );
   }
+
+  const basesDeLaPage = page.blocs
+    .filter((b) => b.type === "base_donnees" && b.contenu?.base_donnees_id)
+    .map((b) => ({ blocId: b.id, baseId: b.contenu.base_donnees_id as string }));
 
   return (
     <div>
@@ -620,40 +771,18 @@ function PanneauPage({
         </div>
       )}
 
-      <div className="mt-6 space-y-0.5">
-        {page.blocs.map((b, i) => (
-          <div
-            key={b.id}
-            draggable
-            onDragStart={(e) => {
-              e.dataTransfer.setData("text/plain", b.id);
-              e.dataTransfer.effectAllowed = "move";
-            }}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const idSource = e.dataTransfer.getData("text/plain");
-              if (idSource) deplacerBloc(idSource, b.id);
-            }}
-            className="group/ligne flex items-start gap-1"
-          >
-            <span
-              className="mt-1.5 hidden shrink-0 cursor-grab text-dj-texte-muet group-hover/ligne:block"
-              title="Glisser pour réordonner"
-            >
-              <GripVertical size={13} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <LigneBloc
-                bloc={b}
-                onChange={recharger}
-                onNouveauBlocApres={() => inserterBlocA(i + 1, "texte")}
-                autoFocus={b.id === nouveauBlocId}
-                onAutoFocusConsomme={() => setNouveauBlocId(null)}
-              />
-            </div>
-          </div>
-        ))}
+      <div className="mt-6">
+        <ListeBlocs
+          tousLesBlocs={page.blocs}
+          parentBlocId={null}
+          basesDeLaPage={basesDeLaPage}
+          onChange={recharger}
+          onDeplacer={deplacerBloc}
+          onAjouterA={(index, parentId) => setMenuAjoutOuvertPour(index, parentId)}
+          onNaviguer={onNaviguer}
+          nouveauBlocId={nouveauBlocId}
+          onAutoFocusConsomme={() => setNouveauBlocId(null)}
+        />
       </div>
 
       {page.sous_pages.length > 0 && (
@@ -697,44 +826,156 @@ function PanneauPage({
           <Plus size={14} /> Ajouter
         </button>
         {menuAjoutOuvert && (
-          <div className="absolute left-0 top-full z-10 mt-1 w-56 space-y-0.5 rounded-lg border border-dj-bordure bg-dj-surface p-1.5 shadow-lg">
-            {TYPES_BLOCS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setMenuAjoutOuvert(false);
-                  inserterBlocA(page.blocs.length, t.id);
-                }}
-                className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-dj-texte hover:bg-dj-surface-haute"
-              >
-                {t.label}
-              </button>
-            ))}
-            <button
-              onClick={ajouterSousPage}
-              className="mt-0.5 block w-full rounded-md border-t border-dj-bordure px-2 py-1.5 pt-2 text-left text-xs text-dj-accent-2 hover:bg-dj-surface-haute"
-            >
-              + Sous-page
-            </button>
-          </div>
+          <MenuAjouterBloc
+            onChoisir={(type) => choisirTypeBloc(page.blocs.filter((b) => !b.parent_bloc_id).length, null, type)}
+            onSousPage={ajouterSousPage}
+          />
         )}
       </div>
+    </div>
+  );
+
+  // NOTE : la fonction ci-dessous existe pour satisfaire la prop
+  // onAjouterA passée à ListeBlocs -- en pratique, chaque bascule gère
+  // son propre menu localement (voir ListeBlocs), cette fonction n'est
+  // donc jamais réellement invoquée pour l'instant mais reste le point
+  // d'extension si un déclenchement centralisé devient utile plus tard.
+  function setMenuAjoutOuvertPour(_index: number, _parentId: string | null) {}
+}
+
+// ---------------------------------------------------------------------
+// Liste récursive des blocs d'un niveau (racine de page, ou enfants
+// d'une bascule) -- glisser-déposer scopé au niveau, "+" scopé au niveau.
+// ---------------------------------------------------------------------
+
+function ListeBlocs({
+  tousLesBlocs,
+  parentBlocId,
+  basesDeLaPage,
+  onChange,
+  onDeplacer,
+  onAjouterA,
+  onNaviguer,
+  nouveauBlocId,
+  onAutoFocusConsomme,
+}: {
+  tousLesBlocs: BlocEspace[];
+  parentBlocId: string | null;
+  basesDeLaPage: { blocId: string; baseId: string }[];
+  onChange: () => void;
+  onDeplacer: (idSource: string, idCible: string) => void;
+  onAjouterA: (indexDansFreres: number, parentId: string | null, type: string) => void;
+  onNaviguer: (id: string) => void;
+  nouveauBlocId: string | null;
+  onAutoFocusConsomme: () => void;
+}) {
+  const freres = tousLesBlocs.filter((b) => (b.parent_bloc_id ?? null) === parentBlocId);
+  const [menuOuvertPourIndex, setMenuOuvertPourIndex] = useState<number | null>(null);
+
+  return (
+    <div className={parentBlocId ? "ml-4 space-y-0.5 border-l border-dj-bordure pl-3" : "space-y-0.5"}>
+      {freres.map((b, i) => (
+        <div key={b.id}>
+          <div
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("text/plain", b.id);
+              e.dataTransfer.effectAllowed = "move";
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              const idSource = e.dataTransfer.getData("text/plain");
+              if (idSource) onDeplacer(idSource, b.id);
+            }}
+            className="group/ligne flex items-start gap-1"
+          >
+            <span
+              className="mt-1.5 hidden shrink-0 cursor-grab text-dj-texte-muet group-hover/ligne:block"
+              title="Glisser pour réordonner"
+            >
+              <GripVertical size={13} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <LigneBloc
+                bloc={b}
+                basesDeLaPage={basesDeLaPage}
+                onChange={onChange}
+                onNouveauBlocApres={() => onAjouterA(i + 1, parentBlocId, "texte")}
+                onNaviguer={onNaviguer}
+                autoFocus={b.id === nouveauBlocId}
+                onAutoFocusConsomme={onAutoFocusConsomme}
+              />
+            </div>
+          </div>
+
+          {b.type === "bascule" && Boolean(b.contenu?.ouvert) && (
+            <div className="mt-0.5">
+              <ListeBlocs
+                tousLesBlocs={tousLesBlocs}
+                parentBlocId={b.id}
+                basesDeLaPage={basesDeLaPage}
+                onChange={onChange}
+                onDeplacer={onDeplacer}
+                onAjouterA={onAjouterA}
+                onNaviguer={onNaviguer}
+                nouveauBlocId={nouveauBlocId}
+                onAutoFocusConsomme={onAutoFocusConsomme}
+              />
+              <div className="relative ml-4 mt-0.5 inline-block pl-3">
+                <button
+                  onClick={() => setMenuOuvertPourIndex(menuOuvertPourIndex === i ? null : i)}
+                  className="-mx-2 flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-dj-texte-muet/70 hover:bg-dj-surface-haute hover:text-dj-texte-muet"
+                >
+                  <Plus size={12} /> Ajouter
+                </button>
+                {menuOuvertPourIndex === i && (
+                  <MenuAjouterBloc
+                    onChoisir={(type) => {
+                      setMenuOuvertPourIndex(null);
+                      onAjouterA(tousLesBlocs.filter((x) => (x.parent_bloc_id ?? null) === b.id).length, b.id, type);
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------
-// Mise en forme inline -- syntaxe maison légère (pas de dépendance
-// supplémentaire) : **gras**, *italique*, __souligné__, `code`.
+// Mise en forme inline + liens de page -- syntaxe maison légère.
+// **gras**, *italique*, __souligné__, `code`, [[Titre|pageId]].
 // ---------------------------------------------------------------------
 
-const REGEX_FORMAT = /(\*\*.+?\*\*|__.+?__|`.+?`|\*.+?\*)/g;
+const REGEX_FORMAT = /(\*\*.+?\*\*|__.+?__|`.+?`|\*.+?\*|\[\[.+?\|[^\]|]+?\]\])/g;
 
-function RenduTexteFormatte({ texte }: { texte: string }) {
+function RenduTexteFormatte({ texte, onNaviguer }: { texte: string; onNaviguer?: (id: string) => void }) {
   const morceaux = texte.split(REGEX_FORMAT);
   return (
     <>
       {morceaux.map((m, i) => {
+        if (m.startsWith("[[") && m.endsWith("]]")) {
+          const interieur = m.slice(2, -2);
+          const idxSep = interieur.lastIndexOf("|");
+          const titre = idxSep === -1 ? interieur : interieur.slice(0, idxSep);
+          const id = idxSep === -1 ? "" : interieur.slice(idxSep + 1);
+          return (
+            <button
+              key={i}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (id && onNaviguer) onNaviguer(id);
+              }}
+              className="rounded bg-dj-accent-1/15 px-1 py-0.5 text-dj-accent-2 hover:underline"
+            >
+              📄 {titre}
+            </button>
+          );
+        }
         if (m.startsWith("**") && m.endsWith("**") && m.length >= 4) return <strong key={i}>{m.slice(2, -2)}</strong>;
         if (m.startsWith("__") && m.endsWith("__") && m.length >= 4) return <u key={i}>{m.slice(2, -2)}</u>;
         if (m.startsWith("`") && m.endsWith("`") && m.length >= 2)
@@ -769,22 +1010,50 @@ function BarreFormatage({ onFormat }: { onFormat: (marque: string) => void }) {
   );
 }
 
+// Détecte un déclencheur de lien de page en cours de frappe juste avant
+// le curseur : "[[" non refermé, ou "@" sans espace depuis. Renvoie la
+// position de début du déclencheur + la requête tapée depuis.
+function detecterDeclencheurLien(texte: string, curseur: number): { debut: number; requete: string } | null {
+  const avant = texte.slice(0, curseur);
+  const idxCrochets = avant.lastIndexOf("[[");
+  if (idxCrochets !== -1 && !avant.slice(idxCrochets).includes("]]")) {
+    return { debut: idxCrochets, requete: avant.slice(idxCrochets + 2) };
+  }
+  const idxArobase = avant.lastIndexOf("@");
+  if (idxArobase !== -1) {
+    const depuis = avant.slice(idxArobase + 1);
+    if (!/\s/.test(depuis) && depuis.length < 40) {
+      return { debut: idxArobase, requete: depuis };
+    }
+  }
+  return null;
+}
+
+function extraireIdYoutube(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/);
+  return m ? m[1] : null;
+}
+
 // ---------------------------------------------------------------------
-// Un bloc, selon son type -- "/" pour changer de type, Entrée pour
-// créer un nouveau bloc juste après, barre de mise en forme au survol
-// d'une sélection.
+// Un bloc, selon son type -- "/" pour changer de type, "[[" ou "@" pour
+// lier une page, Entrée pour créer un nouveau bloc juste après, barre
+// de mise en forme au survol d'une sélection.
 // ---------------------------------------------------------------------
 
 function LigneBloc({
   bloc,
+  basesDeLaPage,
   onChange,
   onNouveauBlocApres,
+  onNaviguer,
   autoFocus,
   onAutoFocusConsomme,
 }: {
   bloc: BlocEspace;
+  basesDeLaPage: { blocId: string; baseId: string }[];
   onChange: () => void;
   onNouveauBlocApres: () => void;
+  onNaviguer: (id: string) => void;
   autoFocus: boolean;
   onAutoFocusConsomme: () => void;
 }) {
@@ -792,6 +1061,8 @@ function LigneBloc({
   const cle = bloc.type === "equation" ? "latex" : "texte";
   const [valeur, setValeur] = useState((bloc.contenu?.[cle] as string) ?? "");
   const [selection, setSelection] = useState<{ debut: number; fin: number } | null>(null);
+  const [lienTrigger, setLienTrigger] = useState<{ debut: number; requete: string } | null>(null);
+  const [resultatsLien, setResultatsLien] = useState<PageEspace[]>([]);
   const refZone = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
 
   useEffect(() => {
@@ -802,9 +1073,18 @@ function LigneBloc({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!lienTrigger) {
+      setResultatsLien([]);
+      return;
+    }
+    rechercherPages(lienTrigger.requete).then(setResultatsLien);
+  }, [lienTrigger?.requete]);
+
   async function enregistrer() {
     setEnEdition(false);
     setSelection(null);
+    setLienTrigger(null);
     if (valeur === ((bloc.contenu?.[cle] as string) ?? "")) return;
     await modifierBloc(bloc.id, { contenu: { [cle]: valeur } });
     onChange();
@@ -842,10 +1122,34 @@ function LigneBloc({
     else setSelection(null);
   }
 
-  const menuSlash = valeur.startsWith("/") && bloc.type !== "equation";
+  function surChangement(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const v = e.target.value;
+    setValeur(v);
+    const curseur = e.target.selectionStart ?? v.length;
+    setLienTrigger(detecterDeclencheurLien(v, curseur));
+  }
+
+  function choisirLien(p: PageEspace) {
+    const zone = refZone.current;
+    if (!zone || !lienTrigger) return;
+    const curseur = zone.selectionStart ?? valeur.length;
+    const nouveau = `${valeur.slice(0, lienTrigger.debut)}[[${(p.titre || "Sans titre").replace(/[[\]|]/g, "")}|${p.id}]] ${valeur.slice(curseur)}`;
+    setValeur(nouveau);
+    setLienTrigger(null);
+    requestAnimationFrame(() => zone.focus());
+  }
+
+  const menuSlash = !lienTrigger && valeur.startsWith("/") && bloc.type !== "equation";
   const requeteSlash = valeur.slice(1);
 
   function surTouche(e: React.KeyboardEvent) {
+    if (lienTrigger) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setLienTrigger(null);
+      }
+      return;
+    }
     if (menuSlash) {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -865,7 +1169,14 @@ function LigneBloc({
   }
 
   if (bloc.type === "base_donnees") {
-    return <BlocBaseDonnees bloc={bloc} onChange={onChange} onSupprimer={supprimer} />;
+    return (
+      <BlocBaseDonnees
+        bloc={bloc}
+        basesDeLaPage={basesDeLaPage}
+        onChange={onChange}
+        onSupprimer={supprimer}
+      />
+    );
   }
 
   if (bloc.type === "separateur") {
@@ -875,6 +1186,118 @@ function LigneBloc({
         <button onClick={supprimer} className="hidden text-dj-texte-muet hover:text-red-500 group-hover:block">
           <Trash2 size={13} />
         </button>
+      </div>
+    );
+  }
+
+  if (bloc.type === "bascule") {
+    return (
+      <div className="group flex items-center gap-1 -mx-2 rounded-md px-2 py-1 hover:bg-dj-surface-haute/60">
+        <button
+          onClick={async () => {
+            await modifierBloc(bloc.id, { contenu: { ...bloc.contenu, ouvert: !bloc.contenu?.ouvert } });
+            onChange();
+          }}
+          className="shrink-0 text-dj-texte-muet"
+        >
+          {bloc.contenu?.ouvert ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        </button>
+        <input
+          value={valeur}
+          onChange={(e) => setValeur(e.target.value)}
+          onBlur={async () => {
+            if (valeur === ((bloc.contenu?.texte as string) ?? "")) return;
+            await modifierBloc(bloc.id, { contenu: { ...bloc.contenu, texte: valeur } });
+            onChange();
+          }}
+          placeholder="Bascule sans titre"
+          className="flex-1 bg-transparent text-sm font-medium text-dj-texte outline-none placeholder:text-dj-texte-muet/50"
+        />
+        <button onClick={supprimer} className="hidden shrink-0 text-dj-texte-muet hover:text-red-500 group-hover:block">
+          <Trash2 size={13} />
+        </button>
+      </div>
+    );
+  }
+
+  if (bloc.type === "image") {
+    return (
+      <div className="group relative -mx-2 rounded-md px-2 py-1">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={String(bloc.contenu?.url ?? "")}
+          alt={String(bloc.contenu?.nom ?? "")}
+          className="max-h-[420px] w-full rounded-md object-contain"
+        />
+        <button
+          onClick={supprimer}
+          className="absolute right-3 top-1 hidden rounded-md bg-dj-fond/80 p-1.5 text-dj-texte-muet hover:text-red-500 group-hover:block"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+    );
+  }
+
+  if (bloc.type === "fichier") {
+    return (
+      <div className="group -mx-2 flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-dj-surface-haute/60">
+        <a
+          href={String(bloc.contenu?.url ?? "")}
+          target="_blank"
+          rel="noreferrer"
+          className="flex min-w-0 items-center gap-2 text-sm text-dj-accent-2 hover:underline"
+        >
+          <IconFichier size={15} className="shrink-0" />
+          <span className="truncate">{String(bloc.contenu?.nom ?? "Fichier")}</span>
+        </a>
+        <button onClick={supprimer} className="hidden shrink-0 text-dj-texte-muet hover:text-red-500 group-hover:block">
+          <Trash2 size={13} />
+        </button>
+      </div>
+    );
+  }
+
+  if (bloc.type === "video" || bloc.type === "embed") {
+    const url = String(bloc.contenu?.url ?? "");
+    if (!url) {
+      return (
+        <div className="group -mx-2 flex items-center gap-2 rounded-md px-2 py-1.5">
+          <input
+            placeholder={bloc.type === "video" ? "Colle un lien vidéo (YouTube…) puis Entrée" : "Colle un lien à intégrer puis Entrée"}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                await modifierBloc(bloc.id, { contenu: { url: e.currentTarget.value.trim() } });
+                onChange();
+              }
+            }}
+            className="w-full rounded-md border border-dj-bordure bg-dj-surface px-2 py-1 text-sm outline-none"
+          />
+          <button onClick={supprimer} className="hidden shrink-0 text-dj-texte-muet hover:text-red-500 group-hover:block">
+            <Trash2 size={13} />
+          </button>
+        </div>
+      );
+    }
+    const idYoutube = bloc.type === "video" ? extraireIdYoutube(url) : null;
+    return (
+      <div className="group -mx-2 rounded-md px-2 py-1">
+        {idYoutube ? (
+          <iframe src={`https://www.youtube.com/embed/${idYoutube}`} className="aspect-video w-full rounded-md" allowFullScreen />
+        ) : bloc.type === "video" ? (
+          // eslint-disable-next-line jsx-a11y/media-has-caption
+          <video src={url} controls className="w-full rounded-md" />
+        ) : (
+          <iframe src={url} className="h-96 w-full rounded-md border border-dj-bordure" />
+        )}
+        <div className="mt-1 flex items-center justify-between">
+          <a href={url} target="_blank" rel="noreferrer" className="text-xs text-dj-texte-muet hover:text-dj-accent-2 hover:underline">
+            Ouvrir dans un nouvel onglet
+          </a>
+          <button onClick={supprimer} className="hidden text-dj-texte-muet hover:text-red-500 group-hover:block">
+            <Trash2 size={13} />
+          </button>
+        </div>
       </div>
     );
   }
@@ -923,12 +1346,12 @@ function LigneBloc({
                 ref={refZone as React.RefObject<HTMLTextAreaElement>}
                 autoFocus
                 value={valeur}
-                onChange={(e) => setValeur(e.target.value)}
+                onChange={surChangement}
                 onSelect={surSelection}
                 onBlur={enregistrer}
                 onKeyDown={surTouche}
                 rows={Math.max(1, valeur.split("\n").length)}
-                placeholder="Écris, ou tape / pour changer le type…"
+                placeholder="Écris, tape / pour changer le type, [[ pour lier une page…"
                 className="w-full resize-none bg-transparent outline-none"
               />
               {menuSlash && (
@@ -948,6 +1371,27 @@ function LigneBloc({
                   )}
                 </div>
               )}
+              {lienTrigger && (
+                <div className="absolute left-0 top-full z-10 mt-1 max-h-56 w-64 space-y-0.5 overflow-y-auto rounded-lg border border-dj-bordure bg-dj-surface p-1.5 shadow-lg">
+                  {resultatsLien.length === 0 ? (
+                    <p className="px-2 py-1 text-xs text-dj-texte-muet">
+                      {lienTrigger.requete ? "Aucune page ne correspond." : "Tape le nom d'une page…"}
+                    </p>
+                  ) : (
+                    resultatsLien.map((p) => (
+                      <button
+                        key={p.id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => choisirLien(p)}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-dj-texte hover:bg-dj-surface-haute"
+                      >
+                        {p.icone ? <span>{p.icone}</span> : <FileText size={12} className="text-dj-texte-muet" />}
+                        <span className="truncate">{p.titre || "Sans titre"}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </>
           )
         ) : (
@@ -959,7 +1403,7 @@ function LigneBloc({
                 <span className="text-dj-texte-muet">Clique pour écrire une équation…</span>
               )
             ) : valeur ? (
-              <RenduTexteFormatte texte={valeur} />
+              <RenduTexteFormatte texte={valeur} onNaviguer={onNaviguer} />
             ) : (
               <span className="text-dj-texte-muet">Clique pour écrire…</span>
             )}
@@ -1021,12 +1465,22 @@ function PanneauCarrefour({ pageId }: { pageId: string }) {
 }
 
 // ---------------------------------------------------------------------
-// Bloc "base de données" -- 4 vues (liste/tableau/calendrier/kanban),
-// avec filtre + tri (tableau/liste/kanban) et vraie grille de mois
-// (calendrier).
+// Bloc "base de données" -- 4 vues, filtre/tri, propriétés avancées
+// (relation/rollup/formule -- relation limitée aux autres bases de LA
+// MÊME PAGE).
 // ---------------------------------------------------------------------
 
-function BlocBaseDonnees({ bloc, onChange, onSupprimer }: { bloc: BlocEspace; onChange: () => void; onSupprimer: () => void }) {
+function BlocBaseDonnees({
+  bloc,
+  basesDeLaPage,
+  onChange,
+  onSupprimer,
+}: {
+  bloc: BlocEspace;
+  basesDeLaPage: { blocId: string; baseId: string }[];
+  onChange: () => void;
+  onSupprimer: () => void;
+}) {
   const baseIdInitiale = bloc.contenu?.base_donnees_id as string | undefined;
   const [baseId, setBaseId] = useState<string | undefined>(baseIdInitiale);
   const [base, setBase] = useState<BaseDonneesDetail | null>(null);
@@ -1099,7 +1553,12 @@ function BlocBaseDonnees({ bloc, onChange, onSupprimer }: { bloc: BlocEspace; on
           </button>
         </div>
       </div>
-      <VueBaseDonnees base={base} vue={vue} onChange={async () => setBase(await obtenirBaseDonnees(baseId))} />
+      <VueBaseDonnees
+        base={base}
+        vue={vue}
+        basesDeLaPage={basesDeLaPage}
+        onChange={async () => setBase(await obtenirBaseDonnees(baseId))}
+      />
     </div>
   );
 }
@@ -1107,21 +1566,43 @@ function BlocBaseDonnees({ bloc, onChange, onSupprimer }: { bloc: BlocEspace; on
 function VueBaseDonnees({
   base,
   vue,
+  basesDeLaPage,
   onChange,
 }: {
   base: BaseDonneesDetail;
   vue: "liste" | "tableau" | "calendrier" | "kanban";
+  basesDeLaPage: { blocId: string; baseId: string }[];
   onChange: () => void;
 }) {
-  const [nouvellePropriete, setNouvellePropriete] = useState("");
   const [filtreProprieteId, setFiltreProprieteId] = useState("");
   const [filtreValeur, setFiltreValeur] = useState("");
   const [triProprieteId, setTriProprieteId] = useState("");
   const [triDesc, setTriDesc] = useState(false);
+  const [basesCibles, setBasesCibles] = useState<Record<string, BaseDonneesDetail>>({});
 
   const elementsRacine = base.elements.filter((e) => !e.parent_element_id);
   const valeurDe = (elementId: string, proprieteId: string) =>
     base.valeurs.find((v) => v.element_id === elementId && v.propriete_id === proprieteId)?.valeur;
+
+  // Charge les bases cibles des propriétés relation/rollup présentes
+  // (nécessaire pour afficher les libellés liés et calculer les rollups).
+  useEffect(() => {
+    const idsCibles = new Set<string>();
+    for (const p of base.proprietes) {
+      if (p.type === "relation") {
+        const id = (p.config as { base_cible_id?: string } | undefined)?.base_cible_id;
+        if (id) idsCibles.add(id);
+      } else if (p.type === "rollup") {
+        const relProp = base.proprietes.find((pp) => pp.id === (p.config as { relation_propriete_id?: string } | undefined)?.relation_propriete_id);
+        const id = (relProp?.config as { base_cible_id?: string } | undefined)?.base_cible_id;
+        if (id) idsCibles.add(id);
+      }
+    }
+    idsCibles.forEach((id) => {
+      obtenirBaseDonnees(id).then((d) => setBasesCibles((prev) => ({ ...prev, [id]: d })));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base.proprietes.map((p) => p.id).join(",")]);
 
   function appliquerFiltreEtTri(liste: ElementBase[]): ElementBase[] {
     let resultat = liste;
@@ -1149,30 +1630,7 @@ function VueBaseDonnees({
     onChange();
   }
 
-  async function ajouterPropriete() {
-    if (!nouvellePropriete.trim()) return;
-    await creerProprieteBase(base.id, nouvellePropriete.trim(), "texte");
-    setNouvellePropriete("");
-    onChange();
-  }
-
-  if (base.proprietes.length === 0) {
-    return (
-      <div className="flex items-center gap-2">
-        <input
-          value={nouvellePropriete}
-          onChange={(e) => setNouvellePropriete(e.target.value)}
-          placeholder="Nom de la première propriété (ex : Statut)"
-          className="flex-1 rounded-md border border-dj-bordure bg-dj-surface px-2 py-1 text-xs outline-none"
-        />
-        <button onClick={ajouterPropriete} className="rounded-md border border-dj-bordure px-2 py-1 text-xs hover:border-dj-accent-2">
-          Ajouter
-        </button>
-      </div>
-    );
-  }
-
-  const barreFiltreTri = vue !== "calendrier" && (
+  const barreFiltreTri = vue !== "calendrier" && base.proprietes.length > 0 && (
     <div className="mb-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
       <select
         value={filtreProprieteId}
@@ -1213,6 +1671,14 @@ function VueBaseDonnees({
     </div>
   );
 
+  const panneauPropriete = (
+    <PanneauAjoutPropriete base={base} basesDeLaPage={basesDeLaPage} onCree={onChange} />
+  );
+
+  if (base.proprietes.length === 0) {
+    return <div>{panneauPropriete}</div>;
+  }
+
   if (vue === "tableau") {
     const liste = appliquerFiltreEtTri(elementsRacine);
     return (
@@ -1235,7 +1701,15 @@ function VueBaseDonnees({
                 <tr key={el.id} className="border-t border-dj-bordure">
                   {base.proprietes.map((p) => (
                     <td key={p.id} className="px-2 py-1">
-                      <CelluleValeur propriete={p} valeur={valeurDe(el.id, p.id)} onChange={(v) => changerValeur(el.id, p, v)} />
+                      <CelluleValeur
+                        propriete={p}
+                        valeur={valeurDe(el.id, p.id)}
+                        onChange={(v) => changerValeur(el.id, p, v)}
+                        base={base}
+                        basesCibles={basesCibles}
+                        elementId={el.id}
+                        valeurDe={valeurDe}
+                      />
                     </td>
                   ))}
                   <td>
@@ -1253,9 +1727,12 @@ function VueBaseDonnees({
               ))}
             </tbody>
           </table>
-          <button onClick={ajouterElement} className="mt-1 text-xs text-dj-texte-muet hover:text-dj-accent-2">
-            + Ajouter une ligne
-          </button>
+          <div className="mt-1 flex items-center gap-3">
+            <button onClick={ajouterElement} className="text-xs text-dj-texte-muet hover:text-dj-accent-2">
+              + Ajouter une ligne
+            </button>
+            {panneauPropriete}
+          </div>
         </div>
       </div>
     );
@@ -1270,7 +1747,15 @@ function VueBaseDonnees({
         <div className="space-y-1">
           {liste.map((el) => (
             <div key={el.id} className="flex items-center justify-between rounded-md px-2 py-1 text-xs hover:bg-dj-surface-haute">
-              <CelluleValeur propriete={proprieteTitre} valeur={valeurDe(el.id, proprieteTitre.id)} onChange={(v) => changerValeur(el.id, proprieteTitre, v)} />
+              <CelluleValeur
+                propriete={proprieteTitre}
+                valeur={valeurDe(el.id, proprieteTitre.id)}
+                onChange={(v) => changerValeur(el.id, proprieteTitre, v)}
+                base={base}
+                basesCibles={basesCibles}
+                elementId={el.id}
+                valeurDe={valeurDe}
+              />
               <button
                 onClick={async () => {
                   await supprimerElementBase(el.id);
@@ -1282,9 +1767,12 @@ function VueBaseDonnees({
               </button>
             </div>
           ))}
-          <button onClick={ajouterElement} className="text-xs text-dj-texte-muet hover:text-dj-accent-2">
-            + Ajouter
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={ajouterElement} className="text-xs text-dj-texte-muet hover:text-dj-accent-2">
+              + Ajouter
+            </button>
+            {panneauPropriete}
+          </div>
         </div>
       </div>
     );
@@ -1312,18 +1800,26 @@ function VueBaseDonnees({
                 ))}
             </div>
           ))}
-          <button onClick={ajouterElement} className="self-start text-xs text-dj-texte-muet hover:text-dj-accent-2">
-            + Ajouter
-          </button>
+          <div className="flex shrink-0 flex-col gap-1 self-start">
+            <button onClick={ajouterElement} className="text-xs text-dj-texte-muet hover:text-dj-accent-2">
+              + Ajouter
+            </button>
+            {panneauPropriete}
+          </div>
         </div>
       </div>
     );
   }
 
-  // vue === "calendrier" -- vraie grille de mois avec navigation.
+  // vue === "calendrier"
   const proprieteDate = base.proprietes.find((p) => p.type === "date");
   if (!proprieteDate) {
-    return <p className="text-xs text-dj-texte-muet">Ajoute une propriété de type "date" pour utiliser la vue calendrier.</p>;
+    return (
+      <div className="space-y-1.5">
+        <p className="text-xs text-dj-texte-muet">Ajoute une propriété de type "date" pour utiliser la vue calendrier.</p>
+        {panneauPropriete}
+      </div>
+    );
   }
   return (
     <VueCalendrier
@@ -1333,6 +1829,184 @@ function VueBaseDonnees({
       valeurDe={valeurDe}
       ajouterElement={ajouterElement}
     />
+  );
+}
+
+// ---------------------------------------------------------------------
+// Ajout de propriété -- texte/nombre/date/statut/case à cocher, ainsi
+// que relation/rollup/formule (Partie 2).
+// ---------------------------------------------------------------------
+
+function PanneauAjoutPropriete({
+  base,
+  basesDeLaPage,
+  onCree,
+}: {
+  base: BaseDonneesDetail;
+  basesDeLaPage: { blocId: string; baseId: string }[];
+  onCree: () => void;
+}) {
+  const [ouvert, setOuvert] = useState(false);
+  const [nom, setNom] = useState("");
+  const [type, setType] = useState("texte");
+  const [baseCibleId, setBaseCibleId] = useState("");
+  const [titresBases, setTitresBases] = useState<Record<string, string>>({});
+  const [relationProprieteId, setRelationProprieteId] = useState("");
+  const [proprieteCibleId, setProprieteCibleId] = useState("");
+  const [fonction, setFonction] = useState<"nombre" | "somme" | "texte">("nombre");
+  const [proprieteAId, setProprieteAId] = useState("");
+  const [operation, setOperation] = useState<"concatener" | "addition" | "soustraction" | "multiplication">("addition");
+  const [proprieteBId, setProprieteBId] = useState("");
+  const [baseCibleDuRollup, setBaseCibleDuRollup] = useState<BaseDonneesDetail | null>(null);
+
+  const proprietesRelation = base.proprietes.filter((p) => p.type === "relation");
+  const proprietesSimples = base.proprietes.filter((p) => !["relation", "rollup", "formule"].includes(p.type));
+
+  useEffect(() => {
+    if (!ouvert || type !== "relation") return;
+    basesDeLaPage.forEach((b) => {
+      if (!titresBases[b.baseId]) {
+        obtenirBaseDonnees(b.baseId).then((d) => setTitresBases((prev) => ({ ...prev, [b.baseId]: d.titre || "(sans titre)" })));
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ouvert, type]);
+
+  useEffect(() => {
+    if (type !== "rollup" || !relationProprieteId) {
+      setBaseCibleDuRollup(null);
+      return;
+    }
+    const rel = proprietesRelation.find((p) => p.id === relationProprieteId);
+    const cibleId = (rel?.config as { base_cible_id?: string } | undefined)?.base_cible_id;
+    if (cibleId) obtenirBaseDonnees(cibleId).then(setBaseCibleDuRollup);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, relationProprieteId]);
+
+  async function valider() {
+    if (!nom.trim()) return;
+    let config: Record<string, unknown> = {};
+    if (type === "relation") {
+      if (!baseCibleId) return;
+      config = { base_cible_id: baseCibleId };
+    } else if (type === "rollup") {
+      if (!relationProprieteId || !proprieteCibleId) return;
+      config = { relation_propriete_id: relationProprieteId, propriete_cible_id: proprieteCibleId, fonction };
+    } else if (type === "formule") {
+      if (!proprieteAId || !proprieteBId) return;
+      config = { propriete_a_id: proprieteAId, operation, propriete_b_id: proprieteBId };
+    }
+    await creerProprieteBase(base.id, nom.trim(), type, [], config);
+    setOuvert(false);
+    setNom("");
+    setType("texte");
+    setBaseCibleId("");
+    setRelationProprieteId("");
+    setProprieteCibleId("");
+    setProprieteAId("");
+    setProprieteBId("");
+    onCree();
+  }
+
+  if (!ouvert) {
+    return (
+      <button onClick={() => setOuvert(true)} className="flex items-center gap-1 text-xs text-dj-texte-muet hover:text-dj-accent-2">
+        <Plus size={12} /> Propriété
+      </button>
+    );
+  }
+
+  return (
+    <div className="w-64 space-y-1.5 rounded-lg border border-dj-bordure bg-dj-surface p-2 text-xs">
+      <input
+        value={nom}
+        onChange={(e) => setNom(e.target.value)}
+        placeholder="Nom de la propriété"
+        className="w-full rounded border border-dj-bordure bg-dj-fond px-2 py-1 outline-none"
+      />
+      <select value={type} onChange={(e) => setType(e.target.value)} className="w-full rounded border border-dj-bordure bg-dj-fond px-2 py-1 outline-none">
+        <option value="texte">Texte</option>
+        <option value="nombre">Nombre</option>
+        <option value="date">Date</option>
+        <option value="statut">Statut</option>
+        <option value="case_a_cocher">Case à cocher</option>
+        <option value="relation">Relation</option>
+        <option value="rollup">Rollup</option>
+        <option value="formule">Formule</option>
+      </select>
+
+      {type === "relation" && (
+        <select value={baseCibleId} onChange={(e) => setBaseCibleId(e.target.value)} className="w-full rounded border border-dj-bordure bg-dj-fond px-2 py-1 outline-none">
+          <option value="">Base cible (même page)…</option>
+          {basesDeLaPage.map((b) => (
+            <option key={b.baseId} value={b.baseId}>{titresBases[b.baseId] ?? "…"}</option>
+          ))}
+        </select>
+      )}
+
+      {type === "rollup" && (
+        <>
+          <select
+            value={relationProprieteId}
+            onChange={(e) => {
+              setRelationProprieteId(e.target.value);
+              setProprieteCibleId("");
+            }}
+            className="w-full rounded border border-dj-bordure bg-dj-fond px-2 py-1 outline-none"
+          >
+            <option value="">Relation…</option>
+            {proprietesRelation.map((p) => (
+              <option key={p.id} value={p.id}>{p.nom}</option>
+            ))}
+          </select>
+          {baseCibleDuRollup && (
+            <select value={proprieteCibleId} onChange={(e) => setProprieteCibleId(e.target.value)} className="w-full rounded border border-dj-bordure bg-dj-fond px-2 py-1 outline-none">
+              <option value="">Propriété à agréger…</option>
+              {baseCibleDuRollup.proprietes.filter((p) => p.type !== "relation" && p.type !== "rollup").map((p) => (
+                <option key={p.id} value={p.id}>{p.nom}</option>
+              ))}
+            </select>
+          )}
+          <select value={fonction} onChange={(e) => setFonction(e.target.value as typeof fonction)} className="w-full rounded border border-dj-bordure bg-dj-fond px-2 py-1 outline-none">
+            <option value="nombre">Nombre d'éléments liés</option>
+            <option value="somme">Somme (si numérique)</option>
+            <option value="texte">Liste (texte)</option>
+          </select>
+        </>
+      )}
+
+      {type === "formule" && (
+        <div className="flex items-center gap-1">
+          <select value={proprieteAId} onChange={(e) => setProprieteAId(e.target.value)} className="min-w-0 flex-1 rounded border border-dj-bordure bg-dj-fond px-1 py-1 outline-none">
+            <option value="">A…</option>
+            {proprietesSimples.map((p) => (
+              <option key={p.id} value={p.id}>{p.nom}</option>
+            ))}
+          </select>
+          <select value={operation} onChange={(e) => setOperation(e.target.value as typeof operation)} className="shrink-0 rounded border border-dj-bordure bg-dj-fond px-1 py-1 outline-none">
+            <option value="addition">+</option>
+            <option value="soustraction">−</option>
+            <option value="multiplication">×</option>
+            <option value="concatener">&amp;</option>
+          </select>
+          <select value={proprieteBId} onChange={(e) => setProprieteBId(e.target.value)} className="min-w-0 flex-1 rounded border border-dj-bordure bg-dj-fond px-1 py-1 outline-none">
+            <option value="">B…</option>
+            {proprietesSimples.map((p) => (
+              <option key={p.id} value={p.id}>{p.nom}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-1.5 pt-1">
+        <button onClick={() => setOuvert(false)} className="rounded px-2 py-1 text-dj-texte-muet hover:bg-dj-surface-haute">
+          Annuler
+        </button>
+        <button onClick={valider} className="rounded bg-dj-accent-1 px-2 py-1 font-semibold text-[#1A0D02] hover:bg-dj-accent-2">
+          Ajouter
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -1427,11 +2101,91 @@ function CelluleValeur({
   propriete,
   valeur,
   onChange,
+  base,
+  basesCibles,
+  elementId,
+  valeurDe,
 }: {
   propriete: ProprieteBase;
   valeur: unknown;
   onChange: (v: unknown) => void;
+  base: BaseDonneesDetail;
+  basesCibles: Record<string, BaseDonneesDetail>;
+  elementId: string;
+  valeurDe: (elementId: string, proprieteId: string) => unknown;
 }) {
+  if (propriete.type === "relation") {
+    const baseCibleId = String((propriete.config as { base_cible_id?: string } | undefined)?.base_cible_id ?? "");
+    const baseCible = basesCibles[baseCibleId];
+    const idsLies = Array.isArray(valeur) ? (valeur as string[]) : [];
+    if (!baseCible) return <span className="text-dj-texte-muet">…</span>;
+    const proprieteAffichage = baseCible.proprietes[0];
+    const libelleDe = (id: string) =>
+      proprieteAffichage
+        ? String(baseCible.valeurs.find((v) => v.element_id === id && v.propriete_id === proprieteAffichage.id)?.valeur ?? "(sans titre)")
+        : id.slice(0, 8);
+    return (
+      <div className="flex flex-wrap items-center gap-1">
+        {idsLies.map((id) => (
+          <span key={id} className="flex items-center gap-1 rounded bg-dj-accent-1/15 px-1.5 py-0.5 text-dj-accent-2">
+            {libelleDe(id)}
+            <button onClick={() => onChange(idsLies.filter((x) => x !== id))} className="hover:text-red-500">
+              ×
+            </button>
+          </span>
+        ))}
+        <select
+          value=""
+          onChange={(e) => {
+            if (e.target.value) onChange([...idsLies, e.target.value]);
+          }}
+          className="rounded border border-dj-bordure bg-transparent text-[10px] text-dj-texte-muet outline-none"
+        >
+          <option value="">+ lier…</option>
+          {baseCible.elements.filter((e) => !idsLies.includes(e.id)).map((e) => (
+            <option key={e.id} value={e.id}>
+              {libelleDe(e.id)}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  if (propriete.type === "rollup") {
+    const config = propriete.config as { relation_propriete_id?: string; propriete_cible_id?: string; fonction?: string } | undefined;
+    const relationProp = base.proprietes.find((p) => p.id === config?.relation_propriete_id);
+    const idsLies = relationProp
+      ? (Array.isArray(valeurDe(elementId, relationProp.id)) ? (valeurDe(elementId, relationProp.id) as string[]) : [])
+      : [];
+    const baseCibleId = String((relationProp?.config as { base_cible_id?: string } | undefined)?.base_cible_id ?? "");
+    const baseCible = basesCibles[baseCibleId];
+    if (!relationProp || !baseCible || !config) return <span className="text-dj-texte-muet">—</span>;
+    if (config.fonction === "nombre") return <span>{idsLies.length}</span>;
+    const valeursCibles = idsLies.map(
+      (id) => baseCible.valeurs.find((v) => v.element_id === id && v.propriete_id === config.propriete_cible_id)?.valeur
+    );
+    if (config.fonction === "somme") {
+      const somme = valeursCibles.reduce((acc: number, v) => acc + (Number(v) || 0), 0);
+      return <span>{somme}</span>;
+    }
+    return <span className="text-dj-texte-muet">{valeursCibles.filter(Boolean).map(String).join(", ") || "—"}</span>;
+  }
+
+  if (propriete.type === "formule") {
+    const config = propriete.config as
+      | { propriete_a_id?: string; operation?: string; propriete_b_id?: string }
+      | undefined;
+    const a = config?.propriete_a_id ? valeurDe(elementId, config.propriete_a_id) : undefined;
+    const b = config?.propriete_b_id ? valeurDe(elementId, config.propriete_b_id) : undefined;
+    if (config?.operation === "concatener") return <span>{`${a ?? ""}${b ?? ""}`}</span>;
+    const na = Number(a) || 0;
+    const nb = Number(b) || 0;
+    const resultat =
+      config?.operation === "addition" ? na + nb : config?.operation === "soustraction" ? na - nb : config?.operation === "multiplication" ? na * nb : 0;
+    return <span>{resultat}</span>;
+  }
+
   if (propriete.type === "case_a_cocher") {
     return <input type="checkbox" checked={Boolean(valeur)} onChange={(e) => onChange(e.target.checked)} />;
   }

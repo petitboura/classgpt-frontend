@@ -1402,6 +1402,7 @@ export type BlocEspace = {
   type: string;
   contenu: Record<string, unknown>;
   ordre: number;
+  parent_bloc_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -1412,6 +1413,13 @@ export type PageDetail = PageEspace & { sous_pages: PageEspace[]; blocs: BlocEsp
 
 export async function listerPagesRacines() {
   return (await appelerApi("/api/pages")) as PageEspace[];
+}
+
+// Recherche de pages par titre -- sert à la fois la recherche globale
+// (Cmd/Ctrl+K) et l'autocomplete de lien [[ ]] / @ dans l'éditeur.
+export async function rechercherPages(q: string) {
+  if (!q.trim()) return [] as PageEspace[];
+  return (await appelerApi(`/api/pages/recherche/tout?q=${encodeURIComponent(q.trim())}`)) as PageEspace[];
 }
 
 export async function creerPage(titre: string, parentId?: string | null) {
@@ -1456,22 +1464,69 @@ export async function supprimerCarrefour(pageId: string, referenceId: string) {
   await appelerApi(`/api/pages/${pageId}/carrefour/${referenceId}`, { method: "DELETE" });
 }
 
-export async function creerBloc(pageId: string, type: string, contenu: Record<string, unknown>, ordre = 0) {
+export async function creerBloc(pageId: string, type: string, contenu: Record<string, unknown>, ordre = 0, parentBlocId: string | null = null) {
   return (await appelerApi("/api/blocs", {
     method: "POST",
-    body: JSON.stringify({ page_id: pageId, type, contenu, ordre }),
+    body: JSON.stringify({ page_id: pageId, type, contenu, ordre, parent_bloc_id: parentBlocId }),
   })) as BlocEspace;
 }
 
-export async function modifierBloc(blocId: string, patch: Partial<Pick<BlocEspace, "type" | "contenu" | "ordre">>) {
-  return (await appelerApi(`/api/blocs/${blocId}`, { method: "PATCH", body: JSON.stringify(patch) })) as BlocEspace;
+// Upload direct (image ou fichier générique) + création du bloc en un
+// seul appel -- voir POST /api/blocs/upload côté backend, réutilise
+// core/bibliotheque_fichiers.py (même mécanisme que le chat).
+export async function uploaderBlocFichier(
+  pageId: string,
+  typeBloc: "image" | "fichier",
+  fichier: File,
+  ordre = 0,
+  parentBlocId: string | null = null
+) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Connecte-toi pour envoyer un fichier.");
+  }
+  const corps = new FormData();
+  corps.append("fichier", fichier);
+  corps.append("page_id", pageId);
+  corps.append("type_bloc", typeBloc);
+  corps.append("ordre", String(ordre));
+  if (parentBlocId) corps.append("parent_bloc_id", parentBlocId);
+
+  const reponse = await fetch(`${API_URL}/api/blocs/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body: corps,
+  });
+  if (!reponse.ok) {
+    throw await construireErreurApi(reponse, "/api/blocs/upload");
+  }
+  return (await reponse.json()) as BlocEspace;
+}
+
+export async function modifierBloc(
+  blocId: string,
+  patch: Partial<Pick<BlocEspace, "type" | "contenu" | "ordre">> & { parent_bloc_id?: string | null }
+) {
+  const corps: Record<string, unknown> = { ...patch };
+  if ("parent_bloc_id" in patch) corps.parent_bloc_id_defini = true;
+  return (await appelerApi(`/api/blocs/${blocId}`, { method: "PATCH", body: JSON.stringify(corps) })) as BlocEspace;
 }
 
 export async function supprimerBloc(blocId: string) {
   await appelerApi(`/api/blocs/${blocId}`, { method: "DELETE" });
 }
 
-export type ProprieteBase = { id: string; base_id: string; nom: string; type: string; options: string[]; ordre: number };
+export type ProprieteBase = {
+  id: string;
+  base_id: string;
+  nom: string;
+  type: string;
+  options: string[];
+  config: Record<string, unknown>;
+  ordre: number;
+};
 export type ElementBase = { id: string; base_id: string; parent_element_id: string | null; ordre: number };
 export type ValeurBase = { id: string; element_id: string; propriete_id: string; valeur: unknown };
 export type BaseDonneesDetail = {
@@ -1495,10 +1550,16 @@ export async function obtenirBaseDonnees(baseId: string) {
   return (await appelerApi(`/api/bases-donnees/${baseId}`)) as BaseDonneesDetail;
 }
 
-export async function creerProprieteBase(baseId: string, nom: string, type: string, options: string[] = []) {
+export async function creerProprieteBase(
+  baseId: string,
+  nom: string,
+  type: string,
+  options: string[] = [],
+  config: Record<string, unknown> = {}
+) {
   return (await appelerApi(`/api/bases-donnees/${baseId}/proprietes`, {
     method: "POST",
-    body: JSON.stringify({ nom, type, options }),
+    body: JSON.stringify({ nom, type, options, config }),
   })) as ProprieteBase;
 }
 

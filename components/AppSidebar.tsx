@@ -327,7 +327,7 @@ export function AppSidebar({
             )}
 
             {historique.length > 0 && (
-              <div className="mt-1 min-h-0 overflow-hidden rounded-xl">
+              <div className="mt-1 overflow-hidden rounded-xl">
                 <button
                   onClick={() => setHistoriqueDeplie((v) => !v)}
                   className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${

@@ -296,7 +296,7 @@ export function AppSidebar({
       <div
         ref={asideRef}
         className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
-          actionsDeplie ? "overflow-visible" : "overflow-hidden"
+          actionsDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${ouverte ? "md:w-72" : "md:w-14"}`}
       >
         <button
@@ -311,12 +311,6 @@ export function AppSidebar({
         </button>
 
         <div className="my-2 h-px w-full bg-dj-bordure" />
-
-        {contexteChat && (
-          <div className="px-2 py-1 text-[10px] text-red-400">
-            DEBUG hist={historique.length} msgs={String(aDesMessages)}
-          </div>
-        )}
 
         {contexteChat && (
           <>

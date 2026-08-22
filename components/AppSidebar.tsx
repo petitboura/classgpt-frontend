@@ -313,6 +313,12 @@ export function AppSidebar({
         <div className="my-2 h-px w-full bg-dj-bordure" />
 
         {contexteChat && (
+          <div className="px-2 py-1 text-[10px] text-red-400">
+            DEBUG hist={historique.length} msgs={String(aDesMessages)}
+          </div>
+        )}
+
+        {contexteChat && (
           <>
             {aDesMessages && (
               <button

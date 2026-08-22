@@ -784,6 +784,47 @@ export async function mettreAJourMonProfil(nomAffiche: string) {
   });
 }
 
+// --- Page Paramètres (22/08/2026, demande Bourama) -------------------------
+//
+// Réutilise entièrement les endpoints déjà en place côté backend
+// (api/profiles.py) : rien de nouveau à créer côté FastAPI. Le mot de
+// passe n'est PAS géré ici (voir lib/supabase.ts : "le backend FastAPI ne
+// gère jamais de mot de passe", supabase.auth.updateUser() appelé
+// directement depuis EspaceParametres.tsx).
+
+/** GET /api/profiles/{user_id} avec l'id de la session en cours -- pas de
+ * endpoint "GET /me" dédié côté backend, voir api/profiles.py. */
+export async function lireMonProfil() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user?.id) {
+    throw new ErreurApi(401, "Connecte-toi pour voir ton profil.", "SESSION_EXPIREE");
+  }
+  return appelerApi(`/api/profiles/${session.user.id}`);
+}
+
+/** PATCH partiel générique (voir MettreAJourProfilPayload côté backend) --
+ * distincte de mettreAJourMonProfil(nomAffiche) ci-dessus pour ne pas
+ * changer sa signature existante (utilisée telle quelle à l'inscription). */
+export async function enregistrerMonProfil(payload: {
+  nom_affiche?: string;
+  bio?: string;
+  avatar_url?: string;
+  notifications_proactives_actives?: boolean;
+}) {
+  return appelerApi("/api/profiles/me", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** DELETE /api/profiles/me -- voir api/profiles.py:supprimer_mon_compte
+ * pour la purge complète (agents, posts, follows, profil, compte Auth). */
+export async function supprimerMonCompte() {
+  return appelerApi("/api/profiles/me", { method: "DELETE" });
+}
+
 // --- Codes de partage (14/08/2026, remplace le système matière ci-dessus,
 // qui n'était de toute façon jamais lu par le chat -- voir
 // core/codes_partage.py côté backend) --------------------------------------

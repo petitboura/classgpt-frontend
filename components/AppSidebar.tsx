@@ -27,6 +27,7 @@ import {
   PanelLeft,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { lireMonProfil } from "@/lib/api";
 import { Logo } from "@/components/Logo";
 import { NoteAgent } from "@/components/NoteAgent";
 import { CommentairesAgent } from "@/components/CommentairesAgent";
@@ -131,6 +132,50 @@ function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.
   );
 }
 
+// Avatar cliquable vers /parametres, desktop (rail replié/déplié) et
+// mobile (panneau plein écran) -- voir note plus haut sur avatarUrl/
+// nomAffiche. Repli sur une bulle avec l'initiale du nom si pas de photo
+// (même logique que components/EspaceParametres.tsx), et sur "Mon
+// compte" si le nom n'est pas encore chargé/renseigné.
+function BoutonProfil({
+  avatarUrl,
+  nomAffiche,
+  ouverte,
+  mobile = false,
+  onClic,
+}: {
+  avatarUrl: string | null;
+  nomAffiche: string | null;
+  ouverte: boolean;
+  mobile?: boolean;
+  onClic?: () => void;
+}) {
+  const libelle = nomAffiche || "Mon compte";
+  return (
+    <Link
+      href="/parametres"
+      onClick={onClic}
+      className={`group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+        mobile ? "px-2" : ""
+      }`}
+    >
+      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+        <span className="h-6 w-6 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute transition-transform duration-200 group-hover:scale-110">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage, hôte dynamique
+            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-dj-texte-muet">
+              {libelle.trim().charAt(0).toUpperCase()}
+            </span>
+          )}
+        </span>
+      </span>
+      {mobile ? <span className="text-sm">{libelle}</span> : <LibelleRail ouverte={ouverte}>{libelle}</LibelleRail>}
+    </Link>
+  );
+}
+
 export function AppSidebar({
   connecte,
   onOuvrirCatalogue,
@@ -180,6 +225,38 @@ export function AppSidebar({
   const [historiqueDeplie, setHistoriqueDeplie] = useState(false);
   const asideRef = useRef<HTMLDivElement>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
+
+  // Photo + nom affichés en bas de la sidebar (22/08/2026, demande
+  // Bourama : "la photo de profil s'affiche en bas dans la sidebar et
+  // est un bouton") -- remplace le bloc "Logo Clovis" non cliquable qui
+  // s'y trouvait, uniquement pour un utilisateur connecté (rien à
+  // afficher pour un visiteur, voir rendu plus bas). Chargé ici (jamais
+  // remonté à AppShell, qui ne connaît que le booléen `connecte`) car
+  // c'est le seul endroit de l'app qui en a besoin.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [nomAffiche, setNomAffiche] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!connecte) {
+      setAvatarUrl(null);
+      setNomAffiche(null);
+      return;
+    }
+    let annule = false;
+    lireMonProfil()
+      .then((p: { avatar_url: string | null; nom_affiche: string }) => {
+        if (annule) return;
+        setAvatarUrl(p.avatar_url || null);
+        setNomAffiche(p.nom_affiche || null);
+      })
+      .catch(() => {
+        // Best-effort : l'initiale de repli ("Mon compte") suffit si ce
+        // chargement échoue, pas la peine d'afficher une erreur ici.
+      });
+    return () => {
+      annule = true;
+    };
+  }, [connecte]);
 
   function basculerActions() {
     setActionsDeplie((v) => !v);
@@ -501,14 +578,18 @@ export function AppSidebar({
           <LibelleRail ouverte={ouverte}>{connecte ? "Se déconnecter" : "Se connecter"}</LibelleRail>
         </button>
 
-        <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
-          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            <Logo taille={18} />
-          </span>
-          <LibelleRail ouverte={ouverte}>
-            <span className="font-display font-bold tracking-tight">Clovis</span>
-          </LibelleRail>
-        </div>
+        {connecte ? (
+          <BoutonProfil avatarUrl={avatarUrl} nomAffiche={nomAffiche} ouverte={ouverte} />
+        ) : (
+          <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+              <Logo taille={18} />
+            </span>
+            <LibelleRail ouverte={ouverte}>
+              <span className="font-display font-bold tracking-tight">Clovis</span>
+            </LibelleRail>
+          </div>
+        )}
       </div>
 
       {/* Panneau plein écran mobile, même logique que desktop. */}
@@ -647,6 +728,16 @@ export function AppSidebar({
           </div>
 
           <ThemeToggle LibelleRail={LibelleRail} ouverte={ouverte} mobile />
+
+          {connecte && (
+            <BoutonProfil
+              avatarUrl={avatarUrl}
+              nomAffiche={nomAffiche}
+              ouverte={ouverte}
+              mobile
+              onClic={() => setOuverte(false)}
+            />
+          )}
 
           <button
             onClick={seDeconnecter}

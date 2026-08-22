@@ -112,26 +112,35 @@ function ChipComportement({
     <button
       onClick={() => onOuvrir(c)}
       title="Ouvrir et modifier"
-      className={`group flex max-w-[280px] items-center gap-2 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute ${
+      className={`group flex max-w-[280px] flex-col gap-1 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute ${
         c.actif ? "" : "opacity-50"
       }`}
     >
-      <ScrollText size={14} className="flex-shrink-0 text-dj-accent-1" />
-      <span className="min-w-0 truncate text-sm text-dj-texte">{c.nom || c.description}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <ScrollText size={14} className="flex-shrink-0 text-dj-accent-1" />
+        <span className="min-w-0 flex-1 truncate text-sm text-dj-texte">{c.nom || c.description}</span>
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => onToggleActif(c, e)}
+          title={c.actif ? "Désactiver (ne sera plus proposé à l'IA)" : "Activer"}
+          className="flex flex-shrink-0 items-center text-dj-texte-muet hover:text-dj-texte disabled:opacity-40"
+        >
+          {c.actif ? <ToggleRight size={18} className="text-dj-accent-1" /> : <ToggleLeft size={18} />}
+        </span>
+      </div>
+      {/* Badge de rattachement (lien_libelle) sur sa propre ligne, sous le
+          nom -- CORRECTIF 22/08/2026 (Bourama : "le texte des sources
+          déborde, on ne voit plus les noms") : avant, ce badge partageait
+          la ligne du nom en flex-shrink-0, donc un chapitre au nom long
+          écrasait le nom du skill au lieu de se réduire lui-même. Ici il a
+          sa propre largeur (celle du chip) et sa propre troncature. */}
       {c.lien_libelle && (
-        <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
-          <Link2 size={9} /> {c.lien_libelle}
+        <span className="ml-[22px] flex min-w-0 items-center gap-1 self-start rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
+          <Link2 size={9} className="flex-shrink-0" />
+          <span className="min-w-0 truncate">{c.lien_libelle}</span>
         </span>
       )}
-      <span
-        role="button"
-        tabIndex={0}
-        onClick={(e) => onToggleActif(c, e)}
-        title={c.actif ? "Désactiver (ne sera plus proposé à l'IA)" : "Activer"}
-        className="flex flex-shrink-0 items-center text-dj-texte-muet hover:text-dj-texte disabled:opacity-40"
-      >
-        {c.actif ? <ToggleRight size={18} className="text-dj-accent-1" /> : <ToggleLeft size={18} />}
-      </span>
     </button>
   );
 }

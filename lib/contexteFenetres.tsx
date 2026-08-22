@@ -11,14 +11,26 @@ import type { OngletId } from "@/components/AppSidebar";
 // clic sur une section). L'URL ne bouge PAS (décision explicite Bourama)
 // -- ces fenêtres n'existent que tant qu'elles sont ouvertes, jamais
 // restaurées après un rafraîchissement de page. Plusieurs peuvent être
-// ouvertes en même temps, empilées (z croissant) et déplaçables (voir
-// components/chat/FenetresSections.tsx).
+// ouvertes en même temps, empilées (z croissant), déplaçables ET
+// redimensionnables (voir components/chat/FenetresSections.tsx).
+//
+// 22/08/2026, 3 précisions Bourama :
+// 1. Cliquer sur une section DÉJÀ ouverte remonte sa fenêtre existante
+//    au premier plan au lieu d'en ouvrir une seconde en double -- voir
+//    `ouvrir` ci-dessous.
+// 2. Redimensionnables par les bords/coins -- voir `width`/`height` +
+//    `redimensionner`.
+// 3. Cliquer dans l'interface du CHAT (en dessous des fenêtres) ferme
+//    TOUTES les fenêtres d'un coup -- voir `fermerToutes`, appelé
+//    depuis ChatFlottant.tsx.
 
 export type FenetreSection = {
   cle: string;
   ongletId: OngletId;
   x: number;
   y: number;
+  width: number;
+  height: number;
   z: number;
 };
 
@@ -26,8 +38,10 @@ type ContexteFenetresValeur = {
   fenetres: FenetreSection[];
   ouvrir: (ongletId: OngletId) => void;
   fermer: (cle: string) => void;
+  fermerToutes: () => void;
   monterAuPremierPlan: (cle: string) => void;
   deplacer: (cle: string, x: number, y: number) => void;
+  redimensionner: (cle: string, patch: Partial<Pick<FenetreSection, "x" | "y" | "width" | "height">>) => void;
 };
 
 export const ContexteFenetres = createContext<ContexteFenetresValeur | null>(null);
@@ -36,6 +50,14 @@ export const ContexteFenetres = createContext<ContexteFenetresValeur | null>(nul
 // se superposent pas exactement (comme un vrai gestionnaire de fenêtres).
 const PAS_CASCADE = 32;
 const POSITION_BASE = { x: 80, y: 70 };
+
+// "Notes"/"programme"/"bibliotheque" occupent tout l'espace disponible
+// sur leur vraie page -- une fenêtre plus large leur va mieux. Source
+// unique (réutilisée par FenetresSections.tsx pour le rendu).
+export const ONGLETS_LARGES = new Set<OngletId>(["notes", "programme", "bibliotheque"]);
+const TAILLE_NORMALE = { width: 480, height: 560 };
+const TAILLE_LARGE = { width: 760, height: 640 };
+export const TAILLE_MIN = { width: 320, height: 280 };
 
 export function useFournirFenetres(): ContexteFenetresValeur {
   const [fenetres, setFenetres] = useState<FenetreSection[]>([]);
@@ -51,8 +73,16 @@ export function useFournirFenetres(): ContexteFenetresValeur {
 
   const ouvrir = useCallback((ongletId: OngletId) => {
     setFenetres((f) => {
+      // Déjà ouverte : on la remonte au premier plan plutôt que d'en
+      // ouvrir une deuxième (demande Bourama du 22/08).
+      const existante = f.find((fen) => fen.ongletId === ongletId);
+      if (existante) {
+        const z = prochainZ.current++;
+        return f.map((fen) => (fen.cle === existante.cle ? { ...fen, z } : fen));
+      }
       const n = nbOuvertures.current++;
       const z = prochainZ.current++;
+      const taille = ONGLETS_LARGES.has(ongletId) ? TAILLE_LARGE : TAILLE_NORMALE;
       return [
         ...f,
         {
@@ -60,6 +90,7 @@ export function useFournirFenetres(): ContexteFenetresValeur {
           ongletId,
           x: POSITION_BASE.x + (n % 6) * PAS_CASCADE,
           y: POSITION_BASE.y + (n % 6) * PAS_CASCADE,
+          ...taille,
           z,
         },
       ];
@@ -68,6 +99,10 @@ export function useFournirFenetres(): ContexteFenetresValeur {
 
   const fermer = useCallback((cle: string) => {
     setFenetres((f) => f.filter((fen) => fen.cle !== cle));
+  }, []);
+
+  const fermerToutes = useCallback(() => {
+    setFenetres((f) => (f.length === 0 ? f : []));
   }, []);
 
   const monterAuPremierPlan = useCallback((cle: string) => {
@@ -81,7 +116,14 @@ export function useFournirFenetres(): ContexteFenetresValeur {
     setFenetres((f) => f.map((fen) => (fen.cle === cle ? { ...fen, x, y } : fen)));
   }, []);
 
-  return { fenetres, ouvrir, fermer, monterAuPremierPlan, deplacer };
+  const redimensionner = useCallback(
+    (cle: string, patch: Partial<Pick<FenetreSection, "x" | "y" | "width" | "height">>) => {
+      setFenetres((f) => f.map((fen) => (fen.cle === cle ? { ...fen, ...patch } : fen)));
+    },
+    []
+  );
+
+  return { fenetres, ouvrir, fermer, fermerToutes, monterAuPremierPlan, deplacer, redimensionner };
 }
 
 export function useFenetres() {

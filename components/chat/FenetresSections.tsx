@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { X } from "lucide-react";
 import { ONGLETS, type OngletId } from "@/components/AppSidebar";
-import { useFenetres } from "@/lib/contexteFenetres";
+import { useFenetres, TAILLE_MIN } from "@/lib/contexteFenetres";
 import { MesCodes } from "@/components/MesCodes";
 import { EspaceEntrerCode } from "@/components/EspaceEntrerCode";
 import { MesComportements } from "@/components/MesComportements";
@@ -52,16 +52,41 @@ const LABEL_PAR_ONGLET: Record<OngletId, { label: string; Icone: (typeof ONGLETS
     { label: string; Icone: (typeof ONGLETS)[number]["Icone"] }
   >;
 
-// "Notes" occupe tout l'espace disponible sur sa vraie page (canevas
-// plein Notion-like) -- une fenêtre flottante plus large lui va mieux
-// qu'une fenêtre étroite où son propre rail interne serait à l'étroit.
-const ONGLETS_LARGES = new Set<OngletId>(["notes", "programme", "bibliotheque"]);
+// Les 8 poignées de redimensionnement (22/08/2026, demande Bourama :
+// "que je puisse les agrandir en tirant par les côtés ou les angles").
+// direction encode quels bords bougent : n/s = haut/bas, e/w = droite/
+// gauche, combinés pour les 4 coins.
+const POIGNEES: { direction: string; classe: string }[] = [
+  { direction: "n", classe: "left-2 right-2 top-0 h-1.5 cursor-ns-resize" },
+  { direction: "s", classe: "left-2 right-2 bottom-0 h-1.5 cursor-ns-resize" },
+  { direction: "e", classe: "right-0 top-2 bottom-2 w-1.5 cursor-ew-resize" },
+  { direction: "w", classe: "left-0 top-2 bottom-2 w-1.5 cursor-ew-resize" },
+  { direction: "ne", classe: "right-0 top-0 h-3 w-3 cursor-nesw-resize" },
+  { direction: "nw", classe: "left-0 top-0 h-3 w-3 cursor-nwse-resize" },
+  { direction: "se", classe: "right-0 bottom-0 h-3 w-3 cursor-nwse-resize" },
+  { direction: "sw", classe: "left-0 bottom-0 h-3 w-3 cursor-nesw-resize" },
+];
 
-function FenetreSection({ cle, ongletId, x, y, z }: { cle: string; ongletId: OngletId; x: number; y: number; z: number }) {
-  const { fermer, monterAuPremierPlan, deplacer } = useFenetres();
+function FenetreSection({
+  cle,
+  ongletId,
+  x,
+  y,
+  width,
+  height,
+  z,
+}: {
+  cle: string;
+  ongletId: OngletId;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  z: number;
+}) {
+  const { fermer, monterAuPremierPlan, deplacer, redimensionner } = useFenetres();
   const glissement = useRef<{ x: number; y: number; fx: number; fy: number } | null>(null);
   const { label, Icone } = LABEL_PAR_ONGLET[ongletId];
-  const large = ONGLETS_LARGES.has(ongletId);
 
   function demarrerGlissement(e: React.MouseEvent) {
     // Bouton gauche uniquement -- laisse clic droit/milieu tranquilles.
@@ -87,13 +112,46 @@ function FenetreSection({ cle, ongletId, x, y, z }: { cle: string; ongletId: Ong
     window.addEventListener("mouseup", onUp);
   }
 
+  function demarrerRedimensionnement(e: React.MouseEvent, direction: string) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    monterAuPremierPlan(cle);
+    const depart = { x: e.clientX, y: e.clientY, fx: x, fy: y, fw: width, fh: height };
+    function onMove(ev: MouseEvent) {
+      const dx = ev.clientX - depart.x;
+      const dy = ev.clientY - depart.y;
+      const patch: Partial<{ x: number; y: number; width: number; height: number }> = {};
+      if (direction.includes("e")) {
+        patch.width = Math.max(TAILLE_MIN.width, depart.fw + dx);
+      }
+      if (direction.includes("s")) {
+        patch.height = Math.max(TAILLE_MIN.height, depart.fh + dy);
+      }
+      if (direction.includes("w")) {
+        const nouvelleLargeur = Math.max(TAILLE_MIN.width, depart.fw - dx);
+        patch.width = nouvelleLargeur;
+        patch.x = depart.fx + (depart.fw - nouvelleLargeur);
+      }
+      if (direction.includes("n")) {
+        const nouvelleHauteur = Math.max(TAILLE_MIN.height, depart.fh - dy);
+        patch.height = nouvelleHauteur;
+        patch.y = depart.fy + (depart.fh - nouvelleHauteur);
+      }
+      redimensionner(cle, patch);
+    }
+    function onUp() {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
   return (
     <div
       onMouseDownCapture={() => monterAuPremierPlan(cle)}
-      style={{ left: x, top: y, zIndex: 120 + z }}
-      className={`fixed flex max-h-[85vh] flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_16px_60px_rgba(0,0,0,0.5)] ${
-        large ? "h-[75vh] w-[min(90vw,760px)]" : "h-[70vh] w-[min(90vw,480px)]"
-      }`}
+      style={{ left: x, top: y, width, height, zIndex: 120 + z }}
+      className="fixed flex flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_16px_60px_rgba(0,0,0,0.5)]"
     >
       <div
         onMouseDown={demarrerGlissement}
@@ -112,6 +170,13 @@ function FenetreSection({ cle, ongletId, x, y, z }: { cle: string; ongletId: Ong
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className="mx-auto w-full max-w-xl">{CONTENU_PAR_ONGLET[ongletId]}</div>
       </div>
+      {POIGNEES.map((p) => (
+        <div
+          key={p.direction}
+          onMouseDown={(e) => demarrerRedimensionnement(e, p.direction)}
+          className={`absolute z-10 ${p.classe}`}
+        />
+      ))}
     </div>
   );
 }
@@ -119,13 +184,15 @@ function FenetreSection({ cle, ongletId, x, y, z }: { cle: string; ongletId: Ong
 // Monté une seule fois dans AppShell.tsx, au même niveau que ChatFlottant
 // (z-[110]) -- les fenêtres vivent au-dessus (z-index 120+) et
 // persistent indépendamment de l'état du chat (fermer/réduire le chat ne
-// les referme pas ; seul leur propre bouton Fermer le fait).
+// les referme pas ; seul leur propre bouton Fermer le fait -- ou cliquer
+// dans l'interface du chat, qui les ferme TOUTES d'un coup, voir
+// fermerToutes dans ChatFlottant.tsx).
 export function FenetresSections() {
   const { fenetres } = useFenetres();
   return (
     <>
       {fenetres.map((f) => (
-        <FenetreSection key={f.cle} cle={f.cle} ongletId={f.ongletId} x={f.x} y={f.y} z={f.z} />
+        <FenetreSection key={f.cle} cle={f.cle} ongletId={f.ongletId} x={f.x} y={f.y} width={f.width} height={f.height} z={f.z} />
       ))}
     </>
   );

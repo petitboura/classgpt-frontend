@@ -11,6 +11,7 @@ import { CompteRequisModal } from "@/components/CompteRequisModal";
 import { Logo } from "@/components/Logo";
 import { useHauteurVisuelle } from "@/lib/useHauteurVisuelle";
 import type { EtatChat } from "@/lib/contexteChat";
+import { useFenetres } from "@/lib/contexteFenetres";
 import { texteAccueilSelonHeure } from "@/lib/salutations";
 
 // Chat flottant global (refonte "Mon espace = l'app", 15/08/2026, demande
@@ -200,6 +201,16 @@ export function ChatFlottant({
   }
 
   const pleinEcran = etat === "plein_ecran";
+  // 22/08/2026, demande Bourama : cliquer dans l'interface du CHAT
+  // lui-même (pas la sidebar-rail à côté, qui a déjà sa propre logique
+  // d'ouverture/premier-plan) ferme TOUTES les fenêtres flottantes de
+  // sections. Voir les deux onMouseDownCapture posés plus bas (en-tête +
+  // zone de contenu du chat), jamais sur le conteneur englobant qui
+  // contiendrait aussi la sidebar.
+  const { fenetres, fermerToutes } = useFenetres();
+  function fermerFenetresAuClic() {
+    if (pleinEcran && fenetres.length > 0) fermerToutes();
+  }
 
   return (
     <div
@@ -244,7 +255,10 @@ export function ChatFlottant({
           d'autre") -- pas de doublon ici. Partager / Avis / Pourquoi
           Clovis restent dans le dropdown Actions de cette même
           AppSidebar, jamais dupliqués dans l'en-tête du chat. */}
-      <div className="flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 py-2.5">
+      <div
+        onMouseDownCapture={fermerFenetresAuClic}
+        className="flex flex-shrink-0 items-center gap-2 border-b border-dj-bordure px-3 py-2.5"
+      >
         <Logo taille={20} />
         <span className="font-display text-sm font-bold text-dj-texte">Clovis</span>
 
@@ -319,7 +333,7 @@ export function ChatFlottant({
           />
         )}
 
-        <div className="min-h-0 flex-1">
+        <div onMouseDownCapture={fermerFenetresAuClic} className="min-h-0 flex-1">
           {chargement === "chargement" && (
             <div className="flex h-full items-center justify-center">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-dj-bordure border-t-dj-accent-1" />

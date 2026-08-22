@@ -296,7 +296,7 @@ export function AppSidebar({
       <div
         ref={asideRef}
         className={`hidden flex-shrink-0 flex-col border-r border-dj-bordure bg-dj-fond px-2 py-3 transition-[width] duration-300 ease-out md:flex ${
-          actionsDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
+          actionsDeplie || historiqueDeplie ? "overflow-visible" : "overflow-y-auto overflow-x-hidden"
         } ${ouverte ? "md:w-72" : "md:w-14"}`}
       >
         <button
@@ -327,7 +327,7 @@ export function AppSidebar({
             )}
 
             {historique.length > 0 && (
-              <div className="mt-1 overflow-hidden rounded-xl">
+              <div className="relative">
                 <button
                   onClick={() => setHistoriqueDeplie((v) => !v)}
                   className={`group flex w-full items-center gap-2 rounded-xl transition-colors ${
@@ -339,8 +339,8 @@ export function AppSidebar({
                   </span>
                   <LibelleRail ouverte={ouverte}>Historique</LibelleRail>
                 </button>
-                {ouverte && historiqueDeplie && (
-                  <div className="flex max-h-56 flex-col overflow-y-auto px-1 pb-1">
+                {historiqueDeplie && (
+                  <div className="absolute left-1 top-11 z-10 max-h-64 w-56 animate-dj-fade-in-rapide overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface p-1 shadow-lg">
                     {historique.map((fil) => {
                       const estActive = fil.conversation_id === conversationActiveId;
                       return (
@@ -348,8 +348,8 @@ export function AppSidebar({
                           key={fil.conversation_id ?? "legacy"}
                           onClick={() => !estActive && onSelectionnerConversation?.(fil)}
                           disabled={estActive}
-                          className={`truncate border-b border-white/[0.06] px-2 py-2 text-left text-sm last:border-b-0 ${
-                            estActive ? "text-dj-accent-1" : "text-dj-texte hover:text-dj-accent-1"
+                          className={`block w-full truncate rounded-lg px-2.5 py-2 text-left text-sm transition-colors ${
+                            estActive ? "text-dj-accent-1" : "text-dj-texte hover:bg-dj-surface-haute"
                           }`}
                         >
                           {estActive ? "● " : ""}

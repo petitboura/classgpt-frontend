@@ -184,12 +184,21 @@ export function MesComportements({ agentId }: { agentId: string }) {
     setNomOuvert(c.nom || "");
     setNomAuto(false); // un comportement existant a déjà un nom -> édition manuelle par défaut
     setErreurOuvert(null);
-    setOnglet("texte");
+    // 22/08/2026, demande Bourama ("quand tu clique sur un skill existant,
+    // tu vois le skill généré et l'aperçu, pas le texte ni le code en
+    // premier") : ouverture directe sur l'onglet "skill" + sous-vue
+    // "Aperçu" (rendu Markdown lisible), plutôt que sur le texte brut de
+    // l'étudiant ou le markdown source du skill. Le chargement se fait ici
+    // via chargerSkill(c) (même logique que ouvrirOngletSkill, dupliquée
+    // car cette fonction n'a pas encore accès à `panneau` mis à jour par
+    // le setPanneau ci-dessus -- setState est asynchrone).
+    setOnglet("skill");
     setSkillOuvert("");
     setErreurSkill(null);
-    setSkillVue("texte");
+    setSkillVue("apercu");
     setPublie(false);
     setErreurPublication(null);
+    chargerSkill(c.id);
   }
 
   function ouvrirCreation() {
@@ -204,19 +213,29 @@ export function MesComportements({ agentId }: { agentId: string }) {
     setSkillVue("texte");
   }
 
-  async function ouvrirOngletSkill() {
-    setOnglet("skill");
-    if (!panneau || panneau.type !== "edition" || skillOuvert || skillChargement) return;
+  // 22/08/2026, demande Bourama : extrait de ouvrirOngletSkill pour être
+  // réutilisable depuis ouvrirEdition (ouverture directe sur ce même
+  // onglet au clic sur un skill existant, voir plus haut). Prend
+  // directement l'id plutôt que de lire `panneau` -- `setPanneau` juste
+  // au-dessus dans ouvrirEdition est asynchrone, `panneau` n'y est donc
+  // pas encore à jour au moment de l'appel.
+  async function chargerSkill(comportementId: string) {
     setSkillChargement(true);
     setErreurSkill(null);
     try {
-      const md = await lireSkillComportement(agentId, panneau.c.id);
+      const md = await lireSkillComportement(agentId, comportementId);
       setSkillOuvert(md);
     } catch (e) {
       setErreurSkill(messageErreur(e));
     } finally {
       setSkillChargement(false);
     }
+  }
+
+  async function ouvrirOngletSkill() {
+    setOnglet("skill");
+    if (!panneau || panneau.type !== "edition" || skillOuvert || skillChargement) return;
+    chargerSkill(panneau.c.id);
   }
 
   async function enregistrerSkill() {
@@ -497,7 +516,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
                   onChange={(e) => setNomOuvert(e.target.value)}
                   disabled={nomAuto}
                   placeholder={nomAuto ? "Nom généré automatiquement" : "Ex : Réponses en langage simple"}
-                  className="flex-1 rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1 disabled:opacity-50"
+                  className="flex-1 rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-3 py-1.5 text-sm text-dj-texte outline-none focus:border-dj-accent-1 disabled:opacity-50"
                 />
                 <label className="flex flex-shrink-0 items-center gap-1.5 text-xs text-dj-texte-muet">
                   <input
@@ -523,7 +542,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
                 onChange={(e) => setTexteOuvert(e.target.value)}
                 placeholder="Ex : réponds-moi toujours en langage simple"
                 rows={16}
-                className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
+                className="w-full flex-1 resize-none rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-4 py-3 text-base text-dj-texte outline-none focus:border-dj-accent-1"
               />
 
               <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -599,7 +618,7 @@ export function MesComportements({ agentId }: { agentId: string }) {
                   onChange={(e) => setSkillOuvert(e.target.value)}
                   rows={16}
                   spellCheck={false}
-                  className="w-full flex-1 resize-none rounded-xl border border-dj-bordure bg-dj-surface-haute px-4 py-3 font-mono text-sm text-dj-texte outline-none focus:border-dj-accent-1"
+                  className="w-full flex-1 resize-none rounded-cgpt-carte border border-dj-bordure bg-dj-surface-haute px-4 py-3 font-mono text-sm text-dj-texte outline-none focus:border-dj-accent-1"
                 />
               ) : (
                 <div className="w-full flex-1 overflow-y-auto rounded-xl border border-dj-bordure bg-dj-surface-haute px-5 py-4">

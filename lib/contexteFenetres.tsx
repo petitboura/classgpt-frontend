@@ -1,0 +1,91 @@
+"use client";
+
+import { createContext, useCallback, useContext, useRef, useState } from "react";
+import type { OngletId } from "@/components/AppSidebar";
+
+// Fenêtres flottantes de sections par-dessus le chat plein écran
+// (22/08/2026, demande explicite Bourama : "je veux que quand on
+// clique, eux s'affichent en fenêtre flottante, sans fermer le chat...
+// que le clic sur une section l'affiche par-dessus le chat en popup" --
+// remplace le comportement précédent qui fermait le chat plein écran au
+// clic sur une section). L'URL ne bouge PAS (décision explicite Bourama)
+// -- ces fenêtres n'existent que tant qu'elles sont ouvertes, jamais
+// restaurées après un rafraîchissement de page. Plusieurs peuvent être
+// ouvertes en même temps, empilées (z croissant) et déplaçables (voir
+// components/chat/FenetresSections.tsx).
+
+export type FenetreSection = {
+  cle: string;
+  ongletId: OngletId;
+  x: number;
+  y: number;
+  z: number;
+};
+
+type ContexteFenetresValeur = {
+  fenetres: FenetreSection[];
+  ouvrir: (ongletId: OngletId) => void;
+  fermer: (cle: string) => void;
+  monterAuPremierPlan: (cle: string) => void;
+  deplacer: (cle: string, x: number, y: number) => void;
+};
+
+export const ContexteFenetres = createContext<ContexteFenetresValeur | null>(null);
+
+// Décalage en cascade pour que les fenêtres ouvertes successivement ne
+// se superposent pas exactement (comme un vrai gestionnaire de fenêtres).
+const PAS_CASCADE = 32;
+const POSITION_BASE = { x: 80, y: 70 };
+
+export function useFournirFenetres(): ContexteFenetresValeur {
+  const [fenetres, setFenetres] = useState<FenetreSection[]>([]);
+  // Compteur de z monotone (jamais réutilisé) plutôt qu'un simple index
+  // de tableau -- sinon "monter au premier plan" devrait réordonner tout
+  // le tableau à chaque clic, ce qui perturberait le rendu/les refs des
+  // fenêtres déjà ouvertes pour rien.
+  const prochainZ = useRef(1);
+  // Compte les fenêtres déjà ouvertes depuis le montage (pas la longueur
+  // du tableau courant, qui redescend quand on en ferme) -- garantit que
+  // la cascade continue de progresser même après avoir fermé/rouvert.
+  const nbOuvertures = useRef(0);
+
+  const ouvrir = useCallback((ongletId: OngletId) => {
+    setFenetres((f) => {
+      const n = nbOuvertures.current++;
+      const z = prochainZ.current++;
+      return [
+        ...f,
+        {
+          cle: crypto.randomUUID(),
+          ongletId,
+          x: POSITION_BASE.x + (n % 6) * PAS_CASCADE,
+          y: POSITION_BASE.y + (n % 6) * PAS_CASCADE,
+          z,
+        },
+      ];
+    });
+  }, []);
+
+  const fermer = useCallback((cle: string) => {
+    setFenetres((f) => f.filter((fen) => fen.cle !== cle));
+  }, []);
+
+  const monterAuPremierPlan = useCallback((cle: string) => {
+    setFenetres((f) => {
+      const z = prochainZ.current++;
+      return f.map((fen) => (fen.cle === cle ? { ...fen, z } : fen));
+    });
+  }, []);
+
+  const deplacer = useCallback((cle: string, x: number, y: number) => {
+    setFenetres((f) => f.map((fen) => (fen.cle === cle ? { ...fen, x, y } : fen)));
+  }, []);
+
+  return { fenetres, ouvrir, fermer, monterAuPremierPlan, deplacer };
+}
+
+export function useFenetres() {
+  const ctx = useContext(ContexteFenetres);
+  if (!ctx) throw new Error("useFenetres doit être utilisé sous ContexteFenetres.Provider");
+  return ctx;
+}

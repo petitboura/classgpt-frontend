@@ -641,6 +641,10 @@ export type Comportement = {
   lien_id: string | null;
   lien_libelle: string | null;
   actif: boolean;
+  depuis_audit: boolean;
+  depuis_public: boolean;
+  matiere_id: string | null;
+  matiere_nom: string | null;
 };
 
 export async function lireMesComportements(agentId: string) {

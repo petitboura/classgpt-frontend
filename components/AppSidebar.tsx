@@ -1,10 +1,10 @@
 "use client";
 
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useFenetres } from "@/lib/contexteFenetres";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ContexteChat } from "@/lib/contexteChat";
 import {
   LogOut,
   LogIn,
@@ -165,12 +165,14 @@ export function AppSidebar({
   onSelectionnerConversation?: (fil: FilConversation) => void;
 }) {
   const pathname = usePathname();
-  // Nav principale (contexteChat=false) : "Historique" ouvre le chat en
-  // plein écran plutôt que de dupliquer ici le fetch + la sélection de
-  // conversation (déjà gérés par ChatFlottant.tsx et déjà affichés par
-  // CETTE MÊME AppSidebar quand contexteChat=true, voir plus bas) --
-  // 22/08/2026, chantier "grandes applis" (point 4/5, Bourama).
-  const ctxChat = useContext(ContexteChat);
+  // 22/08/2026, demande Bourama : remplace le comportement précédent
+  // (fermer le chat plein écran au clic sur une section, cf. commit du
+  // même jour) -- désormais le clic ouvre la section dans une fenêtre
+  // flottante PAR-DESSUS le chat plein écran, qui reste ouvert. Voir
+  // lib/contexteFenetres.tsx + components/chat/FenetresSections.tsx.
+  // Seulement en contexteChat=true (l'autre instance, hors chat, garde
+  // sa vraie navigation classique par route).
+  const { ouvrir: ouvrirFenetre } = useFenetres();
   const [ouverte, setOuverte] = useState(false);
   const [actionsDeplie, setActionsDeplie] = useState(false);
   const [avisDeplie, setAvisDeplie] = useState(false);
@@ -233,7 +235,7 @@ export function AppSidebar({
     mouvement,
     mobile = false,
   }: {
-    onglet: { href: string; label: string; Icone: typeof Briefcase };
+    onglet: { id?: OngletId; href: string; label: string; Icone: typeof Briefcase };
     mouvement: string;
     mobile?: boolean;
   }) {
@@ -241,7 +243,17 @@ export function AppSidebar({
     return (
       <Link
         href={onglet.href}
-        onClick={() => mobile && setOuverte(false)}
+        onClick={(e) => {
+          if (mobile) setOuverte(false);
+          // En contexteChat=true, une vraie "section" (id présent --
+          // "Accueil" n'en a pas, cf. navComplete plus bas, et garde sa
+          // navigation classique) s'ouvre en fenêtre flottante par-dessus
+          // le chat au lieu de naviguer.
+          if (contexteChat && onglet.id) {
+            e.preventDefault();
+            ouvrirFenetre(onglet.id);
+          }
+        }}
         className={`group relative mt-2 flex w-full items-center gap-2 rounded-xl transition-colors ${
           actif ? "bg-dj-surface-haute text-dj-texte" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
         } ${mobile ? "px-2" : ""}`}
@@ -275,11 +287,18 @@ export function AppSidebar({
     );
   }
 
-  // En contexte chat plein écran : Ma mémoire + Audits quittent le rail
-  // principal pour le dropdown Actions (place prise par Nouvelle
-  // conversation + Historique, voir prop contexteChat ci-dessus).
-  const ongletsRail = contexteChat ? ONGLETS.filter((o) => o.id !== "memoire" && o.id !== "audits") : ONGLETS;
-  const ongletsDansActions = contexteChat ? ONGLETS.filter((o) => o.id === "memoire" || o.id === "audits") : [];
+  // En contexte chat plein écran : Ma mémoire, Audits, Bureau, Plugins et
+  // Utiliser Clovis dans Claude quittent le rail principal pour le
+  // dropdown Actions (place prise par Nouvelle conversation + Historique,
+  // voir prop contexteChat ci-dessus -- élargi le 22/08/2026, demande
+  // Bourama).
+  const ID_ONGLETS_DANS_ACTIONS: OngletId[] = ["memoire", "audits", "bureau", "plugins", "claude"];
+  const ongletsRail = contexteChat
+    ? ONGLETS.filter((o) => !ID_ONGLETS_DANS_ACTIONS.includes(o.id))
+    : ONGLETS;
+  const ongletsDansActions = contexteChat
+    ? ONGLETS.filter((o) => ID_ONGLETS_DANS_ACTIONS.includes(o.id))
+    : [];
   const navComplete = [{ href: "/", label: "Accueil", Icone: Home }, ...ongletsRail];
 
   return (
@@ -373,21 +392,6 @@ export function AppSidebar({
           </>
         )}
 
-        {!contexteChat && (
-          <>
-            <button
-              onClick={() => ctxChat?.setEtat("plein_ecran")}
-              className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-            >
-              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                <History size={18} className="transition-transform duration-300 group-hover:rotate-45" />
-              </span>
-              <LibelleRail ouverte={ouverte}>Historique</LibelleRail>
-            </button>
-            <div className="my-2 h-px w-full bg-dj-bordure" />
-          </>
-        )}
-
         {navComplete.map((o, i) => (
           <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENTS_NAV[i % MOUVEMENTS_NAV.length]} />
         ))}
@@ -421,7 +425,11 @@ export function AppSidebar({
                       <Link
                         key={o.href}
                         href={o.href}
-                        onClick={() => setActionsDeplie(false)}
+                        onClick={(e) => {
+                          setActionsDeplie(false);
+                          e.preventDefault();
+                          ouvrirFenetre(o.id);
+                        }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
                           actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"
                         }`}
@@ -557,22 +565,6 @@ export function AppSidebar({
               </>
             )}
 
-            {!contexteChat && (
-              <>
-                <button
-                  onClick={() => {
-                    ctxChat?.setEtat("plein_ecran");
-                    setOuverte(false);
-                  }}
-                  className="group flex w-full items-center gap-2 rounded-xl px-2 py-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-                >
-                  <History size={18} className="flex-shrink-0" />
-                  <span className="text-sm">Historique</span>
-                </button>
-                <div className="my-2 h-px w-full bg-dj-bordure" />
-              </>
-            )}
-
             {navComplete.map((o, i) => (
               <LienOnglet key={o.href} onglet={o} mouvement={MOUVEMENTS_NAV[i % MOUVEMENTS_NAV.length]} mobile />
             ))}
@@ -601,9 +593,11 @@ export function AppSidebar({
                       <Link
                         key={o.href}
                         href={o.href}
-                        onClick={() => {
+                        onClick={(e) => {
                           setActionsDeplie(false);
                           setOuverte(false);
+                          e.preventDefault();
+                          ouvrirFenetre(o.id);
                         }}
                         className={`group relative flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
                           actif ? "text-dj-accent-1" : "text-dj-texte-muet hover:bg-dj-surface-haute hover:text-dj-texte"

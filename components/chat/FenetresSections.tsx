@@ -1,0 +1,132 @@
+"use client";
+
+import { useRef } from "react";
+import { X } from "lucide-react";
+import { ONGLETS, type OngletId } from "@/components/AppSidebar";
+import { useFenetres } from "@/lib/contexteFenetres";
+import { MesCodes } from "@/components/MesCodes";
+import { EspaceEntrerCode } from "@/components/EspaceEntrerCode";
+import { MesComportements } from "@/components/MesComportements";
+import { EspaceBibliotheque } from "@/components/EspaceBibliotheque";
+import { EspaceNotes } from "@/components/EspaceNotes";
+import { MaMemoire } from "@/components/MaMemoire";
+import { ProgrammesRecus } from "@/components/ProgrammesRecus";
+import { EspaceProgramme } from "@/components/EspaceProgramme";
+import { EspacePlugins } from "@/components/EspacePlugins";
+import { EspaceAudits } from "@/components/EspaceAudits";
+import { EspaceConnecterClaude } from "@/components/EspaceConnecterClaude";
+
+const AGENT_ID = "clovis";
+
+// Contenu de chaque section (22/08/2026) -- repris tel quel des pages
+// app/(app)/*/page.tsx (mêmes composants, mêmes props), MOINS le
+// conteneur SectionPage (le titre y fait doublon avec la barre de titre
+// de la fenêtre flottante elle-même, voir plus bas). "Notes" reste hors
+// SectionPage comme sur sa vraie page (canevas plein, décision UX
+// explicite de Bourama, voir app/(app)/notes/page.tsx).
+const CONTENU_PAR_ONGLET: Record<OngletId, React.ReactNode> = {
+  bureau: (
+    <div className="flex flex-col gap-4">
+      <MesCodes />
+      <EspaceEntrerCode />
+    </div>
+  ),
+  comportements: <MesComportements agentId={AGENT_ID} />,
+  bibliotheque: <EspaceBibliotheque />,
+  notes: <EspaceNotes />,
+  memoire: <MaMemoire />,
+  programme: (
+    <>
+      <ProgrammesRecus />
+      <EspaceProgramme />
+    </>
+  ),
+  plugins: <EspacePlugins />,
+  audits: <EspaceAudits />,
+  claude: <EspaceConnecterClaude />,
+};
+
+const LABEL_PAR_ONGLET: Record<OngletId, { label: string; Icone: (typeof ONGLETS)[number]["Icone"] }> =
+  Object.fromEntries(ONGLETS.map((o) => [o.id, { label: o.label, Icone: o.Icone }])) as Record<
+    OngletId,
+    { label: string; Icone: (typeof ONGLETS)[number]["Icone"] }
+  >;
+
+// "Notes" occupe tout l'espace disponible sur sa vraie page (canevas
+// plein Notion-like) -- une fenêtre flottante plus large lui va mieux
+// qu'une fenêtre étroite où son propre rail interne serait à l'étroit.
+const ONGLETS_LARGES = new Set<OngletId>(["notes", "programme", "bibliotheque"]);
+
+function FenetreSection({ cle, ongletId, x, y, z }: { cle: string; ongletId: OngletId; x: number; y: number; z: number }) {
+  const { fermer, monterAuPremierPlan, deplacer } = useFenetres();
+  const glissement = useRef<{ x: number; y: number; fx: number; fy: number } | null>(null);
+  const { label, Icone } = LABEL_PAR_ONGLET[ongletId];
+  const large = ONGLETS_LARGES.has(ongletId);
+
+  function demarrerGlissement(e: React.MouseEvent) {
+    // Bouton gauche uniquement -- laisse clic droit/milieu tranquilles.
+    if (e.button !== 0) return;
+    monterAuPremierPlan(cle);
+    glissement.current = { x: e.clientX, y: e.clientY, fx: x, fy: y };
+    function onMove(ev: MouseEvent) {
+      if (!glissement.current) return;
+      const dx = ev.clientX - glissement.current.x;
+      const dy = ev.clientY - glissement.current.y;
+      // Garde la fenêtre au moins partiellement visible (barre de titre
+      // jamais complètement hors écran, ni au-dessus du haut visible).
+      const nx = Math.max(-400, glissement.current.fx + dx);
+      const ny = Math.max(0, glissement.current.fy + dy);
+      deplacer(cle, nx, ny);
+    }
+    function onUp() {
+      glissement.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  return (
+    <div
+      onMouseDownCapture={() => monterAuPremierPlan(cle)}
+      style={{ left: x, top: y, zIndex: 120 + z }}
+      className={`fixed flex max-h-[85vh] flex-col overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_16px_60px_rgba(0,0,0,0.5)] ${
+        large ? "h-[75vh] w-[min(90vw,760px)]" : "h-[70vh] w-[min(90vw,480px)]"
+      }`}
+    >
+      <div
+        onMouseDown={demarrerGlissement}
+        className="flex flex-shrink-0 cursor-grab select-none items-center gap-2 border-b border-dj-bordure bg-dj-surface-haute px-3 py-2 active:cursor-grabbing"
+      >
+        <Icone size={15} className="flex-shrink-0 text-dj-texte-muet" />
+        <span className="flex-1 truncate text-sm font-medium text-dj-texte">{label}</span>
+        <button
+          onClick={() => fermer(cle)}
+          title="Fermer"
+          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-dj-texte-muet transition-colors hover:bg-dj-surface hover:text-dj-texte"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
+        <div className="mx-auto w-full max-w-xl">{CONTENU_PAR_ONGLET[ongletId]}</div>
+      </div>
+    </div>
+  );
+}
+
+// Monté une seule fois dans AppShell.tsx, au même niveau que ChatFlottant
+// (z-[110]) -- les fenêtres vivent au-dessus (z-index 120+) et
+// persistent indépendamment de l'état du chat (fermer/réduire le chat ne
+// les referme pas ; seul leur propre bouton Fermer le fait).
+export function FenetresSections() {
+  const { fenetres } = useFenetres();
+  return (
+    <>
+      {fenetres.map((f) => (
+        <FenetreSection key={f.cle} cle={f.cle} ongletId={f.ongletId} x={f.x} y={f.y} z={f.z} />
+      ))}
+    </>
+  );
+}

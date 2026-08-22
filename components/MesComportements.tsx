@@ -3,6 +3,7 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import {
   Trash2, Plus, X, Check, ScrollText, FileCode2, Loader2, Link2, Unlink, Eye, Code2, Upload, ToggleLeft, ToggleRight,
+  Download, ClipboardCheck, Sparkles, ChevronDown, ChevronRight,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -95,6 +96,55 @@ function extraireCorpsSkill(skillMd: string): string {
   return correspondance ? correspondance[1].trim() : skillMd;
 }
 
+// Puce d'un skill dans la liste (extrait le 22/08/2026 pour être réutilisé
+// à la fois dans la liste plate normale et dans les groupes par matière de
+// l'onglet "Audits" -- même rendu, une seule source de vérité).
+function ChipComportement({
+  c,
+  onOuvrir,
+  onToggleActif,
+}: {
+  c: Comportement;
+  onOuvrir: (c: Comportement) => void;
+  onToggleActif: (c: Comportement, e: MouseEvent) => void;
+}) {
+  return (
+    <button
+      onClick={() => onOuvrir(c)}
+      title="Ouvrir et modifier"
+      className={`group flex max-w-[280px] flex-col gap-1 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute ${
+        c.actif ? "" : "opacity-50"
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <ScrollText size={14} className="flex-shrink-0 text-dj-accent-1" />
+        <span className="min-w-0 flex-1 truncate text-sm text-dj-texte">{c.nom || c.description}</span>
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => onToggleActif(c, e)}
+          title={c.actif ? "Désactiver (ne sera plus proposé à l'IA)" : "Activer"}
+          className="flex flex-shrink-0 items-center text-dj-texte-muet hover:text-dj-texte disabled:opacity-40"
+        >
+          {c.actif ? <ToggleRight size={18} className="text-dj-accent-1" /> : <ToggleLeft size={18} />}
+        </span>
+      </div>
+      {/* Badge de rattachement (lien_libelle) sur sa propre ligne, sous le
+          nom -- CORRECTIF 22/08/2026 (Bourama : "le texte des sources
+          déborde, on ne voit plus les noms") : avant, ce badge partageait
+          la ligne du nom en flex-shrink-0, donc un chapitre au nom long
+          écrasait le nom du skill au lieu de se réduire lui-même. Ici il a
+          sa propre largeur (celle du chip) et sa propre troncature. */}
+      {c.lien_libelle && (
+        <span className="ml-[22px] flex min-w-0 items-center gap-1 self-start rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
+          <Link2 size={9} className="flex-shrink-0" />
+          <span className="min-w-0 truncate">{c.lien_libelle}</span>
+        </span>
+      )}
+    </button>
+  );
+}
+
 export function MesComportements({ agentId }: { agentId: string }) {
   const [liste, setListe] = useState<Comportement[] | undefined>(undefined);
 
@@ -103,6 +153,47 @@ export function MesComportements({ agentId }: { agentId: string }) {
   // public (nouveau composant ComportementsPublics.tsx, même esprit que
   // EspacePlugins.tsx pour les plugins).
   const [vue, setVue] = useState<"mes-comportements" | "public">("mes-comportements");
+
+  // 22/08/2026, demande Bourama : distinguer les 4 origines d'un skill
+  // (créé directement / téléchargé du public / attaché à un emplacement
+  // du programme / issu d'un audit) par des onglets-filtres au-dessus de
+  // la liste. Non exclusif par design (confirmé par Bourama) : un skill
+  // peut correspondre à plusieurs onglets à la fois -- ex: téléchargé du
+  // public PUIS attaché à un chapitre apparaît dans "Public" ET
+  // "Attachés". Exception volontaire : un skill issu d'un audit a
+  // TOUJOURS un lien_type/lien_id (voir
+  // core/audit_programme.py::_synchroniser_skill_audit), donc il serait
+  // systématiquement compté aussi dans "Attachés" si on ne l'excluait pas
+  // -- choisi de le réserver à "Audits" pour que "Attachés" reste utile
+  // (les dizaines de skills d'audit l'auraient sinon noyé). À ajuster si
+  // Bourama préfère l'inverse.
+  //
+  // Pas de mécanisme i18n branché sur ce composant (même constat que
+  // EspacePlugins.tsx, vérifié 22/08) -- libellés en français en dur
+  // comme le reste du fichier, à signaler à Bourama si la traduction
+  // doit être ajoutée plus tard.
+  type FiltreOrigine = "tous" | "crees" | "public" | "attaches" | "audits";
+  const [filtreOrigine, setFiltreOrigine] = useState<FiltreOrigine>("tous");
+
+  // 22/08/2026, demande Bourama : groupes repliables par matière dans
+  // l'onglet "Audits" -- fermés par défaut (potentiellement des dizaines
+  // de chapitres), clé = matiere_id (ou "sans-matiere" en repli).
+  const [groupesOuverts, setGroupesOuverts] = useState<Set<string>>(new Set());
+
+  function correspondFiltre(c: Comportement, f: FiltreOrigine): boolean {
+    switch (f) {
+      case "tous":
+        return true;
+      case "crees":
+        return !c.depuis_audit && !c.depuis_public;
+      case "public":
+        return c.depuis_public;
+      case "attaches":
+        return !c.depuis_audit && !!c.lien_type && !!c.lien_id;
+      case "audits":
+        return c.depuis_audit;
+    }
+  }
 
   // Toggle actif/inactif par comportement (21/08, demande Bourama :
   // "ajoute activer et désactiver aux comportements") -- suivi par id
@@ -406,37 +497,121 @@ export function MesComportements({ agentId }: { agentId: string }) {
             Nouveau comportement
           </button>
 
+      {liste.length > 0 && (
+        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtrer par origine">
+          {(
+            [
+              { valeur: "tous", libelle: "Tous", icone: null },
+              { valeur: "crees", libelle: "Créés", icone: Sparkles },
+              { valeur: "public", libelle: "Public", icone: Download },
+              { valeur: "attaches", libelle: "Attachés", icone: Link2 },
+              { valeur: "audits", libelle: "Audits", icone: ClipboardCheck },
+            ] as const
+          ).map(({ valeur, libelle, icone: Icone }) => {
+            const compte = liste.filter((c) => correspondFiltre(c, valeur)).length;
+            const actif = filtreOrigine === valeur;
+            return (
+              <button
+                key={valeur}
+                role="tab"
+                aria-selected={actif}
+                onClick={() => setFiltreOrigine(valeur)}
+                disabled={valeur !== "tous" && compte === 0}
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-default disabled:opacity-40 ${
+                  actif
+                    ? "border-dj-accent-1 bg-dj-accent-1/10 text-dj-texte"
+                    : "border-dj-bordure text-dj-texte-muet hover:border-dj-bordure-forte hover:text-dj-texte"
+                }`}
+              >
+                {Icone && <Icone size={12} />}
+                {libelle}
+                <span className="text-[10px] text-dj-texte-muet">{compte}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {liste.length === 0 && <p className="text-sm text-dj-texte-muet">Rien ici pour l&apos;instant.</p>}
 
-      {liste.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {liste.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => ouvrirEdition(c)}
-              title="Ouvrir et modifier"
-              className={`group flex max-w-[280px] items-center gap-2 rounded-full border border-dj-bordure bg-dj-surface px-3.5 py-2 text-left transition-colors hover:border-dj-bordure-forte hover:bg-dj-surface-haute ${
-                c.actif ? "" : "opacity-50"
-              }`}
-            >
-              <ScrollText size={14} className="flex-shrink-0 text-dj-accent-1" />
-              <span className="min-w-0 truncate text-sm text-dj-texte">{c.nom || c.description}</span>
-              {c.lien_libelle && (
-                <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-dj-surface-haute px-2 py-0.5 text-[10px] text-dj-texte-muet">
-                  <Link2 size={9} /> {c.lien_libelle}
-                </span>
-              )}
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => toggleActif(c, e)}
-                title={c.actif ? "Désactiver (ne sera plus proposé à l'IA)" : "Activer"}
-                className="flex flex-shrink-0 items-center text-dj-texte-muet hover:text-dj-texte disabled:opacity-40"
-              >
-                {c.actif ? <ToggleRight size={18} className="text-dj-accent-1" /> : <ToggleLeft size={18} />}
-              </span>
-            </button>
+      {liste.length > 0 && liste.filter((c) => correspondFiltre(c, filtreOrigine)).length === 0 && (
+        <p className="text-sm text-dj-texte-muet">Aucun skill dans cette catégorie pour l&apos;instant.</p>
+      )}
+
+      {liste.length > 0 && filtreOrigine !== "audits" && (
+        <div key={filtreOrigine} className="flex animate-dj-fade-in-rapide flex-wrap gap-2">
+          {liste.filter((c) => correspondFiltre(c, filtreOrigine)).map((c) => (
+            <ChipComportement key={c.id} c={c} onOuvrir={ouvrirEdition} onToggleActif={toggleActif} />
           ))}
+        </div>
+      )}
+
+      {/* 22/08/2026, demande Bourama ("les audits regroupés par matière") :
+          dans l'onglet Audits, "Vue d'ensemble" (skills liés à une matière
+          entière ou au programme entier) toujours visible en premier, puis
+          un groupe repliable par matière pour les skills liés à un
+          chapitre précis -- sinon la liste (un skill par chapitre, donc
+          potentiellement des dizaines) est illisible en vrac. */}
+      {liste.length > 0 && filtreOrigine === "audits" && (
+        <div key="audits" className="flex animate-dj-fade-in-rapide flex-col gap-4">
+          {(() => {
+            const audits = liste.filter((c) => correspondFiltre(c, "audits"));
+            const vueEnsemble = audits.filter((c) => c.lien_type !== "chapitre");
+            const parChapitre = audits.filter((c) => c.lien_type === "chapitre");
+            const groupes = new Map<string, { nom: string; items: Comportement[] }>();
+            for (const c of parChapitre) {
+              const cle = c.matiere_id || "sans-matiere";
+              const nom = c.matiere_nom || "Autres chapitres";
+              if (!groupes.has(cle)) groupes.set(cle, { nom, items: [] });
+              groupes.get(cle)!.items.push(c);
+            }
+            const groupesTries = [...groupes.entries()].sort((a, b) => a[1].nom.localeCompare(b[1].nom));
+
+            return (
+              <>
+                {vueEnsemble.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-medium text-dj-texte-muet">Vue d&apos;ensemble</p>
+                    <div className="flex flex-wrap gap-2">
+                      {vueEnsemble.map((c) => (
+                        <ChipComportement key={c.id} c={c} onOuvrir={ouvrirEdition} onToggleActif={toggleActif} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {groupesTries.map(([cle, groupe]) => {
+                  const ouvert = groupesOuverts.has(cle);
+                  return (
+                    <div key={cle} className="flex flex-col gap-2">
+                      <button
+                        onClick={() =>
+                          setGroupesOuverts((prec) => {
+                            const suivant = new Set(prec);
+                            if (suivant.has(cle)) suivant.delete(cle);
+                            else suivant.add(cle);
+                            return suivant;
+                          })
+                        }
+                        className="flex w-fit items-center gap-1.5 text-xs font-medium text-dj-texte-muet transition-colors hover:text-dj-texte"
+                      >
+                        {ouvert ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        {groupe.nom}
+                        <span className="text-[10px] text-dj-texte-muet">{groupe.items.length}</span>
+                      </button>
+                      {ouvert && (
+                        <div className="flex animate-dj-fade-in-rapide flex-wrap gap-2 pl-1">
+                          {groupe.items.map((c) => (
+                            <ChipComportement key={c.id} c={c} onOuvrir={ouvrirEdition} onToggleActif={toggleActif} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
       )}
 
@@ -630,18 +805,28 @@ export function MesComportements({ agentId }: { agentId: string }) {
                 </div>
               )}
               <div className="flex w-full flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                {erreurSkill ? (
-                  <p className="text-xs text-[var(--dj-erreur)]">{erreurSkill}</p>
+                {erreurSkill || erreurPublication ? (
+                  <p className="text-xs text-[var(--dj-erreur)]">{erreurSkill || erreurPublication}</p>
                 ) : (
                   <span className="hidden sm:block" />
                 )}
-                <button
-                  onClick={enregistrerSkill}
-                  disabled={skillEnregistrementEnCours || skillChargement || !skillOuvert.trim()}
-                  className="flex items-center gap-1.5 self-end rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50 sm:self-auto"
-                >
-                  <Check size={14} /> {skillEnregistrementEnCours ? "Enregistrement…" : "Enregistrer le skill"}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={publier}
+                    disabled={publicationEnCours || skillEnregistrementEnCours || skillChargement}
+                    title="Publier une copie dans le catalogue public -- n'importe qui pourra l'activer"
+                    className="flex items-center gap-1.5 rounded-lg border border-dj-bordure px-3 py-2 text-sm text-dj-texte transition-colors hover:border-dj-bordure-forte disabled:opacity-50"
+                  >
+                    <Upload size={14} /> {publicationEnCours ? "Publication…" : publie ? "Publié !" : "Publier"}
+                  </button>
+                  <button
+                    onClick={enregistrerSkill}
+                    disabled={skillEnregistrementEnCours || skillChargement || !skillOuvert.trim()}
+                    className="flex items-center gap-1.5 rounded-lg bg-dj-accent-1 px-4 py-2 text-sm font-semibold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+                  >
+                    <Check size={14} /> {skillEnregistrementEnCours ? "Enregistrement…" : "Enregistrer le skill"}
+                  </button>
+                </div>
               </div>
             </>
           )}

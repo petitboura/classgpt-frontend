@@ -5,8 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
-  ChevronsLeft,
-  ChevronsRight,
   LogOut,
   LogIn,
   Home,
@@ -25,6 +23,7 @@ import {
   NotebookPen,
   MessageSquarePlus,
   History,
+  PanelLeft,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Logo } from "@/components/Logo";
@@ -291,11 +290,7 @@ export function AppSidebar({
         aria-label={ouverte ? "Replier le panneau" : "Déplier le panneau"}
         className="group fixed left-2 top-2 z-40 flex h-8 w-8 items-center justify-center rounded-md bg-black/35 text-white hover:bg-black/50 md:hidden"
       >
-        {ouverte ? (
-          <ChevronsLeft size={16} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
-        ) : (
-          <ChevronsRight size={16} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-        )}
+        <PanelLeft size={16} className="transition-transform duration-200 group-hover:scale-95" />
       </button>
 
       <div
@@ -310,11 +305,7 @@ export function AppSidebar({
           className="group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
         >
           <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-            {ouverte ? (
-              <ChevronsLeft size={18} className="transition-transform duration-200 group-hover:-translate-x-0.5" />
-            ) : (
-              <ChevronsRight size={18} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-            )}
+            <PanelLeft size={18} className="transition-transform duration-200 group-hover:scale-95" />
           </span>
           <LibelleRail ouverte={ouverte}>Replier</LibelleRail>
         </button>

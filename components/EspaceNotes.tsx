@@ -632,12 +632,12 @@ function PanneauPage({
   const [page, setPage] = useState<PageDetail | null>(null);
   const [titreEnEdition, setTitreEnEdition] = useState("");
   const [menuAjoutOuvert, setMenuAjoutOuvert] = useState(false);
-  const [nouveauBlocId, setNouveauBlocId] = useState<string | null>(null);
+  const [activation, setActivation] = useState<{ id: string; position: "debut" | "fin" } | null>(null);
 
   useEffect(() => {
     setPage(null);
     setMenuAjoutOuvert(false);
-    setNouveauBlocId(null);
+    setActivation(null);
     obtenirPage(pageId).then((p) => {
       setPage(p);
       setTitreEnEdition(p.titre);
@@ -682,7 +682,34 @@ function PanneauPage({
       }).filter((p): p is Promise<BlocEspace> => p !== null)
     );
     await recharger();
-    setNouveauBlocId(nouveau.id);
+    setActivation({ id: nouveau.id, position: "debut" });
+  }
+
+  // Navigation clavier flèche haut/bas entre blocs de même parent --
+  // permet de passer d'un bloc à l'autre sans cliquer, comme Notion.
+  function naviguerVertical(depuisId: string, direction: "haut" | "bas") {
+    if (!page) return;
+    const bloc = page.blocs.find((b) => b.id === depuisId);
+    if (!bloc) return;
+    const freres = page.blocs.filter((b) => (b.parent_bloc_id ?? null) === (bloc.parent_bloc_id ?? null));
+    const index = freres.findIndex((b) => b.id === depuisId);
+    const cible = direction === "haut" ? freres[index - 1] : freres[index + 1];
+    if (!cible) return;
+    setActivation({ id: cible.id, position: direction === "haut" ? "fin" : "debut" });
+  }
+
+  // Retour arrière sur un bloc vide : le supprime et recule dans le
+  // bloc précédent (fin de son texte), sans clic -- comme Notion.
+  async function supprimerEtReculer(depuisId: string) {
+    if (!page) return;
+    const bloc = page.blocs.find((b) => b.id === depuisId);
+    if (!bloc) return;
+    const freres = page.blocs.filter((b) => (b.parent_bloc_id ?? null) === (bloc.parent_bloc_id ?? null));
+    const index = freres.findIndex((b) => b.id === depuisId);
+    const precedent = freres[index - 1];
+    await supprimerBloc(depuisId);
+    await recharger();
+    if (precedent) setActivation({ id: precedent.id, position: "fin" });
   }
 
   // Choix dans le menu "+" : image/fichier passent par un vrai upload
@@ -700,7 +727,7 @@ function PanneauPage({
         const freres = page.blocs.filter((b) => (b.parent_bloc_id ?? null) === parentBlocId);
         const nouveau = await uploaderBlocFichier(pageId, type, f, freres.length, parentBlocId);
         await recharger();
-        setNouveauBlocId(nouveau.id);
+        setActivation({ id: nouveau.id, position: "debut" });
       };
       input.click();
       return;
@@ -788,10 +815,12 @@ function PanneauPage({
           basesDeLaPage={basesDeLaPage}
           onChange={recharger}
           onDeplacer={deplacerBloc}
-          onAjouterA={(index, parentId) => setMenuAjoutOuvertPour(index, parentId)}
+          onAjouterA={(index, parentId, type) => inserterBlocA(index, type, parentId)}
           onNaviguer={onNaviguer}
-          nouveauBlocId={nouveauBlocId}
-          onAutoFocusConsomme={() => setNouveauBlocId(null)}
+          onNaviguerVertical={naviguerVertical}
+          onSupprimerEtReculer={supprimerEtReculer}
+          activation={activation}
+          onActivationConsommee={() => setActivation(null)}
         />
       </div>
 
@@ -844,13 +873,6 @@ function PanneauPage({
       </div>
     </div>
   );
-
-  // NOTE : la fonction ci-dessous existe pour satisfaire la prop
-  // onAjouterA passée à ListeBlocs -- en pratique, chaque bascule gère
-  // son propre menu localement (voir ListeBlocs), cette fonction n'est
-  // donc jamais réellement invoquée pour l'instant mais reste le point
-  // d'extension si un déclenchement centralisé devient utile plus tard.
-  function setMenuAjoutOuvertPour(_index: number, _parentId: string | null) {}
 }
 
 // ---------------------------------------------------------------------
@@ -866,8 +888,10 @@ function ListeBlocs({
   onDeplacer,
   onAjouterA,
   onNaviguer,
-  nouveauBlocId,
-  onAutoFocusConsomme,
+  onNaviguerVertical,
+  onSupprimerEtReculer,
+  activation,
+  onActivationConsommee,
 }: {
   tousLesBlocs: BlocEspace[];
   parentBlocId: string | null;
@@ -876,8 +900,10 @@ function ListeBlocs({
   onDeplacer: (idSource: string, idCible: string) => void;
   onAjouterA: (indexDansFreres: number, parentId: string | null, type: string) => void;
   onNaviguer: (id: string) => void;
-  nouveauBlocId: string | null;
-  onAutoFocusConsomme: () => void;
+  onNaviguerVertical: (depuisId: string, direction: "haut" | "bas") => void;
+  onSupprimerEtReculer: (depuisId: string) => void;
+  activation: { id: string; position: "debut" | "fin" } | null;
+  onActivationConsommee: () => void;
 }) {
   const freres = tousLesBlocs.filter((b) => (b.parent_bloc_id ?? null) === parentBlocId);
   const [menuOuvertPourIndex, setMenuOuvertPourIndex] = useState<number | null>(null);
@@ -913,8 +939,11 @@ function ListeBlocs({
                 onChange={onChange}
                 onNouveauBlocApres={(type) => onAjouterA(i + 1, parentBlocId, type ?? "texte")}
                 onNaviguer={onNaviguer}
-                autoFocus={b.id === nouveauBlocId}
-                onAutoFocusConsomme={onAutoFocusConsomme}
+                onNaviguerVertical={(direction) => onNaviguerVertical(b.id, direction)}
+                onSupprimerEtReculer={() => onSupprimerEtReculer(b.id)}
+                estActif={activation?.id === b.id}
+                positionActivation={activation?.id === b.id ? activation.position : "debut"}
+                onActivationConsommee={onActivationConsommee}
               />
             </div>
           </div>
@@ -929,8 +958,10 @@ function ListeBlocs({
                 onDeplacer={onDeplacer}
                 onAjouterA={onAjouterA}
                 onNaviguer={onNaviguer}
-                nouveauBlocId={nouveauBlocId}
-                onAutoFocusConsomme={onAutoFocusConsomme}
+                onNaviguerVertical={onNaviguerVertical}
+                onSupprimerEtReculer={onSupprimerEtReculer}
+                activation={activation}
+                onActivationConsommee={onActivationConsommee}
               />
               <div className="relative ml-4 mt-0.5 inline-block pl-3">
                 <button
@@ -1056,18 +1087,24 @@ function LigneBloc({
   onChange,
   onNouveauBlocApres,
   onNaviguer,
-  autoFocus,
-  onAutoFocusConsomme,
+  onNaviguerVertical,
+  onSupprimerEtReculer,
+  estActif,
+  positionActivation,
+  onActivationConsommee,
 }: {
   bloc: BlocEspace;
   basesDeLaPage: { blocId: string; baseId: string }[];
   onChange: () => void;
   onNouveauBlocApres: (type?: string) => void;
   onNaviguer: (id: string) => void;
-  autoFocus: boolean;
-  onAutoFocusConsomme: () => void;
+  onNaviguerVertical: (direction: "haut" | "bas") => void;
+  onSupprimerEtReculer: () => void;
+  estActif: boolean;
+  positionActivation: "debut" | "fin";
+  onActivationConsommee: () => void;
 }) {
-  const [enEdition, setEnEdition] = useState(autoFocus);
+  const [enEdition, setEnEdition] = useState(estActif);
   const cle = bloc.type === "equation" ? "latex" : "texte";
   const [valeur, setValeur] = useState((bloc.contenu?.[cle] as string) ?? "");
   const [selection, setSelection] = useState<{ debut: number; fin: number } | null>(null);
@@ -1075,13 +1112,25 @@ function LigneBloc({
   const [resultatsLien, setResultatsLien] = useState<PageEspace[]>([]);
   const refZone = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
 
+  // Un bloc "activé" (nouveau bloc créé par Entrée, ou cible d'une
+  // navigation flèche haut/bas) passe en édition puis récupère le focus
+  // avec le curseur au bon endroit -- sans clic, comme Notion. Deux
+  // temps : (1) passer en édition pour que le textarea/input existe
+  // dans le DOM, (2) le focuser une fois qu'il existe.
   useEffect(() => {
-    if (autoFocus && refZone.current) {
-      refZone.current.focus();
-      onAutoFocusConsomme();
-    }
+    if (estActif && !enEdition && bloc.type !== "bascule") setEnEdition(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [estActif]);
+
+  useEffect(() => {
+    if (!estActif) return;
+    const zone = refZone.current;
+    if (!zone || document.activeElement === zone) return;
+    zone.focus();
+    const pos = positionActivation === "debut" ? 0 : valeur.length;
+    if ("setSelectionRange" in zone) zone.setSelectionRange(pos, pos);
+    onActivationConsommee();
+  });
 
   useEffect(() => {
     if (!lienTrigger) {
@@ -1167,6 +1216,36 @@ function LigneBloc({
       }
       return;
     }
+
+    const zone = refZone.current;
+    const curseur = zone?.selectionStart ?? 0;
+    const finSelection = zone?.selectionEnd ?? 0;
+    const pasDeSelection = curseur === finSelection;
+
+    // Flèche haut sur la première ligne (ou bas sur la dernière) du
+    // bloc -> passe au bloc précédent/suivant, sans clic, comme Notion.
+    if (e.key === "ArrowUp" && pasDeSelection && valeur.slice(0, curseur).indexOf("\n") === -1) {
+      e.preventDefault();
+      enregistrer();
+      onNaviguerVertical("haut");
+      return;
+    }
+    if (e.key === "ArrowDown" && pasDeSelection && valeur.slice(curseur).indexOf("\n") === -1) {
+      e.preventDefault();
+      enregistrer();
+      onNaviguerVertical("bas");
+      return;
+    }
+    // Retour arrière sur un bloc déjà vide -> le supprime et recule
+    // dans le bloc précédent, comme Notion (jamais pour "bascule",
+    // qui peut contenir d'autres blocs -- suppression accidentelle
+    // trop risquée pour un simple Retour arrière).
+    if (e.key === "Backspace" && valeur === "" && curseur === 0 && finSelection === 0 && bloc.type !== "bascule") {
+      e.preventDefault();
+      onSupprimerEtReculer();
+      return;
+    }
+
     // Ctrl/Cmd+Entrée, comme Shift+Entrée : saut de ligne DANS le bloc,
     // ne le quitte pas -- ne pas intercepter, laisser le textarea gérer.
     if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
@@ -1222,6 +1301,7 @@ function LigneBloc({
           {bloc.contenu?.ouvert ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </button>
         <input
+          ref={refZone as React.RefObject<HTMLInputElement>}
           value={valeur}
           onChange={(e) => setValeur(e.target.value)}
           onBlur={async () => {
@@ -1234,6 +1314,18 @@ function LigneBloc({
               e.preventDefault();
               e.currentTarget.blur();
               onNouveauBlocApres();
+              return;
+            }
+            if (e.key === "ArrowUp" && e.currentTarget.selectionStart === e.currentTarget.selectionEnd) {
+              e.preventDefault();
+              e.currentTarget.blur();
+              onNaviguerVertical("haut");
+              return;
+            }
+            if (e.key === "ArrowDown" && e.currentTarget.selectionStart === e.currentTarget.selectionEnd) {
+              e.preventDefault();
+              e.currentTarget.blur();
+              onNaviguerVertical("bas");
             }
           }}
           placeholder="Bascule sans titre"

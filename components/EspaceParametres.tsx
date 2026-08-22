@@ -553,9 +553,18 @@ export function EspaceParametres() {
       <EnTete titre="À propos" onRetour={() => setVue("liste")} />
       <div className="flex flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4 text-sm">
         <span className="text-dj-texte">Clovis</span>
-        <span className="text-xs text-dj-texte-muet">
-          Rien d&apos;autre pour l&apos;instant, en attente du contenu (mentions légales, version) auprès de Bourama.
-        </span>
+        <button
+          onClick={() => router.push("/cgu")}
+          className="w-fit text-dj-accent-1 hover:text-dj-accent-2"
+        >
+          Conditions générales d&apos;utilisation
+        </button>
+        <button
+          onClick={() => router.push("/copyright")}
+          className="w-fit text-dj-accent-1 hover:text-dj-accent-2"
+        >
+          Droit d&apos;auteur
+        </button>
       </div>
     </div>
   );

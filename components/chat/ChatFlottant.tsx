@@ -97,7 +97,10 @@ export function ChatFlottant({
         const detail: AgentDetail = await appelerApi(`/api/agents/${AGENT_INVITE_ID}`);
         const [outils, fils] = await Promise.all([
           lireOutilsChatAgent(AGENT_INVITE_ID).catch(() => ({ outils: [], actions_locales: [] })),
-          appelerApi(`/api/historique/${AGENT_INVITE_ID}/conversations`).catch(() => [] as FilConversation[]),
+          appelerApi(`/api/historique/${AGENT_INVITE_ID}/conversations`).catch((e) => {
+            console.error("Erreur chargement historique conversations:", e);
+            return [] as FilConversation[];
+          }),
         ]);
         if (!annule) {
           setAgent(detail);

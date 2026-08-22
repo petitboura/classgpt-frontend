@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useFenetres } from "@/lib/contexteFenetres";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -25,6 +25,7 @@ import {
   MessageSquarePlus,
   History,
   PanelLeft,
+  Settings,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { lireMonProfil } from "@/lib/api";
@@ -132,47 +133,117 @@ function LibelleRail({ ouverte, children }: { ouverte: boolean; children: React.
   );
 }
 
-// Avatar cliquable vers /parametres, desktop (rail replié/déplié) et
-// mobile (panneau plein écran) -- voir note plus haut sur avatarUrl/
-// nomAffiche. Repli sur une bulle avec l'initiale du nom si pas de photo
-// (même logique que components/EspaceParametres.tsx), et sur "Mon
-// compte" si le nom n'est pas encore chargé/renseigné.
-function BoutonProfil({
+// Menu déroulant ouvert au clic sur la photo de profil, en bas de la
+// sidebar (22/08/2026, correctif demande Bourama : un clic sur la photo
+// ne doit PAS naviguer directement, il doit ouvrir un petit menu -- même
+// pattern que Slack/Discord/Notion, et même mécanique de popover que le
+// menu "Actions" juste au dessus dans ce fichier : ref + état booléen +
+// fermeture au clic extérieur, popover ancré juste au dessus du bouton).
+function MenuProfil({
   avatarUrl,
   nomAffiche,
   ouverte,
+  LibelleRail,
   mobile = false,
-  onClic,
+  onNaviguerVersParametres,
+  onSeDeconnecter,
 }: {
   avatarUrl: string | null;
   nomAffiche: string | null;
   ouverte: boolean;
+  LibelleRail: React.ComponentType<{ ouverte: boolean; children: React.ReactNode }>;
   mobile?: boolean;
-  onClic?: () => void;
+  onNaviguerVersParametres: () => void;
+  onSeDeconnecter: () => void;
 }) {
+  const [deplie, setDeplie] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const libelle = nomAffiche || "Mon compte";
-  return (
-    <Link
-      href="/parametres"
-      onClick={onClic}
-      className={`group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
-        mobile ? "px-2" : ""
-      }`}
-    >
-      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-        <span className="h-6 w-6 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute transition-transform duration-200 group-hover:scale-110">
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage, hôte dynamique
-            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-dj-texte-muet">
-              {libelle.trim().charAt(0).toUpperCase()}
-            </span>
-          )}
+
+  useEffect(() => {
+    if (!deplie) return;
+    function onClicExterieur(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setDeplie(false);
+    }
+    document.addEventListener("mousedown", onClicExterieur);
+    return () => document.removeEventListener("mousedown", onClicExterieur);
+  }, [deplie]);
+
+  const Avatar = (
+    <span className="h-6 w-6 flex-shrink-0 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute">
+      {avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage, hôte dynamique
+        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-dj-texte-muet">
+          {libelle.trim().charAt(0).toUpperCase()}
         </span>
-      </span>
-      {mobile ? <span className="text-sm">{libelle}</span> : <LibelleRail ouverte={ouverte}>{libelle}</LibelleRail>}
-    </Link>
+      )}
+    </span>
+  );
+
+  return (
+    <div ref={ref} className={`relative w-full ${mobile ? "" : "mt-2"}`}>
+      <button
+        onClick={() => setDeplie((v) => !v)}
+        className={`group flex w-full items-center gap-2 rounded-xl text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte ${
+          mobile ? "px-2" : ""
+        }`}
+      >
+        <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">{Avatar}</span>
+        {mobile ? <span className="text-sm">{libelle}</span> : <LibelleRail ouverte={ouverte}>{libelle}</LibelleRail>}
+      </button>
+
+      {deplie && (
+        <div
+          className={`absolute bottom-full z-50 mb-2 w-56 animate-dj-fade-in-rapide overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface shadow-[0_8px_30px_rgba(0,0,0,0.35)] ${
+            mobile ? "left-2" : "left-0"
+          }`}
+        >
+          <button
+            onClick={() => {
+              setDeplie(false);
+              onNaviguerVersParametres();
+            }}
+            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-dj-surface-haute"
+          >
+            {Avatar}
+            <div className="flex flex-col overflow-hidden">
+              <span className="truncate text-sm font-medium text-dj-texte">{libelle}</span>
+              <span className="text-xs text-dj-texte-muet">Voir le profil</span>
+            </div>
+          </button>
+
+          <div className="border-t border-dj-bordure" />
+
+          <button
+            onClick={() => {
+              setDeplie(false);
+              onNaviguerVersParametres();
+            }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
+          >
+            <Settings size={16} className="text-dj-texte-muet" />
+            Paramètres
+          </button>
+
+          <ThemeToggle LibelleRail={LibelleRail} ouverte />
+
+          <div className="border-t border-dj-bordure" />
+
+          <button
+            onClick={() => {
+              setDeplie(false);
+              onSeDeconnecter();
+            }}
+            className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[var(--dj-erreur)] transition-colors hover:bg-dj-surface-haute"
+          >
+            <LogOut size={16} />
+            Se déconnecter
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -210,6 +281,7 @@ export function AppSidebar({
   onSelectionnerConversation?: (fil: FilConversation) => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   // 22/08/2026, demande Bourama : remplace le comportement précédent
   // (fermer le chat plein écran au clic sur une section, cf. commit du
   // même jour) -- désormais le clic ouvre la section dans une fenêtre
@@ -579,7 +651,14 @@ export function AppSidebar({
         </button>
 
         {connecte ? (
-          <BoutonProfil avatarUrl={avatarUrl} nomAffiche={nomAffiche} ouverte={ouverte} />
+          <MenuProfil
+            avatarUrl={avatarUrl}
+            nomAffiche={nomAffiche}
+            ouverte={ouverte}
+            LibelleRail={LibelleRail}
+            onNaviguerVersParametres={() => router.push("/parametres")}
+            onSeDeconnecter={seDeconnecter}
+          />
         ) : (
           <div className="flex w-full items-center gap-2 rounded-xl text-dj-texte-muet">
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
@@ -730,13 +809,25 @@ export function AppSidebar({
           <ThemeToggle LibelleRail={LibelleRail} ouverte={ouverte} mobile />
 
           {connecte && (
-            <BoutonProfil
-              avatarUrl={avatarUrl}
-              nomAffiche={nomAffiche}
-              ouverte={ouverte}
-              mobile
-              onClic={() => setOuverte(false)}
-            />
+            <Link
+              href="/parametres"
+              onClick={() => setOuverte(false)}
+              className="flex w-full items-center gap-2 rounded-xl px-2 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+            >
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                <span className="h-6 w-6 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage, hôte dynamique
+                    <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center text-[10px] font-bold text-dj-texte-muet">
+                      {(nomAffiche || "Mon compte").trim().charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </span>
+              </span>
+              <span className="text-sm">{nomAffiche || "Mon compte"}</span>
+            </Link>
           )}
 
           <button

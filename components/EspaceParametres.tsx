@@ -2,41 +2,58 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Monitor, Sun, Moon, MessageCircle, ExternalLink, LogOut, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  Lock,
+  HelpCircle,
+  Info,
+  Trash2,
+  Camera,
+  Monitor,
+  Sun,
+  Moon,
+  MessageCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { appelerApi, appelerApiFichier, lireMonProfil, enregistrerMonProfil, supprimerMonCompte } from "@/lib/api";
+import { appelerApiFichier, lireMonProfil, enregistrerMonProfil, supprimerMonCompte } from "@/lib/api";
 import { messageErreur, ErreurApi } from "@/lib/erreurs";
 import { useTheme, type ChoixTheme } from "@/lib/useTheme";
 import { Skeleton } from "./Skeleton";
 import { CTACompteRequis } from "./CTACompteRequis";
 
 /**
- * Page Paramètres (22/08/2026, demande Bourama : "on met les 7 [sections]
- * sauf abonnement et facturation"). 6 sections : Profil, Préférences,
- * Confidentialité et sécurité, Aide et support, À propos, Zone de danger
- * (déconnexion + suppression de compte).
+ * Page Paramètres (22/08/2026, demande Bourama).
  *
- * Rôles (2026-08-04) volontairement absents ici : vérifié dans
- * app/inscription/page.tsx, l'inscription n'attribue plus aucun rôle
- * ("il n'y a plus de rôle") -- rien à afficher côté profil pour l'instant.
+ * CORRECTIF (22/08/2026, v2) -- la première version empilait 6 gros blocs
+ * éditables directement sur la page ("ça ressemble à rien", retour de
+ * Bourama). Refaite en vraie liste après avoir regardé de vraies captures
+ * (réglages iOS/Android) : une liste de lignes cliquables (icône +
+ * libellé + chevron), chaque ligne ouvre son propre écran. Pas de route
+ * Next.js par écran -- même pattern que le drill-down programme -> matière
+ * -> chapitre dans EspaceProgramme.tsx (état interne `vue` + bouton
+ * retour), pour rester cohérent avec l'existant plutôt que d'inventer un
+ * système de routes.
  *
- * Deux sections restent volontairement minimales, faute de contenu réel
- * à afficher (signalé à Bourama plutôt que d'inventer) :
- * - Aide et support : pas d'adresse ou de formulaire de support dédié
- *   trouvé dans le projet -- pointe vers le chat Clovis en attendant.
- * - À propos : pas de numéro de version destiné aux utilisateurs, pas de
- *   page CGU propre à Clovis -- les liens légaux pointent vers les pages
- *   déjà existantes de la vitrine (djiguigne-ai/app/[locale]/legal/...).
+ * "Se déconnecter" n'est plus dans cette page : accessible depuis le menu
+ * qui s'ouvre au clic sur la photo de profil dans la sidebar (voir
+ * AppSidebar.tsx:MenuProfil), pas la peine de le dupliquer ici.
  *
- * Pas de mécanisme i18n branché sur ce fichier (même constat que
- * MesComportements.tsx et EspacePlugins.tsx, vérifié 2026-08-22) -- textes
- * en dur en français comme le reste du projet, à signaler à Bourama si la
- * traduction doit être ajoutée plus tard.
+ * Rôles (2026-08-04) volontairement absents : voir app/inscription/page.tsx,
+ * l'inscription n'attribue plus aucun rôle.
+ *
+ * Deux sections minimales par manque de contenu réel (signalé à Bourama
+ * plutôt qu'inventé) : Aide et support (pas d'adresse dédiée trouvée dans
+ * le projet), À propos (pas de CGU propres à Clovis, liens vers les pages
+ * légales déjà en ligne sur la vitrine).
+ *
+ * Pas de mécanisme i18n branché ici (même constat que MesComportements.tsx
+ * et EspacePlugins.tsx) -- textes en dur en français.
  */
 
-const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
-const ICONES_THEME = { systeme: Monitor, clair: Sun, sombre: Moon };
-const LIBELLES_THEME = { systeme: "Système", clair: "Clair", sombre: "Sombre" };
+type Vue = "liste" | "profil" | "preferences" | "confidentialite" | "aide" | "a-propos";
 
 type ProfilMoi = {
   user_id: string;
@@ -46,29 +63,66 @@ type ProfilMoi = {
   notifications_proactives_actives: boolean;
 };
 
-function Carte({
+const ORDRE_THEME: ChoixTheme[] = ["systeme", "clair", "sombre"];
+const ICONES_THEME = { systeme: Monitor, clair: Sun, sombre: Moon };
+const LIBELLES_THEME = { systeme: "Système", clair: "Clair", sombre: "Sombre" };
+
+function EnTete({ titre, onRetour }: { titre: string; onRetour: () => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={onRetour}
+        aria-label="Retour"
+        className="flex items-center gap-1 rounded-lg p-1.5 text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
+      >
+        <ArrowLeft size={16} />
+      </button>
+      <h2 className="font-display text-base font-bold text-dj-texte">{titre}</h2>
+    </div>
+  );
+}
+
+function Liste({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-cgpt-carte border border-dj-bordure bg-dj-surface">
+      <div className="divide-y divide-dj-bordure">{children}</div>
+    </div>
+  );
+}
+
+function LigneListe({
+  icone: Icone,
   titre,
-  description,
-  children,
+  sousTitre,
+  onClick,
+  danger = false,
 }: {
+  icone: LucideIcon;
   titre: string;
-  description?: string;
-  children: React.ReactNode;
+  sousTitre?: string;
+  onClick: () => void;
+  danger?: boolean;
 }) {
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-dj-bordure bg-dj-surface p-6">
-      <div>
-        <h2 className="font-display text-base font-bold text-dj-texte">{titre}</h2>
-        {description && <p className="mt-1 text-sm text-dj-texte-muet">{description}</p>}
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-dj-surface-haute"
+    >
+      <Icone size={18} className={danger ? "flex-shrink-0 text-[var(--dj-erreur)]" : "flex-shrink-0 text-dj-texte-muet"} />
+      <div className="flex-1 overflow-hidden">
+        <div className={`truncate text-sm ${danger ? "text-[var(--dj-erreur)]" : "text-dj-texte"}`}>{titre}</div>
+        {sousTitre && <div className="truncate text-xs text-dj-texte-muet">{sousTitre}</div>}
       </div>
-      {children}
-    </section>
+      {!danger && <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />}
+    </button>
   );
 }
 
 export function EspaceParametres() {
   const router = useRouter();
   const { choix: choixTheme, changerTheme } = useTheme();
+
+  const [vue, setVue] = useState<Vue>("liste");
 
   const [chargement, setChargement] = useState(true);
   const [sansCompte, setSansCompte] = useState(false);
@@ -154,7 +208,7 @@ export function EspaceParametres() {
       await enregistrerMonProfil({ notifications_proactives_actives: nouvelleValeur });
       setMessageNotifs(nouvelleValeur ? "Relances activées." : "Relances désactivées.");
     } catch (e) {
-      setNotifsActives(!nouvelleValeur); // repli si l'enregistrement échoue
+      setNotifsActives(!nouvelleValeur);
       setMessageNotifs(messageErreur(e));
     } finally {
       setEnregistrementNotifs(false);
@@ -187,11 +241,6 @@ export function EspaceParametres() {
     }
   }
 
-  async function seDeconnecter() {
-    await supabase.auth.signOut();
-    router.push("/connexion");
-  }
-
   async function confirmerSuppressionCompte() {
     const saisie = window.prompt(
       'Cette action est définitive : ton profil, tes IA, tes commentaires et tout ce qui t\'appartient sur Clovis seront supprimés. Tape "SUPPRIMER" pour confirmer.'
@@ -216,10 +265,9 @@ export function EspaceParametres() {
 
   if (chargement) {
     return (
-      <div className="flex flex-col gap-4" aria-hidden>
-        <Skeleton className="h-32 w-full rounded-2xl" />
-        <Skeleton className="h-32 w-full rounded-2xl" />
-        <Skeleton className="h-32 w-full rounded-2xl" />
+      <div className="flex flex-col gap-2" aria-hidden>
+        <Skeleton className="h-14 w-full rounded-cgpt-carte" />
+        <Skeleton className="h-48 w-full rounded-cgpt-carte" />
       </div>
     );
   }
@@ -228,156 +276,217 @@ export function EspaceParametres() {
     return <p className="text-sm text-[var(--dj-erreur)]">{erreurChargement}</p>;
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* --- Profil --- */}
-      <Carte titre="Profil" description="Ta photo, ton nom et ta bio, visibles sur ton profil Clovis.">
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => inputFichierRef.current?.click()}
-            disabled={uploadEnCours}
-            aria-label="Changer la photo de profil"
-            className="group relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute disabled:opacity-60"
-          >
+  const libelleProfil = nomAffiche || "Mon compte";
+
+  // --- Liste principale ------------------------------------------------
+  if (vue === "liste") {
+    return (
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={() => setVue("profil")}
+          className="flex w-full items-center gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface px-4 py-3.5 text-left transition-colors hover:bg-dj-surface-haute"
+        >
+          <span className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute">
             {profil?.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage, hôte dynamique, pas dans next.config
+              // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage
               <img src={profil.avatar_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <span className="flex h-full w-full items-center justify-center text-lg font-bold text-dj-texte-muet">
-                {(nomAffiche || "?").trim().charAt(0).toUpperCase()}
+              <span className="flex h-full w-full items-center justify-center text-base font-bold text-dj-texte-muet">
+                {libelleProfil.trim().charAt(0).toUpperCase()}
               </span>
             )}
-            <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100">
-              <Camera size={18} className={uploadEnCours ? "animate-pulse" : ""} />
-            </span>
-          </button>
-          <input
-            ref={inputFichierRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={(e) => {
-              const fichier = e.target.files?.[0];
-              if (fichier) changerAvatar(fichier);
-              e.target.value = "";
-            }}
+          </span>
+          <div className="flex-1 overflow-hidden">
+            <div className="truncate text-sm font-medium text-dj-texte">{libelleProfil}</div>
+            <div className="truncate text-xs text-dj-texte-muet">Photo, nom, bio</div>
+          </div>
+          <ChevronRight size={16} className="flex-shrink-0 text-dj-texte-muet" />
+        </button>
+
+        <Liste>
+          <LigneListe icone={SlidersHorizontal} titre="Préférences" onClick={() => setVue("preferences")} />
+          <LigneListe icone={Lock} titre="Confidentialité et sécurité" onClick={() => setVue("confidentialite")} />
+          <LigneListe icone={HelpCircle} titre="Aide et support" onClick={() => setVue("aide")} />
+          <LigneListe icone={Info} titre="À propos" onClick={() => setVue("a-propos")} />
+        </Liste>
+
+        <Liste>
+          <LigneListe
+            icone={Trash2}
+            titre={suppressionEnCours ? "Suppression…" : "Supprimer mon compte"}
+            onClick={confirmerSuppressionCompte}
+            danger
           />
-          <div className="flex flex-col gap-0.5">
+        </Liste>
+        {erreurSuppression && <p className="text-sm text-[var(--dj-erreur)]">{erreurSuppression}</p>}
+      </div>
+    );
+  }
+
+  // --- Profil ------------------------------------------------------------
+  if (vue === "profil") {
+    return (
+      <div className="flex flex-col gap-4">
+        <EnTete titre="Profil" onRetour={() => setVue("liste")} />
+
+        <div className="flex flex-col gap-4 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
+          <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => inputFichierRef.current?.click()}
               disabled={uploadEnCours}
-              className="self-start text-sm font-medium text-dj-accent-1 hover:text-dj-accent-2 disabled:opacity-50"
+              aria-label="Changer la photo de profil"
+              className="group relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border border-dj-bordure bg-dj-surface-haute disabled:opacity-60"
+            >
+              {profil?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- avatar_url vient de Supabase Storage
+                <img src={profil.avatar_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-lg font-bold text-dj-texte-muet">
+                  {libelleProfil.trim().charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-white opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100">
+                <Camera size={18} className={uploadEnCours ? "animate-pulse" : ""} />
+              </span>
+            </button>
+            <input
+              ref={inputFichierRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const fichier = e.target.files?.[0];
+                if (fichier) changerAvatar(fichier);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => inputFichierRef.current?.click()}
+              disabled={uploadEnCours}
+              className="text-sm font-medium text-dj-accent-1 hover:text-dj-accent-2 disabled:opacity-50"
             >
               {uploadEnCours ? "Envoi…" : "Changer la photo"}
             </button>
-            <span className="text-xs text-dj-texte-muet">JPEG, PNG ou WebP, 5 Mo max.</span>
           </div>
-        </div>
-        {erreurAvatar && <p className="text-sm text-[var(--dj-erreur)]">{erreurAvatar}</p>}
+          {erreurAvatar && <p className="text-sm text-[var(--dj-erreur)]">{erreurAvatar}</p>}
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="nom-affiche" className="text-sm font-medium text-dj-texte">
-            Nom affiché
-          </label>
-          <input
-            id="nom-affiche"
-            type="text"
-            value={nomAffiche}
-            onChange={(e) => setNomAffiche(e.target.value)}
-            placeholder="Ton nom"
-            className="w-full rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="bio" className="text-sm font-medium text-dj-texte">
-            Bio
-          </label>
-          <textarea
-            id="bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={3}
-            placeholder="Quelques mots sur toi (optionnel)."
-            className="w-full resize-y rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-dj-texte">Email</span>
-          <span className="text-sm text-dj-texte-muet">Géré depuis l&apos;écran de connexion, non modifiable ici.</span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={enregistrerProfil}
-            disabled={enregistrementProfil}
-            className="rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
-          >
-            {enregistrementProfil ? "Enregistrement…" : "Enregistrer"}
-          </button>
-          {messageProfil && <span className="text-sm text-dj-texte-muet">{messageProfil}</span>}
-        </div>
-        {erreurProfil && <p className="text-sm text-[var(--dj-erreur)]">{erreurProfil}</p>}
-      </Carte>
-
-      {/* --- Préférences --- */}
-      <Carte titre="Préférences">
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-dj-texte">Thème</span>
-          <div className="flex gap-2">
-            {ORDRE_THEME.map((t) => {
-              const Icone = ICONES_THEME[t];
-              const actif = choixTheme === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => changerTheme(t)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                    actif
-                      ? "border-dj-bordure-forte bg-dj-surface-haute text-dj-texte"
-                      : "border-dj-bordure text-dj-texte-muet hover:bg-dj-surface-haute"
-                  }`}
-                >
-                  <Icone size={16} />
-                  {LIBELLES_THEME[t]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-dj-texte">Relances de Clovis</span>
-            <span className="text-xs text-dj-texte-muet">
-              Autorise Clovis à te relancer si tu es inactif, pour ne pas perdre le fil.
-            </span>
-          </div>
-          <button
-            role="switch"
-            aria-checked={notifsActives}
-            onClick={basculerNotifs}
-            disabled={enregistrementNotifs}
-            className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-              notifsActives ? "bg-dj-accent-1" : "bg-dj-inactif"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                notifsActives ? "translate-x-5" : "translate-x-0.5"
-              }`}
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="nom-affiche" className="text-sm font-medium text-dj-texte">
+              Nom affiché
+            </label>
+            <input
+              id="nom-affiche"
+              type="text"
+              value={nomAffiche}
+              onChange={(e) => setNomAffiche(e.target.value)}
+              placeholder="Ton nom"
+              className="w-full rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
             />
-          </button>
-        </div>
-        {messageNotifs && <span className="text-sm text-dj-texte-muet">{messageNotifs}</span>}
-      </Carte>
+          </div>
 
-      {/* --- Confidentialité et sécurité --- */}
-      <Carte titre="Confidentialité et sécurité" description="Change le mot de passe de ton compte.">
-        <form onSubmit={changerMotDePasse} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="bio" className="text-sm font-medium text-dj-texte">
+              Bio
+            </label>
+            <textarea
+              id="bio"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              placeholder="Quelques mots sur toi (optionnel)."
+              className="w-full resize-y rounded-lg border border-dj-bordure bg-dj-surface-haute px-3 py-2 text-sm text-dj-texte outline-none focus:border-dj-accent-1"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={enregistrerProfil}
+              disabled={enregistrementProfil}
+              className="rounded-cgpt-bouton bg-dj-accent-1 px-5 py-2 text-sm font-bold text-[#1A0D02] transition-colors hover:bg-dj-accent-2 disabled:opacity-50"
+            >
+              {enregistrementProfil ? "Enregistrement…" : "Enregistrer"}
+            </button>
+            {messageProfil && <span className="text-sm text-dj-texte-muet">{messageProfil}</span>}
+          </div>
+          {erreurProfil && <p className="text-sm text-[var(--dj-erreur)]">{erreurProfil}</p>}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Préférences ---------------------------------------------------------
+  if (vue === "preferences") {
+    return (
+      <div className="flex flex-col gap-4">
+        <EnTete titre="Préférences" onRetour={() => setVue("liste")} />
+
+        <div className="flex flex-col gap-4 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-dj-texte">Thème</span>
+            <div className="flex gap-2">
+              {ORDRE_THEME.map((t) => {
+                const Icone = ICONES_THEME[t];
+                const actif = choixTheme === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => changerTheme(t)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                      actif
+                        ? "border-dj-bordure-forte bg-dj-surface-haute text-dj-texte"
+                        : "border-dj-bordure text-dj-texte-muet hover:bg-dj-surface-haute"
+                    }`}
+                  >
+                    <Icone size={16} />
+                    {LIBELLES_THEME[t]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 border-t border-dj-bordure pt-4">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-dj-texte">Relances de Clovis</span>
+              <span className="text-xs text-dj-texte-muet">
+                Autorise Clovis à te relancer si tu es inactif, pour ne pas perdre le fil.
+              </span>
+            </div>
+            <button
+              role="switch"
+              aria-checked={notifsActives}
+              onClick={basculerNotifs}
+              disabled={enregistrementNotifs}
+              className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                notifsActives ? "bg-dj-accent-1" : "bg-dj-inactif"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  notifsActives ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+          {messageNotifs && <span className="text-sm text-dj-texte-muet">{messageNotifs}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Confidentialité et sécurité -----------------------------------------
+  if (vue === "confidentialite") {
+    return (
+      <div className="flex flex-col gap-4">
+        <EnTete titre="Confidentialité et sécurité" onRetour={() => setVue("liste")} />
+
+        <form
+          onSubmit={changerMotDePasse}
+          className="flex flex-col gap-3 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4"
+        >
+          <p className="text-sm text-dj-texte-muet">Change le mot de passe de ton compte.</p>
           <div className="flex flex-col gap-1.5">
             <label htmlFor="nouveau-mdp" className="text-sm font-medium text-dj-texte">
               Nouveau mot de passe
@@ -416,69 +525,38 @@ export function EspaceParametres() {
           </div>
           {erreurMotDePasse && <p className="text-sm text-[var(--dj-erreur)]">{erreurMotDePasse}</p>}
         </form>
-      </Carte>
+      </div>
+    );
+  }
 
-      {/* --- Aide et support --- */}
-      <Carte titre="Aide et support">
-        <button
-          onClick={() => router.push("/")}
-          className="flex items-center gap-2 self-start rounded-lg border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
-        >
-          <MessageCircle size={16} />
-          Poser une question à Clovis
-        </button>
-      </Carte>
-
-      {/* --- À propos --- */}
-      <Carte titre="À propos">
-        <div className="flex flex-col gap-2 text-sm">
-          <span className="text-dj-texte">Clovis, par Djiguignè AI</span>
-          <a
-            href="https://djiguigne.com/legal/mentions-legales"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-fit items-center gap-1 text-dj-accent-1 hover:text-dj-accent-2"
-          >
-            Mentions légales
-            <ExternalLink size={13} />
-          </a>
-          <a
-            href="https://djiguigne.com/legal/confidentialite"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex w-fit items-center gap-1 text-dj-accent-1 hover:text-dj-accent-2"
-          >
-            Politique de confidentialité
-            <ExternalLink size={13} />
-          </a>
-        </div>
-      </Carte>
-
-      {/* --- Zone de danger --- */}
-      <Carte titre="Zone de danger">
-        <button
-          onClick={seDeconnecter}
-          className="flex items-center gap-2 self-start rounded-lg border border-dj-bordure px-4 py-2 text-sm text-dj-texte-muet transition-colors hover:bg-dj-surface-haute hover:text-dj-texte"
-        >
-          <LogOut size={16} />
-          Se déconnecter
-        </button>
-
-        <div className="flex flex-col gap-2 border-t border-dj-bordure pt-4">
+  // --- Aide et support -----------------------------------------------------
+  if (vue === "aide") {
+    return (
+      <div className="flex flex-col gap-4">
+        <EnTete titre="Aide et support" onRetour={() => setVue("liste")} />
+        <div className="rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4">
           <button
-            onClick={confirmerSuppressionCompte}
-            disabled={suppressionEnCours}
-            className="flex items-center gap-2 self-start rounded-lg border border-[var(--dj-erreur)] px-4 py-2 text-sm text-[var(--dj-erreur)] transition-colors hover:bg-[var(--dj-erreur)]/10 disabled:opacity-50"
+            onClick={() => router.push("/")}
+            className="flex items-center gap-2 rounded-lg border border-dj-bordure px-4 py-2 text-sm text-dj-texte transition-colors hover:bg-dj-surface-haute"
           >
-            <Trash2 size={16} />
-            {suppressionEnCours ? "Suppression…" : "Supprimer mon compte"}
+            <MessageCircle size={16} />
+            Poser une question à Clovis
           </button>
-          <span className="text-xs text-dj-texte-muet">
-            Supprime définitivement ton profil, tes IA et tout ce qui t&apos;appartient sur Clovis.
-          </span>
-          {erreurSuppression && <p className="text-sm text-[var(--dj-erreur)]">{erreurSuppression}</p>}
         </div>
-      </Carte>
+      </div>
+    );
+  }
+
+  // --- À propos --------------------------------------------------------------
+  return (
+    <div className="flex flex-col gap-4">
+      <EnTete titre="À propos" onRetour={() => setVue("liste")} />
+      <div className="flex flex-col gap-2 rounded-cgpt-carte border border-dj-bordure bg-dj-surface p-4 text-sm">
+        <span className="text-dj-texte">Clovis</span>
+        <span className="text-xs text-dj-texte-muet">
+          Rien d&apos;autre pour l&apos;instant, en attente du contenu (mentions légales, version) auprès de Bourama.
+        </span>
+      </div>
     </div>
   );
 }
